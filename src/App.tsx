@@ -26,6 +26,7 @@ import { SignupPage } from "./pages/SignupPage";
 import { NewGamePage } from "./pages/NewGamePage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 type Difficulty = "25" | "27" | "30" | "35" | "40" | "45";
 
@@ -216,6 +217,7 @@ export default function App() {
 						</ProtectedRoute>
 					}
 				/>
+				<Route path="*" element={<NotFoundPage />} />
 			</Routes>
 		</AnimatePresence>
 	);
