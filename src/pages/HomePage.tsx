@@ -62,7 +62,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 							<button
 								type="button"
 								onClick={() => navigate("/statistics")}
-								className="flex items-center justify-center gap-3 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
+								className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
 							>
 								<Trophy size={20} className="text-yellow-400" />
 								<span>Statistics</span>
@@ -71,7 +71,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 							<button
 								type="button"
 								onClick={() => navigate("/settings")}
-								className="flex items-center justify-center gap-3 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
+								className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
 							>
 								<SettingsIcon size={20} />
 								<span>Settings</span>

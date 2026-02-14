@@ -93,7 +93,6 @@ export const LoginPage: React.FC = () => {
 							onSubmit={handleEmailAuth}
 							className="w-full flex flex-col gap-4"
 						>
-
 							<div className="relative">
 								<Mail
 									className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"

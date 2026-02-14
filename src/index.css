@@ -85,6 +85,12 @@ body {
 	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
+.blur-glass {
+	background: var(--glass-bg);
+	backdrop-filter: blur(var(--glass-blur));
+	-webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
 .glass-dark {
 	background: var(--glass-dark-bg);
 	backdrop-filter: blur(var(--glass-blur));

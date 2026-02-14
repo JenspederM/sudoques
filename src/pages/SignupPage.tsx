@@ -150,7 +150,11 @@ export const SignupPage: React.FC = () => {
 								disabled={loading}
 								className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg shadow-brand-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
 							>
-								{loading ? <Loader2 className="animate-spin" size={20} /> : "Sign Up"}
+								{loading ? (
+									<Loader2 className="animate-spin" size={20} />
+								) : (
+									"Sign Up"
+								)}
 							</button>
 						</form>
 

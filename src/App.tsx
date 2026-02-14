@@ -147,7 +147,9 @@ export default function App() {
 								hasExistingGame={
 									!!gameState &&
 									!gameState.current.every((row, ri) =>
-										row.every((val, ci) => val === gameState.solution?.[ri]?.[ci]),
+										row.every(
+											(val, ci) => val === gameState.solution?.[ri]?.[ci],
+										),
 									)
 								}
 							/>

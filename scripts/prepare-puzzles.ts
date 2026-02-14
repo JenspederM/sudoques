@@ -20,7 +20,7 @@ async function preparePuzzles() {
 		}
 
 		// Shuffle and sample
-		result[diff] = allPuzzles
+		result[diff] = allPuzzles;
 		console.log(`Loaded ${result[diff].length} puzzles for difficulty ${diff}`);
 	}
 

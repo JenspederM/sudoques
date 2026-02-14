@@ -10,9 +10,7 @@ interface SettingsPageProps {
 	currentTheme: string;
 }
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({
-	currentTheme,
-}) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
 

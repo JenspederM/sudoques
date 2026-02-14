@@ -85,7 +85,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 	}, [showWin, setTimer]);
 
 	const handleCellSelect = (r: number, c: number) => {
-		setSelectedCell([r, c]);
+		if (selectedCell !== null && selectedCell[0] === r && selectedCell[1] === c)
+			setSelectedCell(null);
+		else setSelectedCell([r, c]);
 	};
 
 	const handleInput = (num: number | null) => {
@@ -145,8 +147,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 						userName: user.displayName || "Anonymous",
 						initial: gameState.initial.flat(),
 						solution: gameState.solution.flat(),
-					}).then(() => {;
-					});
+					}).then(() => {});
 					// Also save the final game state so it's marked as complete in DB
 					saveGameState(user.uid, {
 						initial: gameState.initial,
@@ -268,7 +269,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 							}}
 							canUndo={historyPointer > 0}
 							canRedo={historyPointer < history.length - 1}
-						/>
+						/>GameControls
 
 						<Numpad
 							onNumberClick={handleInput}
