@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 const PUZZLES_DIR = join(process.cwd(), "puzzles");
 const OUTPUT_FILE = join(process.cwd(), "src/data/puzzles.json");
-const SAMPLE_SIZE = 50; // Pick 50 from each difficulty
 
 async function preparePuzzles() {
 	const difficulties = await readdir(PUZZLES_DIR);
@@ -21,8 +20,7 @@ async function preparePuzzles() {
 		}
 
 		// Shuffle and sample
-		const shuffled = allPuzzles.sort(() => 0.5 - Math.random());
-		result[diff] = shuffled.slice(0, SAMPLE_SIZE);
+		result[diff] = allPuzzles
 		console.log(`Loaded ${result[diff].length} puzzles for difficulty ${diff}`);
 	}
 
