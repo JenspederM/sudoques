@@ -1,0 +1,256 @@
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, Timer, Trophy } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { SudokuGrid } from "../components/SudokuGrid";
+import { GameControls } from "../components/GameControls";
+import { Numpad } from "../components/Numpad";
+import { Layout } from "../components/Layout";
+import { checkBoard } from "../logic/sudoku";
+import { saveGameState, saveHighScore } from "../logic/firebase";
+import { Timestamp } from "firebase/firestore";
+import type { Board, CellNotes } from "../logic/sudoku";
+import type { User } from "firebase/auth";
+
+interface GamePageProps {
+	user: User | null;
+	gameState: {
+		initial: Board;
+		current: Board;
+		notes: CellNotes;
+		solution: Board;
+	};
+	setGameState: (state: any) => void;
+	timer: number;
+	setTimer: (t: number | ((prev: number) => number)) => void;
+    difficulty: string;
+}
+
+export const GamePage: React.FC<GamePageProps> = ({
+	user,
+	gameState,
+	setGameState,
+	timer,
+	setTimer,
+    difficulty
+}) => {
+	const navigate = useNavigate();
+	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
+	const [isNoteMode, setIsNoteMode] = useState(false);
+	const [history, setHistory] = useState<Board[]>([gameState.current.map(r => [...r])]);
+	const [historyPointer, setHistoryPointer] = useState(0);
+	const [showWin, setShowWin] = useState(false);
+
+	// Persistence effect: Save game
+	useEffect(() => {
+		if (user && gameState && !showWin) {
+			const timeout = setTimeout(() => {
+				saveGameState(user.uid, {
+					initial: gameState.initial,
+					current: gameState.current,
+					notes: gameState.notes,
+					solution: gameState.solution,
+					timer: timer
+				});
+			}, 1000); // Debounce save
+			return () => clearTimeout(timeout);
+		}
+	}, [user, gameState, timer, showWin]);
+
+	// Timer logic
+	useEffect(() => {
+		if (showWin) return;
+		const interval = setInterval(() => setTimer((t) => t + 1), 1000);
+		return () => clearInterval(interval);
+	}, [showWin, setTimer]);
+
+	const handleCellSelect = (r: number, c: number) => {
+		setSelectedCell([r, c]);
+	};
+
+	const handleInput = (num: number | null) => {
+		if (!selectedCell) return;
+		const [r, c] = selectedCell;
+		const initialRow = gameState.initial[r];
+		if (!initialRow || initialRow[c] !== null) return;
+
+		if (isNoteMode && num !== null) {
+			const newNotes = [...gameState.notes];
+			const rowNotes = newNotes[r];
+			if (!rowNotes) return;
+			const targetCellNotes = rowNotes[c];
+			if (!targetCellNotes) return;
+			const cellNotes = new Set(targetCellNotes);
+			if (cellNotes.has(num)) {
+				cellNotes.delete(num);
+			} else {
+				cellNotes.add(num);
+			}
+			rowNotes[c] = cellNotes;
+			setGameState({ ...gameState, notes: newNotes });
+		} else {
+			const newBoard = gameState.current.map((row) => [...row]);
+			const newBoardRow = newBoard[r];
+			
+			// If the value hasn't changed, don't update state or history
+			if (newBoardRow && newBoardRow[c] === num) return;
+
+			if (newBoardRow) {
+				newBoardRow[c] = num;
+			}
+
+			// Update history
+			const newHistory = history.slice(0, historyPointer + 1);
+			newHistory.push(newBoard.map((row) => [...row]));
+			setHistory(newHistory);
+			setHistoryPointer(newHistory.length - 1);
+
+			setGameState({ ...gameState, current: newBoard });
+
+			// Check for win
+			const isComplete = newBoard.every((row, ri) =>
+				row.every((val, ci) => {
+					const solRow = gameState.solution[ri];
+					return solRow ? val === solRow[ci] : false;
+				}),
+			);
+			if (isComplete) {
+				setShowWin(true);
+				if (user) {
+					saveHighScore({
+						difficulty,
+						time: timer,
+						date: Timestamp.now(),
+						userName: user.displayName || "Anonymous"
+					});
+				}
+			}
+		}
+	};
+
+	const undo = () => {
+		if (historyPointer > 0) {
+			const prevBoard = history[historyPointer - 1];
+			if (!prevBoard) return;
+			setGameState({ ...gameState, current: prevBoard.map((row) => [...row]) });
+			setHistoryPointer(historyPointer - 1);
+		}
+	};
+
+	const redo = () => {
+		if (historyPointer < history.length - 1) {
+			const nextBoard = history[historyPointer + 1];
+			if (!nextBoard) return;
+			setGameState({ ...gameState, current: nextBoard.map((row) => [...row]) });
+			setHistoryPointer(historyPointer + 1);
+		}
+	};
+
+	const formatTime = (s: number) => {
+		const mins = Math.floor(s / 60);
+		const secs = s % 60;
+		return `${mins}:${secs.toString().padStart(2, "0")}`;
+	};
+
+	const conflicts = checkBoard(gameState.current, gameState.solution);
+
+	return (
+		<Layout>
+			<div className="page-container px-2 sm:px-4">
+				<div className="content-wrapper flex-1 justify-center sm:justify-start">
+                    {/* Header Info */}
+					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => navigate("/")}
+								className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
+								title="Back to Menu"
+							>
+								<ChevronLeft size={24} />
+							</button>
+						</div>
+						<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
+							<Timer size={20} />
+							<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+								{formatTime(timer)}
+							</span>
+						</div>
+						<div className="flex items-center gap-2 text-yellow-500">
+							<Trophy size={20} />
+							<span className="font-bold">{difficulty}</span>
+						</div>
+					</div>
+
+                    {/* Grid */}
+                    <div className="w-full flex justify-center py-2">
+                        <SudokuGrid
+                            initialBoard={gameState.initial}
+                            currentBoard={gameState.current}
+                            notes={gameState.notes}
+                            selectedCell={selectedCell}
+                            onCellSelect={handleCellSelect}
+                            conflicts={conflicts}
+                        />
+                    </div>
+
+                    {/* Controls & Numpad */}
+                    <div className="w-full flex flex-col gap-4 mt-auto sm:mt-0">
+                        <GameControls
+                            isNoteMode={isNoteMode}
+                            onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
+                            onUndo={undo}
+                            onRedo={redo}
+                            onRestart={() => {
+                                setGameState({
+                                    ...gameState,
+                                    current: gameState.initial.map(r => [...r]),
+                                    notes: Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set<number>()))
+                                });
+                                setTimer(0);
+                            }}
+                            canUndo={historyPointer > 0}
+                            canRedo={historyPointer < history.length - 1}
+                        />
+
+                        <Numpad onNumberClick={handleInput} />
+                    </div>
+				</div>
+
+				<AnimatePresence>
+					{showWin && (
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+							className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
+						>
+							<motion.div
+								initial={{ scale: 0.9, y: 20 }}
+								animate={{ scale: 1, y: 0 }}
+								className="glass p-10 rounded-3xl text-center max-w-sm"
+							>
+								<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
+								<h2 className="text-3xl font-bold mb-2">Victory!</h2>
+								<p className="text-slate-400 mb-6">
+									Solved in {formatTime(timer)}
+								</p>
+								<button
+									type="button"
+									onClick={() => {
+										setShowWin(false);
+										navigate("/");
+									}}
+									className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all"
+								>
+									Back to Menu
+								</button>
+							</motion.div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+			</div>
+		</Layout>
+	);
+};

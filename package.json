@@ -1,0 +1,40 @@
+{
+	"name": "bun-react-template",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "bun --hot src/index.ts",
+		"start": "NODE_ENV=production bun src/index.ts",
+		"build": "bun run build.ts --outdir=dist",
+		"deploy": "bun run build && bun firebase:deploy",
+		"lint": "biome check",
+		"format": "biome format --fix",
+		"test": "bun test",
+		"test:ui": "playwright test",
+		"firebase:login": "firebase login",
+		"firebase:init": "firebase init",
+		"firebase:emulate": "firebase emulators:start",
+		"firebase:deploy": "firebase deploy"
+	},
+	"dependencies": {
+		"bun-plugin-tailwind": "^0.1.2",
+		"clsx": "^2.1.1",
+		"firebase": "^12.9.0",
+		"framer-motion": "^12.34.0",
+		"lucide-react": "^0.564.0",
+		"react": "^19",
+		"react-dom": "^19",
+		"react-router-dom": "^7.13.0",
+		"tailwind-merge": "^3.4.0",
+		"tailwindcss": "^4.1.11"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.15",
+		"@playwright/test": "^1.58.2",
+		"@types/bun": "latest",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"firebase-tools": "^15.6.0"
+	}
+}
