@@ -27,13 +27,17 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		const [sr, sc] = selectedCell;
 		const selectedRow = currentBoard[sr];
 		const currentRow = currentBoard[r];
-		
+
 		const selectedValue = selectedRow ? selectedRow[sc] : null;
 		const currentValue = currentRow ? currentRow[c] : null;
-		
+
 		// Highlight if it's the same number
 		// We explicitly check selectedValue !== null because we don't want to highlight all empty cells when an empty cell is selected
-		if (selectedValue !== null && selectedValue !== undefined && currentValue === selectedValue) {
+		if (
+			selectedValue !== null &&
+			selectedValue !== undefined &&
+			currentValue === selectedValue
+		) {
 			return true;
 		}
 
@@ -73,9 +77,11 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 								r % 3 === 2 && r !== 8 && "border-b-2 border-slate-500",
 								c % 3 === 2 && c !== 8 && "border-r-2 border-slate-500",
 								highlighted && !selected && !conflict && "bg-white/5",
-								selected && !conflict &&
+								selected &&
+									!conflict &&
 									"bg-brand-primary/40 ring-2 ring-brand-primary z-10",
-								conflict && "text-white bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
+								conflict &&
+									"text-white bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
 								!initial && !conflict && "text-brand-primary",
 								initial && !conflict && "text-white font-semibold",
 							)}

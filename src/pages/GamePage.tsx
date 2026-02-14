@@ -1,17 +1,17 @@
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Timer, Trophy } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { SudokuGrid } from "../components/SudokuGrid";
-import { GameControls } from "../components/GameControls";
-import { Numpad } from "../components/Numpad";
-import { Layout } from "../components/Layout";
-import { checkBoard } from "../logic/sudoku";
-import { saveGameState, saveHighScore } from "../logic/firebase";
-import { Timestamp } from "firebase/firestore";
-import type { Board, CellNotes } from "../logic/sudoku";
 import type { User } from "firebase/auth";
+import { Timestamp } from "firebase/firestore";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, Timer, Trophy } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { GameControls } from "../components/GameControls";
+import { Layout } from "../components/Layout";
+import { Numpad } from "../components/Numpad";
+import { SudokuGrid } from "../components/SudokuGrid";
+import { saveGameState, saveHighScore } from "../logic/firebase";
+import type { Board, CellNotes } from "../logic/sudoku";
+import { checkBoard } from "../logic/sudoku";
 
 interface GamePageProps {
 	user: User | null;
@@ -24,7 +24,7 @@ interface GamePageProps {
 	setGameState: (state: any) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
-    difficulty: string;
+	difficulty: string;
 }
 
 export const GamePage: React.FC<GamePageProps> = ({
@@ -33,12 +33,16 @@ export const GamePage: React.FC<GamePageProps> = ({
 	setGameState,
 	timer,
 	setTimer,
-    difficulty
+	difficulty,
 }) => {
 	const navigate = useNavigate();
-	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
+	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
+		null,
+	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
-	const [history, setHistory] = useState<Board[]>([gameState.current.map(r => [...r])]);
+	const [history, setHistory] = useState<Board[]>([
+		gameState.current.map((r) => [...r]),
+	]);
 	const [historyPointer, setHistoryPointer] = useState(0);
 	const [showWin, setShowWin] = useState(false);
 
@@ -51,12 +55,26 @@ export const GamePage: React.FC<GamePageProps> = ({
 					current: gameState.current,
 					notes: gameState.notes,
 					solution: gameState.solution,
-					timer: timer
+					timer: timer,
 				});
 			}, 1000); // Debounce save
 			return () => clearTimeout(timeout);
 		}
 	}, [user, gameState, timer, showWin]);
+
+	// Check for win on load
+	useEffect(() => {
+		if (showWin) return;
+		const isComplete = gameState.current.every((row, ri) =>
+			row.every((val, ci) => {
+				const solRow = gameState.solution[ri];
+				return solRow ? val === solRow[ci] : false;
+			}),
+		);
+		if (isComplete) {
+			setShowWin(true);
+		}
+	}, [gameState, showWin]);
 
 	// Timer logic
 	useEffect(() => {
@@ -92,7 +110,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		} else {
 			const newBoard = gameState.current.map((row) => [...row]);
 			const newBoardRow = newBoard[r];
-			
+
 			// If the value hasn't changed, don't update state or history
 			if (newBoardRow && newBoardRow[c] === num) return;
 
@@ -122,7 +140,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 						difficulty,
 						time: timer,
 						date: Timestamp.now(),
-						userName: user.displayName || "Anonymous"
+						userName: user.displayName || "Anonymous",
+						initial: gameState.initial.flat(),
+						solution: gameState.solution.flat(),
 					});
 				}
 			}
@@ -159,7 +179,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		<Layout>
 			<div className="page-container px-2 sm:px-4">
 				<div className="content-wrapper flex-1 justify-center sm:justify-start">
-                    {/* Header Info */}
+					{/* Header Info */}
 					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
 						<div className="flex items-center gap-2">
 							<button
@@ -173,7 +193,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 						</div>
 						<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
 							<Timer size={20} />
-							<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+							<span
+								data-testid="timer"
+								className="font-mono text-lg sm:text-xl"
+							>
 								{formatTime(timer)}
 							</span>
 						</div>
@@ -183,39 +206,45 @@ export const GamePage: React.FC<GamePageProps> = ({
 						</div>
 					</div>
 
-                    {/* Grid */}
-                    <div className="w-full flex justify-center py-2">
-                        <SudokuGrid
-                            initialBoard={gameState.initial}
-                            currentBoard={gameState.current}
-                            notes={gameState.notes}
-                            selectedCell={selectedCell}
-                            onCellSelect={handleCellSelect}
-                            conflicts={conflicts}
-                        />
-                    </div>
+					{/* Grid */}
+					<div className="w-full flex justify-center py-2">
+						<SudokuGrid
+							initialBoard={gameState.initial}
+							currentBoard={gameState.current}
+							notes={gameState.notes}
+							selectedCell={selectedCell}
+							onCellSelect={handleCellSelect}
+							conflicts={conflicts}
+						/>
+					</div>
 
-                    {/* Controls & Numpad */}
-                    <div className="w-full flex flex-col gap-4 mt-auto sm:mt-0">
-                        <GameControls
-                            isNoteMode={isNoteMode}
-                            onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
-                            onUndo={undo}
-                            onRedo={redo}
-                            onRestart={() => {
-                                setGameState({
-                                    ...gameState,
-                                    current: gameState.initial.map(r => [...r]),
-                                    notes: Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set<number>()))
-                                });
-                                setTimer(0);
-                            }}
-                            canUndo={historyPointer > 0}
-                            canRedo={historyPointer < history.length - 1}
-                        />
+					{/* Controls & Numpad */}
+					<div className="w-full flex flex-col gap-4 mt-auto sm:mt-0">
+						<GameControls
+							isNoteMode={isNoteMode}
+							onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
+							onUndo={undo}
+							onRedo={redo}
+							onRestart={() => {
+								setGameState({
+									...gameState,
+									current: gameState.initial.map((r) => [...r]),
+									notes: Array(9)
+										.fill(null)
+										.map(() =>
+											Array(9)
+												.fill(null)
+												.map(() => new Set<number>()),
+										),
+								});
+								setTimer(0);
+							}}
+							canUndo={historyPointer > 0}
+							canRedo={historyPointer < history.length - 1}
+						/>
 
-                        <Numpad onNumberClick={handleInput} />
-                    </div>
+						<Numpad onNumberClick={handleInput} />
+					</div>
 				</div>
 
 				<AnimatePresence>
@@ -223,7 +252,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 						<motion.div
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+							exit={{ opacity: 0 }}
 							className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
 						>
 							<motion.div

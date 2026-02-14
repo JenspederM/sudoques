@@ -1,24 +1,30 @@
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import {
+	Navigate,
+	Route,
+	Routes,
+	useLocation,
+	useNavigate,
+} from "react-router-dom";
+import { useAuth } from "./components/AuthProvider";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import puzzlesData from "./data/puzzles.json";
+import { loadGameState } from "./logic/firebase";
 import {
 	type Board,
 	type CellNotes,
 	parsePuzzle,
 	solveSudoku,
 } from "./logic/sudoku";
-import { loadGameState } from "./logic/firebase";
-import { useAuth } from "./components/AuthProvider";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-
+import { GamePage } from "./pages/GamePage";
 // Pages
 import { HomePage } from "./pages/HomePage";
-import { GamePage } from "./pages/GamePage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { NewGamePage } from "./pages/NewGamePage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { NewGamePage } from "./pages/NewGamePage";
+import { ReviewPage } from "./pages/ReviewPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 type Difficulty = "25" | "27" | "30" | "35" | "40" | "45";
 
@@ -33,26 +39,38 @@ export default function App() {
 	const { user, loading: authLoading } = useAuth();
 	const [difficulty, setDifficulty] = useState<Difficulty>("45");
 	const [isLoading, setIsLoading] = useState(true);
-	const [theme, setTheme] = useState(localStorage.getItem("theme") || "default");
-    
-    const navigate = useNavigate();
-    const location = useLocation();
+	const [theme, setTheme] = useState(
+		localStorage.getItem("theme") || "default",
+	);
+
+	const navigate = useNavigate();
+	const location = useLocation();
 
 	// Persistence effect: Load game
 	useEffect(() => {
 		if (user && !gameState) {
 			loadGameState(user.uid).then((saved) => {
 				if (saved) {
-					setGameState(saved);
-					setTimer(saved.timer);
+					// Check if game is finished
+					const isComplete = saved.current.every((row, ri) =>
+						row.every((val, ci) => {
+							const solRow = saved.solution[ri];
+							return solRow ? val === solRow[ci] : false;
+						}),
+					);
+
+					if (!isComplete) {
+						setGameState(saved);
+						setTimer(saved.timer);
+					}
 				}
-                setIsLoading(false);
+				setIsLoading(false);
 			});
 		} else if (user && gameState) {
-            setIsLoading(false);
-        } else if (!user && !authLoading) {
-            setIsLoading(false);
-        }
+			setIsLoading(false);
+		} else if (!user && !authLoading) {
+			setIsLoading(false);
+		}
 	}, [user, authLoading, gameState]);
 
 	// Theme effect
@@ -64,35 +82,36 @@ export default function App() {
 	const [timer, setTimer] = useState(0);
 
 	// Initialize a new game
-	const startNewGame = useCallback((diff: Difficulty) => {
-        setDifficulty(diff);
-		const list = puzzlesData[
-			diff as keyof typeof puzzlesData
-		] as string[];
-		if (!list || list.length === 0) return;
-		const puzzleStr = list[Math.floor(Math.random() * list.length)];
-		if (!puzzleStr) return;
-		const initial = parsePuzzle(puzzleStr);
-		const solution = solveSudoku(initial);
-		if (!solution) return;
+	const startNewGame = useCallback(
+		(diff: Difficulty) => {
+			setDifficulty(diff);
+			const list = puzzlesData[diff as keyof typeof puzzlesData] as string[];
+			if (!list || list.length === 0) return;
+			const puzzleStr = list[Math.floor(Math.random() * list.length)];
+			if (!puzzleStr) return;
+			const initial = parsePuzzle(puzzleStr);
+			const solution = solveSudoku(initial);
+			if (!solution) return;
 
-		const notes: CellNotes = Array(9)
-			.fill(null)
-			.map(() =>
-				Array(9)
-					.fill(null)
-					.map(() => new Set<number>()),
-			);
+			const notes: CellNotes = Array(9)
+				.fill(null)
+				.map(() =>
+					Array(9)
+						.fill(null)
+						.map(() => new Set<number>()),
+				);
 
-		setGameState({
-			initial,
-			current: initial.map((r) => [...r]),
-			notes,
-			solution,
-		});
-		setTimer(0);
-        navigate("/game");
-	}, [navigate]);
+			setGameState({
+				initial,
+				current: initial.map((r) => [...r]),
+				notes,
+				solution,
+			});
+			setTimer(0);
+			navigate("/game");
+		},
+		[navigate],
+	);
 
 	if (authLoading) {
 		return (
@@ -106,40 +125,52 @@ export default function App() {
 		<AnimatePresence mode="wait">
 			<Routes location={location} key={location.pathname}>
 				<Route path="/login" element={<LoginPage />} />
-				
-				<Route path="/" element={
-					<ProtectedRoute>
-						<HomePage hasExistingGame={!!gameState} />
-					</ProtectedRoute>
-				} />
-				
-				<Route 
-                    path="/new-game" 
-                    element={
+
+				<Route
+					path="/"
+					element={
+						<ProtectedRoute>
+							<HomePage hasExistingGame={!!gameState} />
+						</ProtectedRoute>
+					}
+				/>
+
+				<Route
+					path="/new-game"
+					element={
 						<ProtectedRoute>
 							<NewGamePage onSelectDifficulty={startNewGame} />
 						</ProtectedRoute>
-					} 
-                />
-				
+					}
+				/>
+
 				<Route
 					path="/settings"
 					element={
 						<ProtectedRoute>
-							<SettingsPage
-								currentTheme={theme}
-								onThemeChange={setTheme}
-							/>
+							<SettingsPage currentTheme={theme} onThemeChange={setTheme} />
 						</ProtectedRoute>
 					}
 				/>
-				
-                <Route path="/leaderboard" element={
-					<ProtectedRoute>
-						<LeaderboardPage />
-					</ProtectedRoute>
-				} />
-				
+
+				<Route
+					path="/leaderboard"
+					element={
+						<ProtectedRoute>
+							<LeaderboardPage />
+						</ProtectedRoute>
+					}
+				/>
+
+				<Route
+					path="/review"
+					element={
+						<ProtectedRoute>
+							<ReviewPage />
+						</ProtectedRoute>
+					}
+				/>
+
 				<Route
 					path="/game"
 					element={
@@ -149,7 +180,7 @@ export default function App() {
 									<div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
 								</div>
 							) : gameState ? (
-								<GamePage 
+								<GamePage
 									user={user}
 									gameState={gameState}
 									setGameState={setGameState}

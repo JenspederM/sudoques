@@ -1,48 +1,44 @@
 {
-  "firestore": {
-    "database": "(default)",
-    "location": "eur3",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "hosting": {
-    "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
-  "auth": {
-    "providers": {
-      "anonymous": true,
-      "emailPassword": true,
-      "googleSignIn": {
-        "oAuthBrandDisplayName": "Sudoques",
-        "supportEmail": "support@undefined.firebaseapp.com"
-      }
-    }
-  },
-  "emulators": {
-    "auth": {
-      "port": 9099
-    },
-    "firestore": {
-      "port": 8080
-    },
-    "hosting": {
-      "port": 5000
-    },
-    "ui": {
-      "enabled": true,
-      "port": 9050
-    },
-    "singleProjectMode": true
-  }
+	"firestore": {
+		"database": "(default)",
+		"location": "eur3",
+		"rules": "firestore.rules",
+		"indexes": "firestore.indexes.json"
+	},
+	"hosting": {
+		"public": "dist",
+		"ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+		"rewrites": [
+			{
+				"source": "**",
+				"destination": "/index.html"
+			}
+		]
+	},
+	"auth": {
+		"providers": {
+			"anonymous": true,
+			"emailPassword": true,
+			"googleSignIn": {
+				"oAuthBrandDisplayName": "Sudoques",
+				"supportEmail": "support@undefined.firebaseapp.com"
+			}
+		}
+	},
+	"emulators": {
+		"auth": {
+			"port": 9099
+		},
+		"firestore": {
+			"port": 8080
+		},
+		"hosting": {
+			"port": 5000
+		},
+		"ui": {
+			"enabled": true,
+			"port": 9050
+		},
+		"singleProjectMode": true
+	}
 }

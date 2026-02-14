@@ -1,10 +1,10 @@
+import { motion } from "framer-motion";
+import { ChevronLeft, Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ChevronLeft, Trophy, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getHighScores, type HighScore } from "../logic/firebase";
 import { Layout } from "../components/Layout";
+import { getHighScores, type HighScore } from "../logic/firebase";
 
 const DIFFICULTIES = [
 	{ id: "45", label: "Easy" },
@@ -46,7 +46,9 @@ export const LeaderboardPage: React.FC = () => {
 						</button>
 						<div className="flex items-center gap-2 text-yellow-400">
 							<Trophy size={24} />
-							<h2 className="text-2xl font-black tracking-tight text-white">Leaderboard</h2>
+							<h2 className="text-2xl font-black tracking-tight text-white">
+								Leaderboard
+							</h2>
 						</div>
 					</div>
 
@@ -82,21 +84,41 @@ export const LeaderboardPage: React.FC = () => {
 									initial={{ opacity: 0, y: 10 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: idx * 0.05 }}
-									className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 hover:border-white/10 transition-colors"
+									onClick={() => {
+										if (score.initial && score.solution) {
+											navigate("/review", { state: score });
+										}
+									}}
+									className={`flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-colors ${
+										score.initial && score.solution
+											? "cursor-pointer hover:bg-white/10"
+											: ""
+									}`}
 								>
 									<div className="flex items-center gap-4">
-										<span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
-											idx === 0 ? "bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-400/20" : 
-											idx === 1 ? "bg-slate-300 text-slate-900 shadow-lg shadow-slate-300/20" :
-											idx === 2 ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20" : 
-											"bg-white/10 text-slate-400"
-										}`}>
+										<span
+											className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
+												idx === 0
+													? "bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-400/20"
+													: idx === 1
+														? "bg-slate-300 text-slate-900 shadow-lg shadow-slate-300/20"
+														: idx === 2
+															? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
+															: "bg-white/10 text-slate-400"
+											}`}
+										>
 											{idx + 1}
 										</span>
 										<div>
-											<p className="font-bold text-white text-lg">{score.userName || "Anonymous"}</p>
+											<p className="font-bold text-white text-lg">
+												{score.userName || "Anonymous"}
+											</p>
 											<p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
-												{score.date.toDate().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+												{score.date.toDate().toLocaleDateString(undefined, {
+													month: "short",
+													day: "numeric",
+													year: "numeric",
+												})}
 											</p>
 										</div>
 									</div>
@@ -108,9 +130,16 @@ export const LeaderboardPage: React.FC = () => {
 							))
 						) : (
 							<div className="text-center py-16 glass rounded-3xl border border-dashed border-white/10">
-								<Trophy size={48} className="text-slate-700 mx-auto mb-4 opacity-20" />
-								<p className="text-slate-400 font-bold text-lg">No scores yet</p>
-								<p className="text-sm text-slate-500">Be the first to claim victory!</p>
+								<Trophy
+									size={48}
+									className="text-slate-700 mx-auto mb-4 opacity-20"
+								/>
+								<p className="text-slate-400 font-bold text-lg">
+									No scores yet
+								</p>
+								<p className="text-sm text-slate-500">
+									Be the first to claim victory!
+								</p>
 							</div>
 						)}
 					</div>

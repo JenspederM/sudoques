@@ -1,6 +1,6 @@
-import type React from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Play } from "lucide-react";
+import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
 
@@ -17,7 +17,9 @@ const DIFFICULTIES = [
 	{ id: "25", label: "Master", desc: "The ultimate test" },
 ];
 
-export const NewGamePage: React.FC<NewGamePageProps> = ({ onSelectDifficulty }) => {
+export const NewGamePage: React.FC<NewGamePageProps> = ({
+	onSelectDifficulty,
+}) => {
 	const navigate = useNavigate();
 
 	return (
@@ -49,16 +51,14 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({ onSelectDifficulty }) 
 							>
 								{/* Decorative background element */}
 								<div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-brand-primary/10 transition-colors" />
-								
+
 								<div className="relative z-10">
 									<h3 className="text-2xl font-black mb-1 group-hover:text-brand-primary transition-colors">
 										{d.label}
 									</h3>
-									<p className="text-slate-400 text-sm font-medium">
-										{d.desc}
-									</p>
+									<p className="text-slate-400 text-sm font-medium">{d.desc}</p>
 								</div>
-								
+
 								<div className="relative z-10 w-12 h-12 rounded-2xl bg-white/5 group-hover:bg-brand-primary group-hover:text-white flex items-center justify-center transition-all shadow-lg">
 									<Play size={20} fill="currentColor" />
 								</div>

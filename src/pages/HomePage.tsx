@@ -1,6 +1,6 @@
-import type React from "react";
 import { motion } from "framer-motion";
 import { Brain, Play, Settings as SettingsIcon, Trophy } from "lucide-react";
+import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
 

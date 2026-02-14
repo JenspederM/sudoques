@@ -2,7 +2,11 @@
 
 import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, GoogleAuthProvider } from "firebase/auth";
+import {
+	connectAuthEmulator,
+	GoogleAuthProvider,
+	getAuth,
+} from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -30,4 +34,5 @@ if (process.env.NODE_ENV !== "production") {
 	connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
 }
 
-export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
+export const analytics =
+	typeof window !== "undefined" ? getAnalytics(app) : null;

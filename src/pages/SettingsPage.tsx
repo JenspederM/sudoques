@@ -1,9 +1,9 @@
-import type React from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, LogOut, Palette, User as UserIcon } from "lucide-react";
+import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout } from "../components/Layout";
 import { useAuth } from "../components/AuthProvider";
+import { Layout } from "../components/Layout";
 
 interface SettingsPageProps {
 	currentTheme: string;
@@ -16,7 +16,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 }) => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
-	
+
 	const handleSignOut = async () => {
 		try {
 			await signOut();
@@ -104,19 +104,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 									key={theme.id}
 									onClick={() => onThemeChange(theme.id)}
 									className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-										currentTheme === theme.id || (currentTheme === "" && theme.id === "default")
+										currentTheme === theme.id ||
+										(currentTheme === "" && theme.id === "default")
 											? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
 											: "border-transparent glass hover:bg-white/5"
 									}`}
 								>
-									<div className={`w-12 h-12 rounded-full ${theme.color} shadow-inner flex items-center justify-center`}>
+									<div
+										className={`w-12 h-12 rounded-full ${theme.color} shadow-inner flex items-center justify-center`}
+									>
 										{currentTheme === theme.id && (
 											<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
 										)}
 									</div>
-									<span className={`font-bold ${
-										currentTheme === theme.id ? "text-white" : "text-slate-400"
-									}`}>
+									<span
+										className={`font-bold ${
+											currentTheme === theme.id
+												? "text-white"
+												: "text-slate-400"
+										}`}
+									>
 										{theme.name}
 									</span>
 								</button>
