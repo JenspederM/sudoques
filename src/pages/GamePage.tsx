@@ -175,6 +175,19 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const conflicts = checkBoard(gameState.current, gameState.solution);
 
+    // Calculate disabled numbers (completed 9 instances)
+    const counts = new Map<number, number>();
+    gameState.current.forEach(row => {
+        row.forEach(val => {
+            if (val !== null) {
+                counts.set(val, (counts.get(val) || 0) + 1);
+            }
+        });
+    });
+    const disabledNumbers = Array.from(counts.entries())
+        .filter(([_, count]) => count >= 9)
+        .map(([num]) => num);
+
 	return (
 		<Layout>
 			<div className="page-container px-2 sm:px-4">
@@ -243,7 +256,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 							canRedo={historyPointer < history.length - 1}
 						/>
 
-						<Numpad onNumberClick={handleInput} />
+						<Numpad 
+                            onNumberClick={handleInput} 
+                            disabledNumbers={disabledNumbers}
+                        />
 					</div>
 				</div>
 
