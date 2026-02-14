@@ -141,9 +141,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 						difficulty,
 						time: timer,
 						date: Timestamp.now(),
+						userId: user.uid,
 						userName: user.displayName || "Anonymous",
 						initial: gameState.initial.flat(),
 						solution: gameState.solution.flat(),
+					}).then(() => {;
 					});
 				}
 			}
@@ -192,7 +194,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	return (
 		<Layout>
 			<div className="page-container px-2 sm:px-4">
-				<div className="content-wrapper flex-1 justify-center sm:justify-start">
+				<div className="content-wrapper flex-1 px-4 justify-center sm:justify-start">
 					{/* Header Info */}
 					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
 						<div className="flex items-center gap-2">
@@ -236,7 +238,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					</div>
 
 					{/* Controls & Numpad */}
-					<div className="w-full flex flex-col gap-4 mt-auto sm:mt-0">
+					<div className="w-full flex flex-col items-center gap-4 mt-auto sm:mt-0">
 						<GameControls
 							isNoteMode={isNoteMode}
 							onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}

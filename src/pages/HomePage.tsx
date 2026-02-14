@@ -61,11 +61,11 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 						<div className="grid grid-cols-2 gap-4">
 							<button
 								type="button"
-								onClick={() => navigate("/leaderboard")}
+								onClick={() => navigate("/statistics")}
 								className="flex items-center justify-center gap-3 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
 							>
 								<Trophy size={20} className="text-yellow-400" />
-								<span>Leaderboard</span>
+								<span>Statistics</span>
 							</button>
 
 							<button

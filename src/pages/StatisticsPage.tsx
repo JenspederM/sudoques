@@ -4,22 +4,26 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
-import { getHighScores, type HighScore } from "../logic/firebase";
+import { getUserScores, type HighScore } from "../logic/firebase";
+import { useAuth } from "../components/AuthProvider";
 
 import { DIFFICULTIES } from "../logic/constants";
 
-export const LeaderboardPage: React.FC = () => {
+export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const [activeDiff, setActiveDiff] = useState("45");
 	const [scores, setScores] = useState<HighScore[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
+	const { user } = useAuth();
+
 	useEffect(() => {
+		if (!user) return;
 		setIsLoading(true);
-		getHighScores(activeDiff)
+		getUserScores(user.uid, activeDiff)
 			.then(setScores)
 			.finally(() => setIsLoading(false));
-	}, [activeDiff]);
+	}, [activeDiff, user]);
 
 	const formatTime = (s: number) => {
 		const mins = Math.floor(s / 60);
@@ -43,7 +47,7 @@ export const LeaderboardPage: React.FC = () => {
 						<div className="flex items-center gap-2 text-yellow-400">
 							<Trophy size={24} />
 							<h2 className="text-2xl font-black tracking-tight text-white">
-								Leaderboard
+								Statistics
 							</h2>
 						</div>
 					</div>
@@ -107,13 +111,16 @@ export const LeaderboardPage: React.FC = () => {
 										</span>
 										<div>
 											<p className="font-bold text-white text-lg">
-												{score.userName || "Anonymous"}
-											</p>
-											<p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
 												{score.date.toDate().toLocaleDateString(undefined, {
 													month: "short",
 													day: "numeric",
 													year: "numeric",
+												})}
+											</p>
+											<p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
+												{score.date.toDate().toLocaleTimeString(undefined, {
+													hour: "numeric",
+													minute: "2-digit",
 												})}
 											</p>
 										</div>

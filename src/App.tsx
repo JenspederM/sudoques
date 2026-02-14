@@ -20,7 +20,7 @@ import {
 import { GamePage } from "./pages/GamePage";
 // Pages
 import { HomePage } from "./pages/HomePage";
-import { LeaderboardPage } from "./pages/LeaderboardPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NewGamePage } from "./pages/NewGamePage";
 import { ReviewPage } from "./pages/ReviewPage";
@@ -161,10 +161,10 @@ export default function App() {
 				/>
 
 				<Route
-					path="/leaderboard"
+					path="/statistics"
 					element={
 						<ProtectedRoute>
-							<LeaderboardPage />
+							<StatisticsPage />
 						</ProtectedRoute>
 					}
 				/>

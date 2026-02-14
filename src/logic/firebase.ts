@@ -8,6 +8,7 @@ import {
 	query,
 	setDoc,
 	Timestamp,
+	where,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Board, CellNotes } from "./sudoku";
@@ -25,6 +26,7 @@ export interface HighScore {
 	difficulty: string;
 	time: number;
 	date: Timestamp;
+	userId: string;
 	userName?: string;
 	initial?: (number | null)[];
 	solution?: (number | null)[];
@@ -116,11 +118,17 @@ export async function saveHighScore(score: HighScore) {
 /**
  * Fetches top 10 high scores for a specific difficulty
  */
-export async function getHighScores(difficulty: string): Promise<HighScore[]> {
+/**
+ * Fetches user's scores for a specific difficulty
+ */
+export async function getUserScores(
+	userId: string,
+	difficulty: string,
+): Promise<HighScore[]> {
 	const q = query(
 		collection(db, HIGHSCORES_COLLECTION),
+		where("userId", "==", userId),
 		orderBy("time", "asc"),
-		limit(10),
 	);
 
 	const querySnapshot = await getDocs(q);

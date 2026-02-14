@@ -56,7 +56,7 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		conflicts.some((conf) => conf.row === r && conf.col === c);
 
 	return (
-		<div className="grid grid-cols-9 gap-[1px] p-[2px] bg-slate-700/50 rounded-lg glass border border-white/10 aspect-square w-full max-w-[450px] shrink-0">
+		<div className="grid grid-cols-9 gap-[1px] p-[2px] bg-slate-700/50 rounded-lg glass border-2 border-white/20 aspect-square w-full max-w-[450px] shrink-0 overflow-hidden">
 			{currentBoard.map((row, r) =>
 				row.map((val, c) => {
 					const selected = isSelected(r, c);
@@ -74,16 +74,16 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 							className={cn(
 								"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer transition-all duration-200 select-none",
 								"bg-slate-900/40",
-								r % 3 === 2 && r !== 8 && "border-b-2 border-slate-500",
-								c % 3 === 2 && c !== 8 && "border-r-2 border-slate-500",
-								highlighted && !selected && !conflict && "bg-white/5",
+								r % 3 === 2 && r !== 8 && "border-b-2 border-white/30",
+								c % 3 === 2 && c !== 8 && "border-r-2 border-white/30",
+								highlighted && !selected && !conflict && "bg-brand-primary/20",
 								selected &&
 									!conflict &&
 									"bg-brand-primary/40 ring-2 ring-brand-primary z-10",
 								conflict &&
 									"text-white bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
-								!initial && !conflict && "text-brand-primary",
-								initial && !conflict && "text-white font-semibold",
+								!initial && !conflict && "text-brand-secondary font-semibold",
+								initial && !conflict && "text-white font-bold",
 							)}
 						>
 							{val !== null ? (
