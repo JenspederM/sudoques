@@ -152,6 +152,7 @@ const result = await Bun.build({
 	minify: true,
 	target: "browser",
 	sourcemap: "linked",
+	env: "BUN_PUBLIC_*",
 	define: {
 		"process.env.NODE_ENV": JSON.stringify("production"),
 	},
