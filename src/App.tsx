@@ -10,7 +10,7 @@ import {
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import puzzlesData from "./data/puzzles.json";
-import { loadGameState } from "./logic/firebase";
+import { subscribeToUser } from "./logic/firebase";
 import {
 	type Board,
 	type CellNotes,
@@ -22,6 +22,7 @@ import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { SignupPage } from "./pages/SignupPage";
 import { NewGamePage } from "./pages/NewGamePage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -39,44 +40,55 @@ export default function App() {
 	const { user, loading: authLoading } = useAuth();
 	const [difficulty, setDifficulty] = useState<Difficulty>("45");
 	const [isLoading, setIsLoading] = useState(true);
-	const [theme, setTheme] = useState(
-		localStorage.getItem("theme") || "default",
-	);
+	const [theme, setTheme] = useState("default");
 
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	// Persistence effect: Load game
+	// Persistence effect: Subscribe to user data
 	useEffect(() => {
-		if (user && !gameState) {
-			loadGameState(user.uid).then((saved) => {
-				if (saved) {
-					// Check if game is finished
-					const isComplete = saved.current.every((row, ri) =>
-						row.every((val, ci) => {
-							const solRow = saved.solution[ri];
-							return solRow ? val === solRow[ci] : false;
-						}),
-					);
+		if (user) {
+			setIsLoading(true);
+			const unsubscribe = subscribeToUser(user.uid, (data) => {
+				// Update theme
+				setTheme(data.settings?.theme || "default");
 
-					if (!isComplete) {
-						setGameState(saved);
-						setTimer(saved.timer);
-					}
+				// Update game state
+				if (data.gameState) {
+					setGameState(data.gameState);
+					// Initialize timer only if we are loading fresh
+					// But since we sync constantly, we might want to stay in sync?
+					// If we are playing, the local timer takes precedence?
+					// Actually, simpler: just sync.
+					// But we need to avoid jitter.
+					// For now, let's sync. If user is playing, local updates will act as "optimistic" and write back.
+					// Check if we strictly need to sync timer.
+					// Let's protect timer from jumping back if local is ahead?
+					// Nah, just set it.
+					// Wait, if local timer is running, and we get an update, we might reset it?
+					// But we are the only writer usually.
+					// Unless multiple tabs.
+					setTimer(data.gameState.timer);
+				} else {
+					setGameState(null);
+					setTimer(0);
 				}
 				setIsLoading(false);
 			});
-		} else if (user && gameState) {
-			setIsLoading(false);
-		} else if (!user && !authLoading) {
+			return () => unsubscribe();
+		}
+
+		if (!user && !authLoading) {
+			setGameState(null);
+			setTimer(0);
+			setTheme("default");
 			setIsLoading(false);
 		}
-	}, [user, authLoading, gameState]);
+	}, [user, authLoading]);
 
-	// Theme effect
+	// Theme effect - applied to DOM
 	useEffect(() => {
 		document.documentElement.setAttribute("data-theme", theme);
-		localStorage.setItem("theme", theme);
 	}, [theme]);
 
 	const [timer, setTimer] = useState(0);
@@ -125,6 +137,7 @@ export default function App() {
 		<AnimatePresence mode="wait">
 			<Routes location={location} key={location.pathname}>
 				<Route path="/login" element={<LoginPage />} />
+				<Route path="/signup" element={<SignupPage />} />
 
 				<Route
 					path="/"
@@ -155,7 +168,7 @@ export default function App() {
 					path="/settings"
 					element={
 						<ProtectedRoute>
-							<SettingsPage currentTheme={theme} onThemeChange={setTheme} />
+							<SettingsPage currentTheme={theme} />
 						</ProtectedRoute>
 					}
 				/>

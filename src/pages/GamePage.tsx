@@ -49,7 +49,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	// Persistence effect: Save game
 	useEffect(() => {
-		if (user && gameState && !showWin) {
+		if (user && gameState) {
 			const timeout = setTimeout(() => {
 				saveGameState(user.uid, {
 					initial: gameState.initial,
@@ -61,7 +61,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			}, 1000); // Debounce save
 			return () => clearTimeout(timeout);
 		}
-	}, [user, gameState, timer, showWin]);
+	}, [user, gameState, timer]);
 
 	// Check for win on load
 	useEffect(() => {
@@ -146,6 +146,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 						initial: gameState.initial.flat(),
 						solution: gameState.solution.flat(),
 					}).then(() => {;
+					});
+					// Also save the final game state so it's marked as complete in DB
+					saveGameState(user.uid, {
+						initial: gameState.initial,
+						current: newBoard,
+						notes: gameState.notes,
+						solution: gameState.solution,
+						timer: timer,
 					});
 				}
 			}

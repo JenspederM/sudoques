@@ -4,15 +4,14 @@ import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
+import { updateUserSettings } from "../logic/firebase";
 
 interface SettingsPageProps {
 	currentTheme: string;
-	onThemeChange: (theme: string) => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
 	currentTheme,
-	onThemeChange,
 }) => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
@@ -102,7 +101,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 								<button
 									type="button"
 									key={theme.id}
-									onClick={() => onThemeChange(theme.id)}
+									onClick={() => {
+										if (user) {
+											updateUserSettings(user.uid, { theme: theme.id });
+										}
+									}}
 									className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
 										currentTheme === theme.id ||
 										(currentTheme === "" && theme.id === "default")

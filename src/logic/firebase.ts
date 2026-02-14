@@ -6,8 +6,10 @@ import {
 	limit,
 	orderBy,
 	query,
+	onSnapshot,
 	setDoc,
 	Timestamp,
+	updateDoc,
 	where,
 } from "firebase/firestore";
 import { db } from "../firebase";
@@ -22,6 +24,13 @@ export interface GameState {
 	lastUpdated: Timestamp;
 }
 
+export interface UserDocument {
+	settings: {
+		theme: string;
+	};
+	gameState: GameState | null;
+}
+
 export interface HighScore {
 	difficulty: string;
 	time: number;
@@ -32,7 +41,7 @@ export interface HighScore {
 	solution?: (number | null)[];
 }
 
-const GAMES_COLLECTION = "games";
+const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
 
 /**
@@ -42,7 +51,7 @@ export async function saveGameState(
 	userId: string,
 	state: Omit<GameState, "lastUpdated">,
 ) {
-	const gameRef = doc(db, GAMES_COLLECTION, userId);
+	const userRef = doc(db, USERS_COLLECTION, userId);
 
 	// Convert notes to an object with keys "0" to "80" to avoid nested arrays
 	const notesObj: Record<string, number[]> = {};
@@ -52,14 +61,64 @@ export async function saveGameState(
 		}
 	});
 
-	await setDoc(gameRef, {
-		initial: state.initial.flat(),
-		current: state.current.flat(),
-		solution: state.solution.flat(),
-		timer: state.timer,
-		notes: notesObj,
-		lastUpdated: Timestamp.now(),
-	});
+	// We use setDoc with merge: true to avoid overwriting settings if they exist
+	await setDoc(
+		userRef,
+		{
+			gameState: {
+				initial: state.initial.flat(),
+				current: state.current.flat(),
+				solution: state.solution.flat(),
+				timer: state.timer,
+				notes: notesObj,
+				lastUpdated: Timestamp.now(),
+			},
+		},
+		{ merge: true },
+	);
+}
+
+/**
+ * Loads a saved game state
+ */
+/**
+ * Helper to parse raw firestore data into GameState
+ */
+function parseGameState(gameData: any): Omit<GameState, "lastUpdated"> | null {
+	if (!gameData) return null;
+
+	// Helper to unflatten 1D array back to 9x9
+	const unflatten = <T>(arr: T[]): T[][] => {
+		const result: T[][] = [];
+		for (let i = 0; i < 9; i++) {
+			result.push(arr.slice(i * 9, (i + 1) * 9));
+		}
+		return result;
+	};
+
+	// Reconstruct notes from object
+	const notesArray: Set<number>[] = Array.from({ length: 81 }, () => new Set());
+
+	// Check if notes exist and are in the expected format
+	// biome-ignore lint/suspicious/noExplicitAny: complex firestore data structure
+	const notesData = gameData.notes as Record<string, number[]>;
+
+	if (notesData) {
+		for (const [key, values] of Object.entries(notesData)) {
+			const idx = parseInt(key, 10);
+			if (idx >= 0 && idx < 81) {
+				notesArray[idx] = new Set(values);
+			}
+		}
+	}
+
+	return {
+		initial: unflatten(gameData.initial as unknown as number[]),
+		current: unflatten(gameData.current as unknown as number[]),
+		solution: unflatten(gameData.solution as unknown as number[]),
+		timer: gameData.timer,
+		notes: unflatten(notesArray) as CellNotes,
+	};
 }
 
 /**
@@ -68,43 +127,57 @@ export async function saveGameState(
 export async function loadGameState(
 	userId: string,
 ): Promise<Omit<GameState, "lastUpdated"> | null> {
-	const gameRef = doc(db, GAMES_COLLECTION, userId);
-	const gameSnap = await getDoc(gameRef);
+	const userRef = doc(db, USERS_COLLECTION, userId);
+	const userSnap = await getDoc(userRef);
 
-	if (gameSnap.exists()) {
-		const data = gameSnap.data();
-
-		// Helper to unflatten 1D array back to 9x9
-		const unflatten = <T>(arr: T[]): T[][] => {
-			const result: T[][] = [];
-			for (let i = 0; i < 9; i++) {
-				result.push(arr.slice(i * 9, (i + 1) * 9));
-			}
-			return result;
-		};
-
-		// Reconstruct notes from object
-		const notesArray: Set<number>[] = Array.from(
-			{ length: 81 },
-			() => new Set(),
-		);
-		const notesData = data.notes as Record<string, number[]>;
-		for (const [key, values] of Object.entries(notesData)) {
-			const idx = parseInt(key, 10);
-			if (idx >= 0 && idx < 81) {
-				notesArray[idx] = new Set(values);
-			}
-		}
-
-		return {
-			initial: unflatten(data.initial),
-			current: unflatten(data.current),
-			solution: unflatten(data.solution),
-			timer: data.timer,
-			notes: unflatten(notesArray) as CellNotes,
-		};
+	if (userSnap.exists()) {
+		const data = userSnap.data() as UserDocument;
+		return parseGameState(data.gameState);
 	}
 	return null;
+}
+
+/**
+ * Subscribes to changes in the user document
+ */
+export function subscribeToUser(
+	userId: string,
+	callback: (data: UserDocument) => void,
+) {
+	return onSnapshot(doc(db, USERS_COLLECTION, userId), (doc) => {
+		if (doc.exists()) {
+			const data = doc.data() as UserDocument;
+			// Manually parse gameState to unflatten arrays
+			const parsedData: UserDocument = {
+				...data,
+				gameState: parseGameState(data.gameState) as GameState, // Cast because Omit vs GameState
+			};
+			callback(parsedData);
+		} else {
+			// If document doesn't exist, call with defaults
+			callback({
+				settings: { theme: "default" },
+				gameState: null,
+			});
+		}
+	});
+}
+
+/**
+ * Updates user settings
+ */
+export async function updateUserSettings(
+	userId: string,
+	settings: Partial<UserDocument["settings"]>,
+) {
+	const userRef = doc(db, USERS_COLLECTION, userId);
+	await setDoc(
+		userRef,
+		{
+			settings,
+		},
+		{ merge: true },
+	);
 }
 
 /**
