@@ -269,8 +269,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 							}}
 							canUndo={historyPointer > 0}
 							canRedo={historyPointer < history.length - 1}
-						/>GameControls
-
+						/>
+						GameControls
 						<Numpad
 							onNumberClick={handleInput}
 							disabledNumbers={disabledNumbers}
