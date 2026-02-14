@@ -4,9 +4,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "bun --hot src/index.ts",
-		"start": "NODE_ENV=production bun src/index.ts",
-		"build": "bun run build.ts --outdir=dist",
+		"dev": "bun --hot src/index.html",
+		"start": "NODE_ENV=production bun src/index.html",
+		"build": "bun run build.ts",
 		"deploy": "bun run build && bun firebase:deploy",
 		"lint": "biome check",
 		"format": "biome format --fix",

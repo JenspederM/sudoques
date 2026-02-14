@@ -146,8 +146,8 @@ console.log(
 );
 
 const result = await Bun.build({
-	entrypoints,
-	outdir,
+	entrypoints: ["./src/index.html"],
+	outdir: "dist",
 	plugins: [plugin],
 	minify: true,
 	target: "browser",
