@@ -3,8 +3,6 @@ import {
 	doc,
 	getDoc,
 	getDocs,
-	limit,
-	orderBy,
 	query,
 	onSnapshot,
 	setDoc,
@@ -201,11 +199,11 @@ export async function getUserScores(
 	const q = query(
 		collection(db, HIGHSCORES_COLLECTION),
 		where("userId", "==", userId),
-		orderBy("time", "asc"),
 	);
 
 	const querySnapshot = await getDocs(q);
 	return querySnapshot.docs
 		.map((doc) => doc.data() as HighScore)
-		.filter((score) => score.difficulty === difficulty);
+		.filter((score) => score.difficulty === difficulty)
+		.sort((a, b) => a.time - b.time);
 }

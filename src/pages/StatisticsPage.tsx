@@ -22,6 +22,10 @@ export const StatisticsPage: React.FC = () => {
 		setIsLoading(true);
 		getUserScores(user.uid, activeDiff)
 			.then(setScores)
+			.catch((error) => {
+				console.error("Failed to fetch scores:", error);
+				setScores([]);
+			})
 			.finally(() => setIsLoading(false));
 	}, [activeDiff, user]);
 
