@@ -3,6 +3,7 @@ import type React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
+import { DIFFICULTIES } from "../logic/constants";
 import type { Board } from "../logic/sudoku";
 
 interface ReviewPageState {
@@ -90,7 +91,10 @@ export const ReviewPage: React.FC = () => {
 						</div>
 						<div className="flex items-center gap-2 text-yellow-500">
 							<Trophy size={20} />
-							<span className="font-bold">{state.difficulty}</span>
+							<span className="font-bold">
+								{DIFFICULTIES.find((d) => d.id === state.difficulty)?.label ||
+									state.difficulty}
+							</span>
 						</div>
 					</div>
 

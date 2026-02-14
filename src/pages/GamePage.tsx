@@ -12,6 +12,7 @@ import { SudokuGrid } from "../components/SudokuGrid";
 import { saveGameState, saveHighScore } from "../logic/firebase";
 import type { Board, CellNotes } from "../logic/sudoku";
 import { checkBoard } from "../logic/sudoku";
+import { DIFFICULTIES } from "../logic/constants";
 
 interface GamePageProps {
 	user: User | null;
@@ -175,18 +176,18 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const conflicts = checkBoard(gameState.current, gameState.solution);
 
-    // Calculate disabled numbers (completed 9 instances)
-    const counts = new Map<number, number>();
-    gameState.current.forEach(row => {
-        row.forEach(val => {
-            if (val !== null) {
-                counts.set(val, (counts.get(val) || 0) + 1);
-            }
-        });
-    });
-    const disabledNumbers = Array.from(counts.entries())
-        .filter(([_, count]) => count >= 9)
-        .map(([num]) => num);
+	// Calculate disabled numbers (completed 9 instances)
+	const counts = new Map<number, number>();
+	gameState.current.forEach((row) => {
+		row.forEach((val) => {
+			if (val !== null) {
+				counts.set(val, (counts.get(val) || 0) + 1);
+			}
+		});
+	});
+	const disabledNumbers = Array.from(counts.entries())
+		.filter(([_, count]) => count >= 9)
+		.map(([num]) => num);
 
 	return (
 		<Layout>
@@ -215,7 +216,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 						</div>
 						<div className="flex items-center gap-2 text-yellow-500">
 							<Trophy size={20} />
-							<span className="font-bold">{difficulty}</span>
+							<span className="font-bold">
+								{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
+									difficulty}
+							</span>
 						</div>
 					</div>
 
@@ -256,10 +260,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 							canRedo={historyPointer < history.length - 1}
 						/>
 
-						<Numpad 
-                            onNumberClick={handleInput} 
-                            disabledNumbers={disabledNumbers}
-                        />
+						<Numpad
+							onNumberClick={handleInput}
+							disabledNumbers={disabledNumbers}
+						/>
 					</div>
 				</div>
 

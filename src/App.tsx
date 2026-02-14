@@ -130,7 +130,14 @@ export default function App() {
 					path="/"
 					element={
 						<ProtectedRoute>
-							<HomePage hasExistingGame={!!gameState} />
+							<HomePage
+								hasExistingGame={
+									!!gameState &&
+									!gameState.current.every((row, ri) =>
+										row.every((val, ci) => val === gameState.solution?.[ri]?.[ci]),
+									)
+								}
+							/>
 						</ProtectedRoute>
 					}
 				/>

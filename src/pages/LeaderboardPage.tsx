@@ -6,11 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { getHighScores, type HighScore } from "../logic/firebase";
 
-const DIFFICULTIES = [
-	{ id: "45", label: "Easy" },
-	{ id: "35", label: "Medium" },
-	{ id: "25", label: "Hard" },
-];
+import { DIFFICULTIES } from "../logic/constants";
 
 export const LeaderboardPage: React.FC = () => {
 	const navigate = useNavigate();
@@ -53,13 +49,13 @@ export const LeaderboardPage: React.FC = () => {
 					</div>
 
 					{/* Tabs */}
-					<div className="w-full flex p-2 gap-2 glass mx-0 mb-2 rounded-2xl border border-white/5">
+					<div className="w-full grid grid-cols-3 gap-2 glass mx-0 mb-2 rounded-2xl border border-white/5 p-2">
 						{DIFFICULTIES.map((d) => (
 							<button
 								key={d.id}
 								type="button"
 								onClick={() => setActiveDiff(d.id)}
-								className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+								className={`py-2 rounded-xl text-sm font-bold transition-all ${
 									activeDiff === d.id
 										? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
 										: "text-slate-400 hover:text-white"
