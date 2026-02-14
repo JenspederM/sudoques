@@ -25,10 +25,10 @@ export const ReviewPage: React.FC = () => {
 					<p className="text-white mb-4">No game data found.</p>
 					<button
 						type="button"
-						onClick={() => navigate("/leaderboard")}
+						onClick={() => navigate("/statistics")}
 						className="px-4 py-2 bg-brand-primary rounded-lg text-white"
 					>
-						Back to Leaderboard
+						Back to Statistics
 					</button>
 				</div>
 			</Layout>
@@ -67,15 +67,15 @@ export const ReviewPage: React.FC = () => {
 	return (
 		<Layout>
 			<div className="page-container px-2 sm:px-4">
-				<div className="content-wrapper flex-1 justify-center sm:justify-start">
+				<div className="content-wrapper flex-1 sm:justify-start">
 					{/* Header Info */}
 					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
-								onClick={() => navigate("/leaderboard")}
+								onClick={() => navigate("/statistics")}
 								className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-								title="Back to Leaderboard"
+								title="Back to Statistics"
 							>
 								<ChevronLeft size={24} />
 							</button>
