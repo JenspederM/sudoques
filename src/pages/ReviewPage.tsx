@@ -67,6 +67,7 @@ export const ReviewPage: React.FC = () => {
 	return (
 		<Layout
 			backRedirect="/statistics"
+			headerClassName="justify-between"
 			headerChildren={
 				<>
 					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
