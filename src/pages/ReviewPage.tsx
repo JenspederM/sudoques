@@ -1,23 +1,67 @@
-import { Timer, Trophy } from "lucide-react";
+import {
+	Pause,
+	Play,
+	SkipBack,
+	SkipForward,
+	Timer,
+	Trophy,
+} from "lucide-react";
 import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
-import type { DBBoard } from "../types";
+import { applyActions } from "../logic/gameReducer";
+import type { DBBoard, GameAction } from "../types";
 
 interface ReviewPageState {
 	initial: DBBoard;
 	solution: DBBoard;
 	time: number;
 	difficulty: string;
+	actions?: GameAction[];
 }
 
 export const ReviewPage: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const state = location.state as ReviewPageState;
+
+	const [playbackIndex, setPlaybackIndex] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
+
+	const actions = state?.actions || [];
+	const totalSteps = actions.length;
+
+	useEffect(() => {
+		if (isPlaying && playbackIndex < totalSteps) {
+			const timer = setTimeout(() => {
+				setPlaybackIndex((prev) => prev + 1);
+			}, 500);
+			return () => clearTimeout(timer);
+		} else if (playbackIndex >= totalSteps) {
+			setIsPlaying(false);
+		}
+	}, [isPlaying, playbackIndex, totalSteps]);
+
+	const initialBoard = useMemo(
+		() => unflattenBoard(state?.initial || []),
+		[state?.initial],
+	);
+	const solutionBoard = useMemo(
+		() => unflattenBoard(state?.solution || []),
+		[state?.solution],
+	);
+
+	const currentDerivedState = useMemo(() => {
+		return applyActions(
+			initialBoard,
+			solutionBoard,
+			actions.slice(0, playbackIndex),
+		);
+	}, [initialBoard, solutionBoard, actions, playbackIndex]);
 
 	if (!state || !state.initial || !state.solution) {
 		return (
@@ -42,19 +86,9 @@ export const ReviewPage: React.FC = () => {
 		return `${mins}:${secs.toString().padStart(2, "0")}`;
 	};
 
-	const initialBoard = unflattenBoard(state.initial);
-	const solutionBoard = unflattenBoard(state.solution);
-	// For review, current board is the solution
-	const currentBoard = solutionBoard;
-
-	// Empty notes
-	const notes = Array(9)
-		.fill(null)
-		.map(() =>
-			Array(9)
-				.fill(null)
-				.map(() => new Set<number>()),
-		);
+	const initialBoardActual = initialBoard;
+	const currentBoard = currentDerivedState.current;
+	const notes = currentDerivedState.notes;
 
 	return (
 		<Layout
@@ -79,9 +113,9 @@ export const ReviewPage: React.FC = () => {
 			}
 		>
 			{/* Grid */}
-			<div className="w-full flex justify-center py-2 pointer-events-none opacity-90">
+			<div className="w-full flex justify-center py-2 opacity-90">
 				<SudokuGrid
-					initialBoard={initialBoard}
+					initialBoard={initialBoardActual}
 					currentBoard={currentBoard}
 					notes={notes}
 					selectedCell={null}
@@ -89,6 +123,61 @@ export const ReviewPage: React.FC = () => {
 					conflicts={[]}
 				/>
 			</div>
+
+			{/* Playback Controls */}
+			{actions.length > 0 && (
+				<div className="w-full flex flex-col items-center gap-6 mt-4 pb-8">
+					<div className="flex items-center gap-8">
+						<button
+							type="button"
+							onClick={() => setPlaybackIndex((prev) => Math.max(0, prev - 1))}
+							className="p-3 text-slate-400 hover:text-white transition-colors"
+						>
+							<SkipBack size={28} />
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsPlaying(!isPlaying)}
+							className="w-16 h-16 flex items-center justify-center bg-brand-primary rounded-full text-white shadow-lg shadow-brand-primary/30 hover:scale-105 active:scale-95 transition-all"
+						>
+							{isPlaying ? (
+								<Pause size={32} fill="currentColor" />
+							) : (
+								<Play size={32} fill="currentColor" className="ml-1" />
+							)}
+						</button>
+
+						<button
+							type="button"
+							onClick={() =>
+								setPlaybackIndex((prev) => Math.min(totalSteps, prev + 1))
+							}
+							className="p-3 text-slate-400 hover:text-white transition-colors"
+						>
+							<SkipForward size={28} />
+						</button>
+					</div>
+
+					<div className="w-full max-w-md px-4 flex flex-col gap-2">
+						<div className="flex justify-between text-xs font-medium text-slate-500 uppercase tracking-wider">
+							<span>Start</span>
+							<span>
+								{playbackIndex} / {totalSteps} moves
+							</span>
+							<span>Finish</span>
+						</div>
+						<input
+							type="range"
+							min="0"
+							max={totalSteps}
+							value={playbackIndex}
+							onChange={(e) => setPlaybackIndex(parseInt(e.target.value, 10))}
+							className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+						/>
+					</div>
+				</div>
+			)}
 		</Layout>
 	);
 };

@@ -48,6 +48,7 @@ export async function saveGameState(
 			solution: state.solution.flat(),
 			timer: state.timer,
 			notes: notesObj,
+			actions: state.actions,
 			lastUpdated: Timestamp.now(),
 		},
 	});
@@ -67,6 +68,7 @@ function parseGameState(
 		solution: unflattenBoard(gameData.solution),
 		notes: unflattenCellNotes(gameData.notes),
 		timer: gameData.timer,
+		actions: gameData.actions || [],
 	};
 }
 

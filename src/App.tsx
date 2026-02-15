@@ -22,7 +22,7 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Board, CellNotes, Difficulty } from "./types";
+import type { Board, CellNotes, Difficulty, GameAction } from "./types";
 
 export default function App() {
 	const [gameState, setGameState] = useState<{
@@ -30,6 +30,7 @@ export default function App() {
 		current: Board;
 		notes: CellNotes;
 		solution: Board;
+		actions: GameAction[];
 	} | null>(null);
 
 	const { user, loading: authLoading } = useAuth();
@@ -113,6 +114,7 @@ export default function App() {
 				current: initial.map((r) => [...r]),
 				notes,
 				solution,
+				actions: [],
 			});
 			setTimer(0);
 			navigate("/game");

@@ -11,8 +11,9 @@ import { Numpad } from "../components/Numpad";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
 import { saveGameState, saveHighScore } from "../logic/firebase";
+import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
-import type { Board, GameState } from "../types";
+import type { GameAction, GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
@@ -36,11 +37,44 @@ export const GamePage: React.FC<GamePageProps> = ({
 		null,
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
-	const [history, setHistory] = useState<Board[]>([
-		gameState.current.map((r) => [...r]),
-	]);
-	const [historyPointer, setHistoryPointer] = useState(0);
 	const [showWin, setShowWin] = useState(false);
+
+	// Compute current state from actions
+	const currentDerivedState = applyActions(
+		gameState.initial,
+		gameState.solution,
+		gameState.actions,
+	);
+
+	// We can find if we can undo/redo by looking at the history reconstruction in applyActions
+	// But since applyActions only returns the final state, let's optimize or change how we track it.
+	// For now, let's just use the derived state for rendering.
+
+	// To know canUndo/canRedo, we actually need to know where we are in the "active" history.
+	// If every undo/redo is an action, canUndo/canRedo depends on the logic in applyActions.
+
+	// Let's modify applyActions to return more info or handle it here.
+	// Actually, it's easier if GamePage just tracks the actions and we have a way to know the "effective pointer".
+
+	const getEffectivePointer = (actions: GameAction[]) => {
+		let p = 0;
+		let hLen = 1; // start state
+		for (const a of actions) {
+			if (a.type === "undo") {
+				if (p > 0) p--;
+			} else if (a.type === "redo") {
+				if (p < hLen - 1) p++;
+			} else {
+				hLen = p + 1 + 1;
+				p++;
+			}
+		}
+		return { pointer: p, historyLength: hLen };
+	};
+
+	const { pointer, historyLength } = getEffectivePointer(gameState.actions);
+	const canUndo = pointer > 0;
+	const canRedo = pointer < historyLength - 1;
 
 	// Persistence effect: Save game
 	useEffect(() => {
@@ -52,6 +86,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					notes: gameState.notes,
 					solution: gameState.solution,
 					timer: timer,
+					actions: gameState.actions,
 				});
 			}, 1000); // Debounce save
 			return () => clearTimeout(timeout);
@@ -91,125 +126,108 @@ export const GamePage: React.FC<GamePageProps> = ({
 		const initialRow = gameState.initial[r];
 		if (!initialRow || initialRow[c] !== null) return;
 
+		let action: GameAction;
 		if (isNoteMode && num !== null) {
-			const newNotes = [...gameState.notes];
-			const rowNotes = newNotes[r];
-			if (!rowNotes) return;
-			const targetCellNotes = rowNotes[c];
-			if (!targetCellNotes) return;
-			const cellNotes = new Set(targetCellNotes);
-			if (cellNotes.has(num)) {
-				cellNotes.delete(num);
+			const rowNotes = currentDerivedState.notes[r];
+			const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
+			if (targetCellNotes?.has(num)) {
+				action = {
+					type: "removeNote",
+					payload: { row: r, col: c, value: num },
+				};
 			} else {
-				cellNotes.add(num);
+				action = { type: "addNote", payload: { row: r, col: c, value: num } };
 			}
-			rowNotes[c] = cellNotes;
-			setGameState({ ...gameState, notes: newNotes });
 		} else {
-			const newBoard = gameState.current.map((row) => [...row]);
-			const newBoardRow = newBoard[r];
-			const newNotes = gameState.notes.map((row) =>
-				row.map((cell) => new Set(cell)),
-			);
-
-			// If the value hasn't changed (and it's not a clear action), don't update
-			if (num !== null && newBoardRow && newBoardRow[c] === num) return;
-
-			if (newBoardRow) {
-				newBoardRow[c] = num;
-			}
-
-			// If erasing, also clear notes
 			if (num === null) {
-				const targetRowNotes = newNotes[r];
-				if (targetRowNotes) {
-					targetRowNotes[c] = new Set<number>();
-				}
+				action = { type: "removeValue", payload: { row: r, col: c } };
+			} else {
+				// If the value hasn't changed, don't update
+				const currentRow = currentDerivedState.current[r];
+				if (currentRow && currentRow[c] === num) return;
+				action = { type: "addValue", payload: { row: r, col: c, value: num } };
 			}
+		}
 
-			// Auto-remove notes if a number is completed
-			if (num !== null) {
-				// Calculate counts after placing the new number
-				const counts = new Map<number, number>();
-				newBoard.forEach((row) => {
-					row.forEach((val) => {
-						if (val !== null) {
-							counts.set(val, (counts.get(val) || 0) + 1);
-						}
-					});
+		const newActions = [...gameState.actions, action];
+		const newState = applyActions(
+			gameState.initial,
+			gameState.solution,
+			newActions,
+		);
+
+		setGameState({
+			...gameState,
+			current: newState.current,
+			notes: newState.notes,
+			actions: newActions,
+		});
+
+		// Check for win
+		const isComplete = newState.current.every((row, ri) =>
+			row.every((val, ci) => {
+				const solRow = gameState.solution[ri];
+				return solRow ? val === solRow[ci] : false;
+			}),
+		);
+
+		if (isComplete) {
+			setShowWin(true);
+			if (user) {
+				saveHighScore({
+					difficulty,
+					time: timer,
+					date: Timestamp.now(),
+					userId: user.uid,
+					userName: user.displayName || "Anonymous",
+					initial: gameState.initial.flat(),
+					solution: gameState.solution.flat(),
+					actions: newActions,
+				}).then(() => {});
+
+				saveGameState(user.uid, {
+					initial: gameState.initial,
+					current: newState.current,
+					notes: newState.notes,
+					solution: gameState.solution,
+					timer: timer,
+					actions: newActions,
 				});
-
-				if ((counts.get(num) || 0) >= 9) {
-					// Remove this number from all notes
-					for (let i = 0; i < 9; i++) {
-						const rowNotes = newNotes[i];
-						if (rowNotes) {
-							for (let j = 0; j < 9; j++) {
-								const cellNotes = rowNotes[j];
-								if (cellNotes) {
-									cellNotes.delete(num);
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// Update history
-			const newHistory = history.slice(0, historyPointer + 1);
-			newHistory.push(newBoard.map((row) => [...row]));
-			setHistory(newHistory);
-			setHistoryPointer(newHistory.length - 1);
-
-			setGameState({ ...gameState, current: newBoard, notes: newNotes });
-
-			// Check for win
-			const isComplete = newBoard.every((row, ri) =>
-				row.every((val, ci) => {
-					const solRow = gameState.solution[ri];
-					return solRow ? val === solRow[ci] : false;
-				}),
-			);
-			if (isComplete) {
-				setShowWin(true);
-				if (user) {
-					saveHighScore({
-						difficulty,
-						time: timer,
-						date: Timestamp.now(),
-						userId: user.uid,
-						userName: user.displayName || "Anonymous",
-						initial: gameState.initial.flat(),
-						solution: gameState.solution.flat(),
-					}).then(() => {});
-					// Also save the final game state so it's marked as complete in DB
-					saveGameState(user.uid, {
-						initial: gameState.initial,
-						current: newBoard,
-						notes: newNotes,
-						solution: gameState.solution,
-						timer: timer,
-					});
-				}
 			}
 		}
 	};
 
 	const undo = () => {
-		if (historyPointer > 0) {
-			const prevBoard = history[historyPointer - 1];
-			if (!prevBoard) return;
-			setGameState({ ...gameState, current: prevBoard.map((row) => [...row]) });
-			setHistoryPointer(historyPointer - 1);
+		if (canUndo) {
+			const newActions: GameAction[] = [...gameState.actions, { type: "undo" }];
+			const newState = applyActions(
+				gameState.initial,
+				gameState.solution,
+				newActions,
+			);
+			setGameState({
+				...gameState,
+				current: newState.current,
+				notes: newState.notes,
+				actions: newActions,
+			});
 		}
 	};
 
 	const redo = () => {
-		if (historyPointer < history.length - 1) {
-			const nextBoard = history[historyPointer + 1];
-			if (!nextBoard) return;
-			setGameState({ ...gameState, current: nextBoard.map((row) => [...row]) });
-			setHistoryPointer(historyPointer + 1);
+		if (canRedo) {
+			const newActions: GameAction[] = [...gameState.actions, { type: "redo" }];
+			const newState = applyActions(
+				gameState.initial,
+				gameState.solution,
+				newActions,
+			);
+			setGameState({
+				...gameState,
+				current: newState.current,
+				notes: newState.notes,
+				actions: newActions,
+			});
 		}
 	};
 
@@ -219,11 +237,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 		return `${mins}:${secs.toString().padStart(2, "0")}`;
 	};
 
-	const conflicts = checkBoard(gameState.current, gameState.solution);
+	const conflicts = checkBoard(currentDerivedState.current, gameState.solution);
 
 	// Calculate disabled numbers (completed 9 instances)
 	const counts = new Map<number, number>();
-	gameState.current.forEach((row) => {
+	currentDerivedState.current.forEach((row) => {
 		row.forEach((val) => {
 			if (val !== null) {
 				counts.set(val, (counts.get(val) || 0) + 1);
@@ -289,11 +307,12 @@ export const GamePage: React.FC<GamePageProps> = ({
 										.fill(null)
 										.map(() => new Set<number>()),
 								),
+							actions: [],
 						});
 						setTimer(0);
 					}}
-					canUndo={historyPointer > 0}
-					canRedo={historyPointer < history.length - 1}
+					canUndo={canUndo}
+					canRedo={canRedo}
 				/>
 				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
 				<AnimatePresence>

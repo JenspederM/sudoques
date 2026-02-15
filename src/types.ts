@@ -12,6 +12,7 @@ export type GameState = {
 	notes: CellNotes;
 	solution: Board;
 	timer: number;
+	actions: GameAction[];
 	lastUpdated: Timestamp;
 };
 
@@ -28,6 +29,7 @@ export type DBGameState = {
 	solution: DBBoard;
 	timer: number;
 	notes: DBCellNotes;
+	actions: GameAction[];
 	lastUpdated: Timestamp;
 };
 
@@ -46,4 +48,56 @@ export type HighScore = {
 	userName?: string;
 	initial?: DBBoard;
 	solution?: DBBoard;
+	actions?: GameAction[];
 };
+
+export type AddValueAction = {
+	type: "addValue";
+	payload: {
+		row: number;
+		col: number;
+		value: number;
+	};
+};
+
+export type RemoveValueAction = {
+	type: "removeValue";
+	payload: {
+		row: number;
+		col: number;
+	};
+};
+
+export type AddNoteAction = {
+	type: "addNote";
+	payload: {
+		row: number;
+		col: number;
+		value: number;
+	};
+};
+
+export type RemoveNoteAction = {
+	type: "removeNote";
+	payload: {
+		row: number;
+		col: number;
+		value: number;
+	};
+};
+
+export type UndoAction = {
+	type: "undo";
+};
+
+export type RedoAction = {
+	type: "redo";
+};
+
+export type GameAction =
+	| AddValueAction
+	| RemoveValueAction
+	| AddNoteAction
+	| RemoveNoteAction
+	| UndoAction
+	| RedoAction;
