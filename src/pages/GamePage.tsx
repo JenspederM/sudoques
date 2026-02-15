@@ -307,7 +307,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 							<motion.div
 								initial={{ scale: 0.9, y: 20 }}
 								animate={{ scale: 1, y: 0 }}
-								className="glass p-10 rounded-3xl text-center max-w-sm"
+								className="glass p-10 rounded-3xl text-center w-full"
 							>
 								<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
 								<h2 className="text-3xl font-bold mb-2">Victory!</h2>
