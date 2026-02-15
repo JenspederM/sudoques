@@ -1,14 +1,14 @@
 import { LogOut, Palette, User as UserIcon } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../components/AuthProvider";
-import { Layout } from "../components/Layout";
-import { updateUserSettings } from "../logic/firebase";
 import {
 	MotionCard,
 	MotionCardContent,
 	MotionCardTitle,
 } from "@/components/MotionCard";
+import { useAuth } from "../components/AuthProvider";
+import { Layout } from "../components/Layout";
+import { updateUserSettings } from "../logic/firebase";
 
 interface SettingsPageProps {
 	currentTheme: string;
@@ -71,6 +71,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 						</div>
 					</div>
 					<button
+						type="button"
 						onClick={handleSignOut}
 						className="w-full py-4 mt-2 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold transition-all border border-red-500/20 active:scale-95"
 					>

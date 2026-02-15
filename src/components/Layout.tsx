@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import type React from "react";
 import { ChevronLeft } from "lucide-react";
+import type React from "react";
+import type { PropsWithChildren } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import type { PropsWithChildren } from "react";
 import { MotionCard } from "./MotionCard";
 
 type LayoutProps = PropsWithChildren<{

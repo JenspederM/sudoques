@@ -4,14 +4,13 @@ import {
 	signInWithEmailAndPassword,
 	signInWithPopup,
 } from "firebase/auth";
-import { AnimatePresence, motion } from "framer-motion";
 import { Brain, Loader2, Lock, Mail } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
 import { Layout } from "../components/Layout";
 import { auth } from "../firebase";
-import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
 
 export const LoginPage: React.FC = () => {
 	const [email, setEmail] = useState("");
@@ -164,6 +163,7 @@ export const LoginPage: React.FC = () => {
 				</div>
 
 				<button
+					type="button"
 					onClick={() => navigate("/signup")}
 					className="mt-2 text-sm font-medium text-slate-400 hover:text-brand-primary transition-colors"
 				>

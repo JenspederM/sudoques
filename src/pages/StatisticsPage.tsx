@@ -1,13 +1,12 @@
-import { motion } from "framer-motion";
-import { ChevronLeft, Timer, Trophy } from "lucide-react";
+import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout } from "../components/Layout";
-import { getUserScores, type HighScore } from "../logic/firebase";
-import { useAuth } from "../components/AuthProvider";
-import { DIFFICULTIES } from "../logic/constants";
 import { MotionCard } from "@/components/MotionCard";
+import { useAuth } from "../components/AuthProvider";
+import { Layout } from "../components/Layout";
+import { DIFFICULTIES } from "../logic/constants";
+import { getUserScores, type HighScore } from "../logic/firebase";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();

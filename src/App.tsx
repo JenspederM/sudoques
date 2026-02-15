@@ -20,13 +20,13 @@ import {
 import { GamePage } from "./pages/GamePage";
 // Pages
 import { HomePage } from "./pages/HomePage";
-import { StatisticsPage } from "./pages/StatisticsPage";
 import { LoginPage } from "./pages/LoginPage";
-import { SignupPage } from "./pages/SignupPage";
 import { NewGamePage } from "./pages/NewGamePage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
+import { SignupPage } from "./pages/SignupPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 
 type Difficulty = "25" | "27" | "30" | "35" | "40" | "45";
 

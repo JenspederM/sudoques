@@ -3,8 +3,8 @@ import {
 	doc,
 	getDoc,
 	getDocs,
-	query,
 	onSnapshot,
+	query,
 	setDoc,
 	Timestamp,
 	updateDoc,
@@ -60,20 +60,16 @@ export async function saveGameState(
 	});
 
 	// We use setDoc with merge: true to avoid overwriting settings if they exist
-	await setDoc(
-		userRef,
-		{
-			gameState: {
-				initial: state.initial.flat(),
-				current: state.current.flat(),
-				solution: state.solution.flat(),
-				timer: state.timer,
-				notes: notesObj,
-				lastUpdated: Timestamp.now(),
-			},
+	await updateDoc(userRef, {
+		gameState: {
+			initial: state.initial.flat(),
+			current: state.current.flat(),
+			solution: state.solution.flat(),
+			timer: state.timer,
+			notes: notesObj,
+			lastUpdated: Timestamp.now(),
 		},
-		{ merge: true },
-	);
+	});
 }
 
 /**
@@ -98,7 +94,6 @@ function parseGameState(gameData: any): Omit<GameState, "lastUpdated"> | null {
 	const notesArray: Set<number>[] = Array.from({ length: 81 }, () => new Set());
 
 	// Check if notes exist and are in the expected format
-	// biome-ignore lint/suspicious/noExplicitAny: complex firestore data structure
 	const notesData = gameData.notes as Record<string, number[]>;
 
 	if (notesData) {
@@ -169,13 +164,9 @@ export async function updateUserSettings(
 	settings: Partial<UserDocument["settings"]>,
 ) {
 	const userRef = doc(db, USERS_COLLECTION, userId);
-	await setDoc(
-		userRef,
-		{
-			settings,
-		},
-		{ merge: true },
-	);
+	await updateDoc(userRef, {
+		settings,
+	});
 }
 
 /**

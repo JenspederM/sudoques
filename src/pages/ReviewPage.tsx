@@ -1,4 +1,4 @@
-import { ChevronLeft, Timer, Trophy } from "lucide-react";
+import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";

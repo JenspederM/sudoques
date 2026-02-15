@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, Timer, Trophy } from "lucide-react";
+import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,10 +9,10 @@ import { GameControls } from "../components/GameControls";
 import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
 import { SudokuGrid } from "../components/SudokuGrid";
+import { DIFFICULTIES } from "../logic/constants";
 import { saveGameState, saveHighScore } from "../logic/firebase";
 import type { Board, CellNotes } from "../logic/sudoku";
 import { checkBoard } from "../logic/sudoku";
-import { DIFFICULTIES } from "../logic/constants";
 
 interface GamePageProps {
 	user: User | null;

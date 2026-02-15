@@ -5,7 +5,7 @@ import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 
 interface NewGamePageProps {
-	onSelectDifficulty: (difficulty: any) => void;
+	onSelectDifficulty: (difficulty: string) => void;
 }
 
 export const NewGamePage: React.FC<NewGamePageProps> = ({

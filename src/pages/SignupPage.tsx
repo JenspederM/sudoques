@@ -1,17 +1,11 @@
-import {
-	createUserWithEmailAndPassword,
-	GoogleAuthProvider,
-	signInAnonymously,
-	signInWithPopup,
-	updateProfile,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { Brain, Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
-import type React from "react";
+import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
 import { Layout } from "../components/Layout";
 import { auth } from "../firebase";
-import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
 
 export const SignupPage: React.FC = () => {
 	const [email, setEmail] = useState("");
@@ -24,7 +18,7 @@ export const SignupPage: React.FC = () => {
 	const location = useLocation();
 	const from = location.state?.from?.pathname || "/";
 
-	const handleSignup = async (e: React.FormEvent) => {
+	const handleSignup = async (e: SubmitEvent) => {
 		e.preventDefault();
 		setError(null);
 		setLoading(true);
@@ -45,33 +39,6 @@ export const SignupPage: React.FC = () => {
 		}
 	};
 
-	const handleGoogleAuth = async () => {
-		setError(null);
-		setLoading(true);
-		try {
-			const provider = new GoogleAuthProvider();
-			await signInWithPopup(auth, provider);
-			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleAnonymousAuth = async () => {
-		setError(null);
-		setLoading(true);
-		try {
-			await signInAnonymously(auth);
-			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	return (
 		<Layout contentClassName="justify-center">
 			<MotionCard
@@ -79,7 +46,7 @@ export const SignupPage: React.FC = () => {
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center"
 			>
-			<MotionCardTitle className="flex flex-col items-center gap-0">
+				<MotionCardTitle className="flex flex-col items-center gap-0">
 					<div className="bg-brand-primary/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-brand-primary/20 border border-brand-primary/30">
 						<Brain size={56} className="text-brand-primary" />
 					</div>
@@ -153,6 +120,7 @@ export const SignupPage: React.FC = () => {
 				</form>
 
 				<button
+					type="button"
 					onClick={() => navigate("/login")}
 					className="mt-8 text-sm font-medium text-slate-400 hover:text-brand-primary transition-colors"
 				>
