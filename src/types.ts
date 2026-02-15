@@ -3,7 +3,8 @@ import type { Timestamp } from "firebase/firestore";
 export type Difficulty = "25" | "27" | "30" | "35" | "40" | "45";
 export type Board = (number | null)[][];
 export type CellNotes = Set<number>[][];
-export type FlatBoard = (number | null)[];
+export type DBCellNotes = Record<string, number[]>;
+export type DBBoard = (number | null)[];
 
 export type GameState = {
 	initial: Board;
@@ -22,11 +23,11 @@ export type UserDocument = {
 };
 
 export type DBGameState = {
-	initial: FlatBoard;
-	current: FlatBoard;
-	solution: FlatBoard;
+	initial: DBBoard;
+	current: DBBoard;
+	solution: DBBoard;
 	timer: number;
-	notes: Record<string, number[]>;
+	notes: DBCellNotes;
 	lastUpdated: Timestamp;
 };
 
@@ -43,6 +44,6 @@ export type HighScore = {
 	date: Timestamp;
 	userId: string;
 	userName?: string;
-	initial?: FlatBoard;
-	solution?: FlatBoard;
+	initial?: DBBoard;
+	solution?: DBBoard;
 };

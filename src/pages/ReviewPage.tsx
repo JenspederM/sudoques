@@ -1,14 +1,15 @@
 import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
-import type { Board } from "../types";
+import type { DBBoard } from "../types";
 
 interface ReviewPageState {
-	initial: number[];
-	solution: number[];
+	initial: DBBoard;
+	solution: DBBoard;
 	time: number;
 	difficulty: string;
 }
@@ -41,17 +42,8 @@ export const ReviewPage: React.FC = () => {
 		return `${mins}:${secs.toString().padStart(2, "0")}`;
 	};
 
-	// Unflatten arrays
-	const unflatten = (arr: number[]): Board => {
-		const result: Board = [];
-		for (let i = 0; i < 9; i++) {
-			result.push(arr.slice(i * 9, (i + 1) * 9));
-		}
-		return result;
-	};
-
-	const initialBoard = unflatten(state.initial);
-	const solutionBoard = unflatten(state.solution);
+	const initialBoard = unflattenBoard(state.initial);
+	const solutionBoard = unflattenBoard(state.solution);
 	// For review, current board is the solution
 	const currentBoard = solutionBoard;
 

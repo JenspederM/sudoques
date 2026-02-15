@@ -3,10 +3,10 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
+import type { HighScore } from "@/types";
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
-import { type HighScore } from "@/types";
 import { getUserScores } from "../logic/firebase";
 
 export const StatisticsPage: React.FC = () => {
