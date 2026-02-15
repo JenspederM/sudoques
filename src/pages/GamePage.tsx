@@ -113,12 +113,51 @@ export const GamePage: React.FC<GamePageProps> = ({
 		} else {
 			const newBoard = gameState.current.map((row) => [...row]);
 			const newBoardRow = newBoard[r];
+			const newNotes = gameState.notes.map((row) =>
+				row.map((cell) => new Set(cell)),
+			);
 
-			// If the value hasn't changed, don't update state or history
-			if (newBoardRow && newBoardRow[c] === num) return;
+			// If the value hasn't changed (and it's not a clear action), don't update
+			if (num !== null && newBoardRow && newBoardRow[c] === num) return;
 
 			if (newBoardRow) {
 				newBoardRow[c] = num;
+			}
+
+			// If erasing, also clear notes
+			if (num === null) {
+				const targetRowNotes = newNotes[r];
+				if (targetRowNotes) {
+					targetRowNotes[c] = new Set<number>();
+				}
+			}
+
+			// Auto-remove notes if a number is completed
+			if (num !== null) {
+				// Calculate counts after placing the new number
+				const counts = new Map<number, number>();
+				newBoard.forEach((row) => {
+					row.forEach((val) => {
+						if (val !== null) {
+							counts.set(val, (counts.get(val) || 0) + 1);
+						}
+					});
+				});
+
+				if ((counts.get(num) || 0) >= 9) {
+					// Remove this number from all notes
+					for (let i = 0; i < 9; i++) {
+						const rowNotes = newNotes[i];
+						if (rowNotes) {
+							for (let j = 0; j < 9; j++) {
+								const cellNotes = rowNotes[j];
+								if (cellNotes) {
+									cellNotes.delete(num);
+								}
+							}
+						}
+					}
+				}
 			}
 
 			// Update history
@@ -127,7 +166,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			setHistory(newHistory);
 			setHistoryPointer(newHistory.length - 1);
 
-			setGameState({ ...gameState, current: newBoard });
+			setGameState({ ...gameState, current: newBoard, notes: newNotes });
 
 			// Check for win
 			const isComplete = newBoard.every((row, ri) =>
@@ -152,7 +191,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					saveGameState(user.uid, {
 						initial: gameState.initial,
 						current: newBoard,
-						notes: gameState.notes,
+						notes: newNotes,
 						solution: gameState.solution,
 						timer: timer,
 					});
