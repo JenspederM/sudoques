@@ -32,8 +32,8 @@ export const SignupPage: React.FC = () => {
 				await updateProfile(userCredential.user, { displayName: name });
 			}
 			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "An error occurred");
 		} finally {
 			setLoading(false);
 		}

@@ -22,7 +22,7 @@ interface GamePageProps {
 		notes: CellNotes;
 		solution: Board;
 	};
-	setGameState: (state: any) => void;
+	setGameState: (state: GamePageProps["gameState"]) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
 	difficulty: string;

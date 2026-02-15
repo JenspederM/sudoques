@@ -29,8 +29,8 @@ export const LoginPage: React.FC = () => {
 		try {
 			await signInWithEmailAndPassword(auth, email, password);
 			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "An error occurred");
 		} finally {
 			setLoading(false);
 		}
@@ -43,8 +43,8 @@ export const LoginPage: React.FC = () => {
 			const provider = new GoogleAuthProvider();
 			await signInWithPopup(auth, provider);
 			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "An error occurred");
 		} finally {
 			setLoading(false);
 		}
@@ -56,8 +56,8 @@ export const LoginPage: React.FC = () => {
 		try {
 			await signInAnonymously(auth);
 			navigate(from, { replace: true });
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : "An error occurred");
 		} finally {
 			setLoading(false);
 		}

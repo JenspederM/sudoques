@@ -29,6 +29,13 @@ export interface UserDocument {
 	gameState: GameState | null;
 }
 
+interface DBUserDocument {
+	settings: {
+		theme: string;
+	};
+	gameState: (RawGameState & { lastUpdated: Timestamp }) | null;
+}
+
 export interface HighScore {
 	difficulty: string;
 	time: number;
@@ -41,6 +48,14 @@ export interface HighScore {
 
 const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
+
+interface RawGameState {
+	initial: (number | null)[];
+	current: (number | null)[];
+	solution: (number | null)[];
+	timer: number;
+	notes: Record<string, number[]>;
+}
 
 /**
  * Saves the current game state for anonymous persistence
@@ -78,7 +93,9 @@ export async function saveGameState(
 /**
  * Helper to parse raw firestore data into GameState
  */
-function parseGameState(gameData: any): Omit<GameState, "lastUpdated"> | null {
+function parseGameState(
+	gameData: RawGameState | null,
+): Omit<GameState, "lastUpdated"> | null {
 	if (!gameData) return null;
 
 	// Helper to unflatten 1D array back to 9x9
@@ -94,7 +111,7 @@ function parseGameState(gameData: any): Omit<GameState, "lastUpdated"> | null {
 	const notesArray: Set<number>[] = Array.from({ length: 81 }, () => new Set());
 
 	// Check if notes exist and are in the expected format
-	const notesData = gameData.notes as Record<string, number[]>;
+	const notesData = gameData.notes;
 
 	if (notesData) {
 		for (const [key, values] of Object.entries(notesData)) {
@@ -106,9 +123,9 @@ function parseGameState(gameData: any): Omit<GameState, "lastUpdated"> | null {
 	}
 
 	return {
-		initial: unflatten(gameData.initial as unknown as number[]),
-		current: unflatten(gameData.current as unknown as number[]),
-		solution: unflatten(gameData.solution as unknown as number[]),
+		initial: unflatten(gameData.initial),
+		current: unflatten(gameData.current),
+		solution: unflatten(gameData.solution),
 		timer: gameData.timer,
 		notes: unflatten(notesArray) as CellNotes,
 	};
@@ -124,7 +141,7 @@ export async function loadGameState(
 	const userSnap = await getDoc(userRef);
 
 	if (userSnap.exists()) {
-		const data = userSnap.data() as UserDocument;
+		const data = userSnap.data() as DBUserDocument;
 		return parseGameState(data.gameState);
 	}
 	return null;
@@ -139,11 +156,11 @@ export function subscribeToUser(
 ) {
 	return onSnapshot(doc(db, USERS_COLLECTION, userId), (doc) => {
 		if (doc.exists()) {
-			const data = doc.data() as UserDocument;
+			const data = doc.data() as DBUserDocument;
 			// Manually parse gameState to unflatten arrays
 			const parsedData: UserDocument = {
 				...data,
-				gameState: parseGameState(data.gameState) as GameState, // Cast because Omit vs GameState
+				gameState: parseGameState(data.gameState) as GameState,
 			};
 			callback(parsedData);
 		} else {
