@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
-import type { Board } from "../logic/sudoku";
+import type { Board } from "../types";
 
 interface ReviewPageState {
 	initial: number[];

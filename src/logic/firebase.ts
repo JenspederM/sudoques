@@ -10,52 +10,18 @@ import {
 	updateDoc,
 	where,
 } from "firebase/firestore";
+import type {
+	CellNotes,
+	DBGameState,
+	DBUserDocument,
+	GameState,
+	HighScore,
+	UserDocument,
+} from "@/types";
 import { db } from "../firebase";
-import type { Board, CellNotes } from "./sudoku";
-
-export interface GameState {
-	initial: Board;
-	current: Board;
-	notes: CellNotes;
-	solution: Board;
-	timer: number;
-	lastUpdated: Timestamp;
-}
-
-export interface UserDocument {
-	settings: {
-		theme: string;
-	};
-	gameState: GameState | null;
-}
-
-interface DBUserDocument {
-	settings: {
-		theme: string;
-	};
-	gameState: (RawGameState & { lastUpdated: Timestamp }) | null;
-}
-
-export interface HighScore {
-	difficulty: string;
-	time: number;
-	date: Timestamp;
-	userId: string;
-	userName?: string;
-	initial?: (number | null)[];
-	solution?: (number | null)[];
-}
 
 const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
-
-interface RawGameState {
-	initial: (number | null)[];
-	current: (number | null)[];
-	solution: (number | null)[];
-	timer: number;
-	notes: Record<string, number[]>;
-}
 
 /**
  * Saves the current game state for anonymous persistence
@@ -94,7 +60,7 @@ export async function saveGameState(
  * Helper to parse raw firestore data into GameState
  */
 function parseGameState(
-	gameData: RawGameState | null,
+	gameData: DBGameState | null,
 ): Omit<GameState, "lastUpdated"> | null {
 	if (!gameData) return null;
 

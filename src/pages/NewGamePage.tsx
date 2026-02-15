@@ -3,9 +3,10 @@ import { Play } from "lucide-react";
 import type React from "react";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
+import type { Difficulty } from "../types";
 
 interface NewGamePageProps {
-	onSelectDifficulty: (difficulty: string) => void;
+	onSelectDifficulty: (difficulty: Difficulty) => void;
 }
 
 export const NewGamePage: React.FC<NewGamePageProps> = ({

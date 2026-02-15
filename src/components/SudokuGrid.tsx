@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import type React from "react";
 import { cn } from "../lib/utils";
-import type { Board, CellNotes } from "../logic/sudoku";
+import type { Board, CellNotes } from "@/types";
 
 interface SudokuGridProps {
 	initialBoard: Board;
@@ -57,8 +57,8 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 
 	return (
 		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg glass aspect-square w-full shrink-0 overflow-hidden">
-			{currentBoard.map((row, r) =>
-				row.map((val, c) => {
+			{(currentBoard as (number | null)[][]).map((row: (number | null)[], r: number) =>
+				row.map((val: number | null, c: number) => {
 					const selected = isSelected(r, c);
 					const highlighted = isHighlighted(r, c);
 					const initial = isInitial(r, c);

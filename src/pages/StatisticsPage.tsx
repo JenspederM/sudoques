@@ -6,7 +6,8 @@ import { MotionCard } from "@/components/MotionCard";
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
-import { getUserScores, type HighScore } from "../logic/firebase";
+import { type HighScore } from "@/types";
+import { getUserScores } from "../logic/firebase";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();

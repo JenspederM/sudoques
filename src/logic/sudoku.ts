@@ -1,17 +1,8 @@
-export type Board = (number | null)[][];
-export type CellNotes = Set<number>[][];
+import type { Board } from "../types";
 
 export const EMPTY_BOARD: Board = Array(9)
 	.fill(null)
 	.map(() => Array(9).fill(null));
-
-export interface GameState {
-	initialBoard: Board;
-	currentBoard: Board;
-	notes: CellNotes;
-	solution: Board;
-	difficulty: number;
-}
 
 export function parsePuzzle(puzzleStr: string): Board {
 	const board: Board = [];

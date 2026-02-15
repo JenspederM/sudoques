@@ -11,17 +11,12 @@ import { Numpad } from "../components/Numpad";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
 import { saveGameState, saveHighScore } from "../logic/firebase";
-import type { Board, CellNotes } from "../logic/sudoku";
 import { checkBoard } from "../logic/sudoku";
+import type { Board, GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
-	gameState: {
-		initial: Board;
-		current: Board;
-		notes: CellNotes;
-		solution: Board;
-	};
+	gameState: Omit<GameState, "lastUpdated" | "timer">;
 	setGameState: (state: GamePageProps["gameState"]) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
