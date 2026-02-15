@@ -242,6 +242,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
+			contentClassName="mb-8"
 			headerClassName="justify-between"
 			headerChildren={
 				<>
