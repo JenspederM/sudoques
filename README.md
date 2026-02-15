@@ -2,9 +2,7 @@
 
 A modern, responsive Sudoku web application built with **Bun**, **React**, and **Tailwind CSS**. Not just another Sudoku clone, but a premium experience featuring a sleek glassmorphism design and smooth animations.
 
-[**Live Demo**](https://sudoques.web.app)
-
-![Sudoques Screenshot](https://sudoques.web.app/screenshot.png) *(Note: You might want to add a real screenshot later)*
+[**Live App**](https://sudoques.web.app)
 
 ## Features
 
