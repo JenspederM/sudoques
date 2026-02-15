@@ -201,83 +201,66 @@ export const GamePage: React.FC<GamePageProps> = ({
 		.map(([num]) => num);
 
 	return (
-		<Layout>
-			<div className="page-container px-2 sm:px-4">
-				<div className="content-wrapper flex-1 px-4 justify-center sm:justify-start">
-					{/* Header Info */}
-					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => navigate("/")}
-								className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-								title="Back to Menu"
-							>
-								<ChevronLeft size={24} />
-							</button>
-						</div>
-						<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-							<Timer size={20} />
-							<span
-								data-testid="timer"
-								className="font-mono text-lg sm:text-xl"
-							>
-								{formatTime(timer)}
-							</span>
-						</div>
-						<div className="flex items-center gap-2 text-yellow-500">
-							<Trophy size={20} />
-							<span className="font-bold">
-								{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
-									difficulty}
-							</span>
-						</div>
+		<Layout
+			backRedirect="/"
+			headerClassName="justify-between"
+			headerChildren={
+				<>
+					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
+						<Timer size={20} />
+						<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+							{formatTime(timer)}
+						</span>
 					</div>
-
-					{/* Grid */}
-					<div className="w-full flex justify-center py-2">
-						<SudokuGrid
-							initialBoard={gameState.initial}
-							currentBoard={gameState.current}
-							notes={gameState.notes}
-							selectedCell={selectedCell}
-							onCellSelect={handleCellSelect}
-							conflicts={conflicts}
-						/>
+					<div className="flex items-center gap-2 text-yellow-500">
+						<Trophy size={20} />
+						<span className="font-bold">
+							{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
+								difficulty}
+						</span>
 					</div>
-
-					{/* Controls & Numpad */}
-					<div className="w-full flex flex-col items-center gap-4 mt-auto sm:mt-0">
-						<GameControls
-							isNoteMode={isNoteMode}
-							onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
-							onUndo={undo}
-							onRedo={redo}
-							onRestart={() => {
-								setGameState({
-									...gameState,
-									current: gameState.initial.map((r) => [...r]),
-									notes: Array(9)
-										.fill(null)
-										.map(() =>
-											Array(9)
-												.fill(null)
-												.map(() => new Set<number>()),
-										),
-								});
-								setTimer(0);
-							}}
-							canUndo={historyPointer > 0}
-							canRedo={historyPointer < history.length - 1}
-						/>
-						GameControls
-						<Numpad
-							onNumberClick={handleInput}
-							disabledNumbers={disabledNumbers}
-						/>
-					</div>
+				</>
+			}
+		>
+			{/* Grid */}
+			<div className="flex flex-col flex-1 sm:flex-0 w-full">
+				<div className="w-full">
+					<SudokuGrid
+						initialBoard={gameState.initial}
+						currentBoard={gameState.current}
+						notes={gameState.notes}
+						selectedCell={selectedCell}
+						onCellSelect={handleCellSelect}
+						conflicts={conflicts}
+					/>
 				</div>
+			</div>
 
+			{/* Controls & Numpad */}
+			<div className="w-full flex flex-col items-center gap-4">
+				<GameControls
+					isNoteMode={isNoteMode}
+					onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
+					onUndo={undo}
+					onRedo={redo}
+					onRestart={() => {
+						setGameState({
+							...gameState,
+							current: gameState.initial.map((r) => [...r]),
+							notes: Array(9)
+								.fill(null)
+								.map(() =>
+									Array(9)
+										.fill(null)
+										.map(() => new Set<number>()),
+								),
+						});
+						setTimer(0);
+					}}
+					canUndo={historyPointer > 0}
+					canRedo={historyPointer < history.length - 1}
+				/>
+				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
 				<AnimatePresence>
 					{showWin && (
 						<motion.div

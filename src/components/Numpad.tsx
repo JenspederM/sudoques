@@ -14,7 +14,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 	const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 	return (
-		<div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full max-w-[450px] shrink-0">
+		<div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full shrink-0">
 			{/* 1 2 3 4 5 */}
 			{numbers.slice(0, 5).map((num) => (
 				<button

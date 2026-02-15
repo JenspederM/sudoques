@@ -56,7 +56,7 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		conflicts.some((conf) => conf.row === r && conf.col === c);
 
 	return (
-		<div className="grid grid-cols-9 gap-[1px] rounded-lg glass aspect-square w-full max-w-[450px] shrink-0 overflow-hidden">
+		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg glass aspect-square w-full shrink-0 overflow-hidden">
 			{currentBoard.map((row, r) =>
 				row.map((val, c) => {
 					const selected = isSelected(r, c);
@@ -76,6 +76,10 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 								"bg-glass",
 								r % 3 === 2 && r !== 8 && "border-b-2 border-white/30",
 								c % 3 === 2 && c !== 8 && "border-r-2 border-white/30",
+								r === 8 && c === 8 && "rounded-br-md",
+								r === 8 && c === 0 && "rounded-bl-md",
+								r === 0 && c === 8 && "rounded-tr-md",
+								r === 0 && c === 0 && "rounded-tl-md",
 								highlighted && !selected && !conflict && "bg-brand-primary/20",
 								selected &&
 									!conflict &&

@@ -65,51 +65,36 @@ export const ReviewPage: React.FC = () => {
 		);
 
 	return (
-		<Layout>
-			<div className="page-container px-2 sm:px-4">
-				<div className="content-wrapper flex-1 sm:justify-start">
-					{/* Header Info */}
-					<div className="w-full flex items-center justify-between glass px-4 py-2 sm:px-6 sm:py-3 rounded-2xl shrink-0">
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => navigate("/statistics")}
-								className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white"
-								title="Back to Statistics"
-							>
-								<ChevronLeft size={24} />
-							</button>
-						</div>
-						<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-							<Timer size={20} />
-							<span
-								data-testid="timer"
-								className="font-mono text-lg sm:text-xl"
-							>
-								{formatTime(state.time)}
-							</span>
-						</div>
-						<div className="flex items-center gap-2 text-yellow-500">
-							<Trophy size={20} />
-							<span className="font-bold">
-								{DIFFICULTIES.find((d) => d.id === state.difficulty)?.label ||
-									state.difficulty}
-							</span>
-						</div>
+		<Layout
+			backRedirect="/statistics"
+			headerChildren={
+				<>
+					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
+						<Timer size={20} />
+						<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+							{formatTime(state.time)}
+						</span>
 					</div>
-
-					{/* Grid */}
-					<div className="w-full flex justify-center py-2 pointer-events-none opacity-90">
-						<SudokuGrid
-							initialBoard={initialBoard}
-							currentBoard={currentBoard}
-							notes={notes}
-							selectedCell={null}
-							onCellSelect={() => {}}
-							conflicts={[]}
-						/>
+					<div className="flex items-center gap-2 text-yellow-500">
+						<Trophy size={20} />
+						<span className="font-bold">
+							{DIFFICULTIES.find((d) => d.id === state.difficulty)?.label ||
+								state.difficulty}
+						</span>
 					</div>
-				</div>
+				</>
+			}
+		>
+			{/* Grid */}
+			<div className="w-full flex justify-center py-2 pointer-events-none opacity-90">
+				<SudokuGrid
+					initialBoard={initialBoard}
+					currentBoard={currentBoard}
+					notes={notes}
+					selectedCell={null}
+					onCellSelect={() => {}}
+					conflicts={[]}
+				/>
 			</div>
 		</Layout>
 	);

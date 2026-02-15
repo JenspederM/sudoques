@@ -22,7 +22,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 	canRedo,
 }) => {
 	return (
-		<div className="flex items-center justify-between w-full max-w-[450px] py-0 sm:py-4 gap-2 sm:gap-4 shrink-0">
+		<div className="flex items-center justify-between w-full py-0 sm:py-4 gap-2 sm:gap-4 shrink-0">
 			<div className="flex gap-2">
 				<button
 					type="button"
