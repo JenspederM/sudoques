@@ -1,19 +1,85 @@
 import { readdir, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { parsePuzzle } from "../src/logic/sudoku";
-import { gradePuzzle } from "../src/logic/solver";
+import { cpus } from "node:os";
 
 const PUZZLES_DIR = join(process.cwd(), "puzzles");
 const OUTPUT_DIR = join(process.cwd(), "src/data");
 const UNSOLVABLES = join(OUTPUT_DIR, "unsolvables.json");
+const WORKER_COUNT = Math.max(1, cpus().length - 1);
+
+interface PuzzleTask {
+	puzzleStr: string;
+	bankId?: string;
+	sourceFile: string;
+}
 
 async function generateId(puzzleStr: string): Promise<string> {
 	return createHash("sha256").update(puzzleStr).digest("hex").slice(0, 12);
 }
 
+function shuffle<T>(array: T[]) {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		const temp = array[i];
+		const target = array[j];
+		if (temp !== undefined && target !== undefined) {
+			array[i] = target;
+			array[j] = temp;
+		}
+	}
+}
+
 async function preparePuzzles() {
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
+	const tasks: PuzzleTask[] = [];
+
+	const MAX_LINES_FROM_FILE = 5000;
+	console.log("Collecting puzzles...");
+
+	for (const entry of entries) {
+		const fullPath = join(PUZZLES_DIR, entry.name);
+
+		if (entry.isDirectory()) {
+			const files = await readdir(fullPath);
+			for (const file of files) {
+				const content = await readFile(join(fullPath, file), "utf-8");
+				const lines = content.split("\n").filter((l: string) => l.trim().length === 81);
+				let lff = 0;
+				for (const line of lines) {
+					if (lff >= MAX_LINES_FROM_FILE) break;
+					lff++;
+					tasks.push({
+						puzzleStr: line.trim(),
+						sourceFile: entry.name,
+					});
+				}
+			}
+		} else if (entry.isFile() && entry.name.endsWith(".txt")) {
+			const content = await readFile(fullPath, "utf-8");
+			const lines = content.trim().split("\n");
+			let lff = 0;
+			for (const line of lines) {
+				if (lff >= MAX_LINES_FROM_FILE) break;
+				lff++;
+				const parts = line.trim().split(/\s+/);
+				const puzzleStr = parts[1];
+				const bankId = parts[0];
+
+				if (puzzleStr && puzzleStr.length === 81) {
+					tasks.push({
+						puzzleStr,
+						bankId,
+						sourceFile: entry.name,
+					});
+				}
+			}
+		}
+	}
+
+	console.log(`Collected ${tasks.length} puzzles. Shuffling...`);
+	shuffle(tasks);
+
 	const puzzlesByDifficulty: Record<string, Record<string, string>> = {
 		easy: {},
 		normal: {},
@@ -24,80 +90,67 @@ async function preparePuzzles() {
 	};
 	const unsolvables: Record<string, string[]> = {};
 
-	let processed = 0
-	const MAX_LINES_FROM_FILE=3000;
-	const LOG_EVERY_N_PUZZLES=1000;
+	console.log(`Starting ${WORKER_COUNT} workers...`);
+	let processed = 0;
+	const LOG_EVERY_N_PUZZLES = 1000;
 
-	console.log("Ingesting and grading puzzles...");
+	const solveInParallel = (): Promise<void> => {
+		return new Promise((resolve) => {
+			let taskIdx = 0;
+			let activeWorkers = 0;
 
-	for (const entry of entries) {
-		const fullPath = join(PUZZLES_DIR, entry.name);
+			const startWorker = () => {
+				if (taskIdx >= tasks.length) return;
 
-		if (entry.isDirectory()) {
-			// Old structure: puzzles/<ignored_label>/file
-			const files = await readdir(fullPath);
-			for (const file of files) {
-				const content = await readFile(join(fullPath, file), "utf-8");
-				const lines = content.split("\n").filter((l) => l.trim().length === 81);
-				let lff = 0
-				for (const line of lines) {
-					if (lff >= MAX_LINES_FROM_FILE) break;
-					processed++;
-					lff++;
-					const puzzleStr = line.trim();
-					const board = parsePuzzle(puzzleStr);
-					const graded = gradePuzzle(board);
-					
-					if (graded.isSolvable) {
-						const diffLabel = getDifficultyLabel(graded.difficulty);
-						const puzzles = puzzlesByDifficulty[diffLabel];
-						if (!puzzles) continue;
-						const id = await generateId(puzzleStr);
-						puzzles[id] = puzzleStr;
-					}	else {
-						unsolvables[entry.name] ??= [];
-						unsolvables[entry.name].push(puzzleStr);
+				activeWorkers++;
+				const worker = new Worker(join(process.cwd(), "scripts/worker-solver.ts"));
+
+				worker.onmessage = async (event) => {
+					const { puzzleStr, bankId, sourceFile, graded, success, error } =
+						event.data;
+
+					if (success) {
+						if (graded.isSolvable) {
+							const diffLabel = getDifficultyLabel(graded.difficulty);
+							const puzzles = puzzlesByDifficulty[diffLabel];
+							if (puzzles) {
+								const id = bankId || (await generateId(puzzleStr));
+								puzzles[id] = puzzleStr;
+							}
+						} else {
+							unsolvables[sourceFile] ??= [];
+							unsolvables[sourceFile].push(puzzleStr);
+						}
+					} else {
+						console.error(`Worker error: ${error}`);
 					}
 
+					processed++;
 					if (processed % LOG_EVERY_N_PUZZLES === 0) {
 						console.log(`Processed ${processed} puzzles`);
 					}
-				}
-			}
-		} else if (entry.isFile() && entry.name.endsWith(".txt")) {
-			// Bank format: ID String Rating
-			const content = await readFile(fullPath, "utf-8");
-			const lines = content.trim().split("\n");
-			let lff = 0
-			for (const line of lines) {
-				if (lff >= MAX_LINES_FROM_FILE) break;
-				processed++;
-				lff++;
-				const parts = line.trim().split(/\s+/);
-				const puzzleStr = parts[1];
-				const bankId = parts[0];
-				
-				if (puzzleStr && puzzleStr.length === 81) {
-					const board = parsePuzzle(puzzleStr);
-					const graded = gradePuzzle(board);
-					
-					if (graded.isSolvable) {
-						const diffLabel = getDifficultyLabel(graded.difficulty);
-						const puzzles = puzzlesByDifficulty[diffLabel];
-						if (!puzzles) continue;
-						const id = bankId || await generateId(puzzleStr);
-						puzzles[id] = puzzleStr;
+
+					if (taskIdx < tasks.length) {
+						worker.postMessage(tasks[taskIdx++]);
 					} else {
-						unsolvables[entry.name] ??= [];
-						unsolvables[entry.name].push(puzzleStr);
+						worker.terminate();
+						activeWorkers--;
+						if (activeWorkers === 0) {
+							resolve();
+						}
 					}
-				}
-				if (processed % LOG_EVERY_N_PUZZLES === 0) {
-					console.log(`Processed ${processed} puzzles`);
-				}
+				};
+
+				worker.postMessage(tasks[taskIdx++]);
+			};
+
+			for (let i = 0; i < Math.min(WORKER_COUNT, tasks.length); i++) {
+				startWorker();
 			}
-		}
-	}
+		});
+	};
+
+	await solveInParallel();
 
 	// Write individual files
 	await mkdir(OUTPUT_DIR, { recursive: true });
