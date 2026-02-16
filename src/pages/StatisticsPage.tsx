@@ -8,6 +8,7 @@ import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 import { getUserScores } from "../logic/firebase";
+import { formatTime } from "@/lib/utils";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
@@ -31,12 +32,6 @@ export const StatisticsPage: React.FC = () => {
 			})
 			.finally(() => setIsLoading(false));
 	}, [activeDiff, user]);
-
-	const formatTime = (s: number) => {
-		const mins = Math.floor(s / 60);
-		const secs = s % 60;
-		return `${mins}:${secs.toString().padStart(2, "0")}`;
-	};
 
 	return (
 		<Layout

@@ -9,7 +9,7 @@ import {
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { unflattenBoard } from "@/lib/utils";
+import { formatTime, unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
@@ -84,12 +84,6 @@ export const ReviewPage: React.FC = () => {
 			</Layout>
 		);
 	}
-
-	const formatTime = (s: number) => {
-		const mins = Math.floor(s / 60);
-		const secs = s % 60;
-		return `${mins}:${secs.toString().padStart(2, "0")}`;
-	};
 
 	const initialBoardActual = initialBoard;
 	const currentBoard = currentDerivedState.current;
@@ -185,7 +179,7 @@ export const ReviewPage: React.FC = () => {
 
 					{/* Speed Controls */}
 					<div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5">
-						{[1, 2, 4, 8].map((speed) => (
+						{[1, 2, 4, 8, 16, 32].map((speed) => (
 							<button
 								key={speed}
 								type="button"

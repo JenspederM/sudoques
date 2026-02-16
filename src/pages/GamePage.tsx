@@ -14,6 +14,7 @@ import { saveGameState, saveHighScore } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
+import { formatTime } from "@/lib/utils";
 
 interface GamePageProps {
 	user: User | null;
@@ -259,11 +260,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		}
 	};
 
-	const formatTime = (s: number) => {
-		const mins = Math.floor(s / 60);
-		const secs = s % 60;
-		return `${mins}:${secs.toString().padStart(2, "0")}`;
-	};
+
 
 	const conflicts = checkBoard(currentDerivedState.current, gameState.solution);
 
