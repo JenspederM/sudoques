@@ -91,4 +91,3 @@ test("gradePuzzle - XY-Chain", () => {
 	expect(graded.isSolvable).toBe(true);
 	expect(graded.techniquesUsed.has("XY-Chain")).toBe(true);
 });
-

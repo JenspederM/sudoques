@@ -1,5 +1,3 @@
-import type { Difficulty } from "@/types";
-
 export const DIFFICULTIES = [
 	{ id: "easy", label: "Easy", desc: "A relaxed warm-up" },
 	{ id: "normal", label: "Normal", desc: "Just the right balance" },

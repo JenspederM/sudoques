@@ -99,7 +99,8 @@ export default function App() {
 				const puzzles = data.default || data;
 				const ids = Object.keys(puzzles);
 				if (ids.length === 0) return;
-				const randomId = ids[Math.floor(Math.random() * ids.length)]!;
+				const randomId = ids[Math.floor(Math.random() * ids.length)];
+				if (!randomId) return;
 				puzzleStr = puzzles[randomId];
 			} catch (e) {
 				console.error("Failed to load puzzles", e);
