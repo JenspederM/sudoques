@@ -36,6 +36,16 @@ export type UserDocument = {
 	playedPuzzles?: string[];
 };
 
+export type DBPuzzle = {
+	id: string;
+	puzzle: string;
+	solution: string;
+	difficulty: string;
+	score: number;
+	techniques: string[];
+	updatedAt: Timestamp;
+};
+
 export type DBGameState = {
 	initial: DBBoard;
 	current: DBBoard;

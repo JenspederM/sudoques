@@ -10,7 +10,7 @@ import {
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { getRandomPuzzle, subscribeToUser } from "./logic/firebase";
-import { parsePuzzle, solveSudoku } from "./logic/sudoku";
+import { parsePuzzle } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -98,11 +98,14 @@ export default function App() {
 
 			let puzzleStr = "";
 			let puzzleId = "";
+			let solutionStr = "";
 			try {
 				setIsLoading(true);
 				const result = await getRandomPuzzle(diff, playedPuzzles);
 				puzzleStr = result.puzzle;
 				puzzleId = result.id;
+				solutionStr = result.solution;
+				// We can also use result.score and result.techniques if we want to store them
 			} catch (e) {
 				console.error("Failed to load puzzles from Firestore", e);
 				// Fallback to local data if needed, or just show error
@@ -114,7 +117,7 @@ export default function App() {
 
 			if (!puzzleStr) return;
 			const initial = parsePuzzle(puzzleStr);
-			const solution = solveSudoku(initial);
+			const solution = parsePuzzle(solutionStr);
 			if (!solution) return;
 
 			const notes: CellNotes = Array(9)

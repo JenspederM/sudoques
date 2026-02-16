@@ -16,6 +16,7 @@ import {
 import { unflattenBoard, unflattenCellNotes } from "@/lib/utils";
 import type {
 	DBGameState,
+	DBPuzzle,
 	DBUserDocument,
 	GameState,
 	HighScore,
@@ -189,7 +190,7 @@ export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
 export async function getRandomPuzzle(
 	difficulty: string,
 	playedPuzzleIds: string[] = [],
-): Promise<{ id: string; puzzle: string }> {
+): Promise<DBPuzzle> {
 	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
 	const playedSet = new Set(playedPuzzleIds);
 	const MAX_RETRIES = 5;
@@ -228,9 +229,15 @@ export async function getRandomPuzzle(
 		// Find a puzzle not in playedSet
 		for (const docSnapshot of querySnapshot.docs) {
 			if (!playedSet.has(docSnapshot.id)) {
+				const data = docSnapshot.data() as DBPuzzle;
 				return {
 					id: docSnapshot.id,
-					puzzle: docSnapshot.data().puzzleStr as string,
+					puzzle: data.puzzle,
+					solution: data.solution,
+					difficulty: data.difficulty,
+					score: data.score,
+					techniques: data.techniques,
+					updatedAt: data.updatedAt,
 				};
 			}
 		}
@@ -251,9 +258,15 @@ export async function getRandomPuzzle(
 	if (!fallbackSnap.empty) {
 		const docSnapshot = fallbackSnap.docs[0];
 		if (docSnapshot) {
+			const data = docSnapshot.data() as DBPuzzle;
 			return {
 				id: docSnapshot.id,
-				puzzle: docSnapshot.data().puzzleStr as string,
+				puzzle: data.puzzle,
+				solution: data.solution,
+				difficulty: data.difficulty,
+				score: data.score,
+				techniques: data.techniques,
+				updatedAt: data.updatedAt,
 			};
 		}
 	}

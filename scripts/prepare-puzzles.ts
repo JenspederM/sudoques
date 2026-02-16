@@ -2,17 +2,14 @@ import { readdir, readFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { cpus } from "node:os";
+import { boardToString } from "../src/logic/sudoku";
+import type { PuzzleData, WorkerRequest, WorkerResponse } from "./types";
 
 const PUZZLES_DIR = join(process.cwd(), "puzzles");
 const OUTPUT_DIR = join(process.cwd(), "src/data");
 const UNSOLVABLES = join(OUTPUT_DIR, "unsolvables.json");
 const WORKER_COUNT = Math.max(1, cpus().length - 1);
 
-interface PuzzleTask {
-	puzzleStr: string;
-	bankId?: string;
-	sourceFile: string;
-}
 
 async function generateId(puzzleStr: string): Promise<string> {
 	return createHash("sha256").update(puzzleStr).digest("hex").slice(0, 12);
@@ -32,7 +29,7 @@ function shuffle<T>(array: T[]) {
 
 async function preparePuzzles() {
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
-	const tasks: PuzzleTask[] = [];
+	const tasks: WorkerRequest[] = [];
 
 	const MAX_LINES_FROM_FILE = 100000;
 	console.log("Collecting puzzles...");
@@ -80,7 +77,13 @@ async function preparePuzzles() {
 	console.log(`Collected ${tasks.length} puzzles. Shuffling...`);
 	shuffle(tasks);
 
-	const puzzlesByDifficulty: Record<string, Record<string, string>> = {
+	const puzzlesByDifficulty: Record<
+		string,
+		Record<
+			string,
+			PuzzleData
+		>
+	> = {
 		easy: {},
 		normal: {},
 		medium: {},
@@ -105,17 +108,21 @@ async function preparePuzzles() {
 				activeWorkers++;
 				const worker = new Worker(join(process.cwd(), "scripts/worker-solver.ts"));
 
-				worker.onmessage = async (event) => {
+				worker.onmessage = async (event: MessageEvent<WorkerResponse>) => {
 					const { puzzleStr, bankId, sourceFile, graded, success, error } =
 						event.data;
-
 					if (success) {
 						if (graded.isSolvable) {
 							const diffLabel = getDifficultyLabel(graded.difficulty);
 							const puzzles = puzzlesByDifficulty[diffLabel];
 							if (puzzles) {
 								const id = bankId || (await generateId(puzzleStr));
-								puzzles[id] = puzzleStr;
+								puzzles[id] = {
+									puzzle: puzzleStr,
+									solution: boardToString(graded.solution!),
+									score: graded.difficulty,
+									techniques: Array.from(graded.techniquesUsed),
+								} as PuzzleData;
 							}
 						} else {
 							unsolvables[sourceFile] ??= [];

@@ -8,6 +8,7 @@ import {
 	connectFirestoreEmulator 
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
+import type { PuzzleData } from "./types";
 
 const firebaseConfig = {
 	apiKey: process.env.BUN_PUBLIC_FIREBASE_API_KEY || "fake-api-key",
@@ -39,7 +40,10 @@ async function uploadPuzzles() {
 		const difficulty = file.replace(".json", "");
 		console.log(`Processing ${file} (${difficulty})...`);
 		const content = await readFile(join(DATA_DIR, file), "utf-8");
-		const puzzles = JSON.parse(content) as Record<string, string>;
+		const puzzles = JSON.parse(content) as Record<
+			string,
+			PuzzleData
+		>;
 		const entries = Object.entries(puzzles);
 		
 		console.log(`Uploading ${entries.length} puzzles for ${difficulty}...`);
@@ -48,12 +52,15 @@ async function uploadPuzzles() {
 			const batch = writeBatch(db);
 			const chunk = entries.slice(i, i + BATCH_SIZE);
 			
-			for (const [id, puzzleStr] of chunk) {
+			for (const [id, data] of chunk) {
 				const puzzleRef = doc(db, COLLECTION_NAME, id);
 				batch.set(puzzleRef, {
-					puzzleStr,
-					difficulty,
-					updatedAt: new Date()
+					puzzle: data.puzzle,
+					solution: data.solution,
+					difficulty: difficulty,
+					score: data.score,
+					techniques: data.techniques,
+					updatedAt: new Date(),
 				});
 			}
 			
