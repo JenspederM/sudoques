@@ -93,6 +93,7 @@ export const ReviewPage: React.FC = () => {
 	return (
 		<Layout
 			backRedirect="/statistics"
+			backState={{ activeDiff: state.difficulty }}
 			headerClassName="justify-between"
 			headerChildren={
 				<>

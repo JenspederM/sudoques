@@ -1,7 +1,7 @@
 import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
 import type { HighScore } from "@/types";
 import { useAuth } from "../components/AuthProvider";
@@ -11,7 +11,10 @@ import { getUserScores } from "../logic/firebase";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
-	const [activeDiff, setActiveDiff] = useState("45");
+	const location = useLocation();
+	const initialDiff =
+		(location.state as { activeDiff?: string })?.activeDiff || "45";
+	const [activeDiff, setActiveDiff] = useState(initialDiff);
 	const [scores, setScores] = useState<HighScore[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 

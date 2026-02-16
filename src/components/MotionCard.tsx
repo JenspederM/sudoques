@@ -12,7 +12,7 @@ export function MotionCard({
 	return (
 		<motion.div
 			className={cn(
-				"glass rounded-2xl border border-white/5 px-6 py-4 w-full",
+				"glass rounded-2xl border border-white/5 px-6 py-4 w-full max-w-xl",
 				className,
 			)}
 			{...props}

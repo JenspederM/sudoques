@@ -8,6 +8,7 @@ import { MotionCard } from "./MotionCard";
 
 type LayoutProps = PropsWithChildren<{
 	backRedirect?: string;
+	backState?: any;
 	headerClassName?: string;
 	headerChildren?: React.ReactNode;
 	contentClassName?: string;
@@ -17,6 +18,7 @@ export const Layout: React.FC<LayoutProps> = ({
 	children,
 	headerClassName,
 	backRedirect,
+	backState,
 	headerChildren,
 	contentClassName,
 }) => {
@@ -52,7 +54,7 @@ export const Layout: React.FC<LayoutProps> = ({
 							>
 								<button
 									type="button"
-									onClick={() => navigate(backRedirect)}
+									onClick={() => navigate(backRedirect, { state: backState })}
 									className="py-2 hover:bg-white/10 rounded-xl transition-all active:scale-90"
 								>
 									<ChevronLeft size={28} />

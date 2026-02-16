@@ -14,6 +14,7 @@ import { saveGameState, saveHighScore } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
+import { MotionCard } from "@/components/MotionCard";
 
 interface GamePageProps {
 	user: User | null;
@@ -314,6 +315,32 @@ export const GamePage: React.FC<GamePageProps> = ({
 					canUndo={canUndo}
 					canRedo={canRedo}
 				/>
+				{import.meta.env.DEV && (
+					<button
+						type="button"
+						onClick={() => {
+							const firstRow = gameState.solution[0];
+							if (!firstRow) return;
+							const firstVal = firstRow[0];
+							if (typeof firstVal !== "number") return;
+
+							setGameState({
+								...gameState,
+								current: gameState.solution.map((r) => [...r]),
+								actions: [
+									...gameState.actions,
+									{
+										type: "addValue",
+										payload: { row: 0, col: 0, value: firstVal },
+									},
+								],
+							});
+						}}
+						className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500/50 hover:bg-red-500/30 transition-all text-xs uppercase tracking-widest"
+					>
+						Solve (Dev Only)
+					</button>
+				)}
 				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
 				<AnimatePresence>
 					{showWin && (
@@ -323,27 +350,54 @@ export const GamePage: React.FC<GamePageProps> = ({
 							exit={{ opacity: 0 }}
 							className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
 						>
-							<motion.div
+							<MotionCard
 								initial={{ scale: 0.9, y: 20 }}
 								animate={{ scale: 1, y: 0 }}
-								className="glass p-10 rounded-3xl text-center w-full"
+								className="glass p-10 rounded-3xl text-center"
 							>
 								<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
 								<h2 className="text-3xl font-bold mb-2">Victory!</h2>
-								<p className="text-slate-400 mb-6">
-									Solved in {formatTime(timer)}
-								</p>
-								<button
-									type="button"
-									onClick={() => {
-										setShowWin(false);
-										navigate("/");
-									}}
-									className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all"
-								>
-									Back to Menu
-								</button>
-							</motion.div>
+								<div className="flex flex-col gap-1 mb-6">
+									<p className="text-slate-400">
+										Solved in {formatTime(timer)}
+									</p>
+									<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
+										{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
+											difficulty}{" "}
+										Difficulty
+									</p>
+								</div>
+								<div className="flex flex-col gap-3">
+									<button
+										type="button"
+										onClick={() => {
+											setShowWin(false);
+											navigate("/review", {
+												state: {
+													initial: gameState.initial.flat(),
+													solution: gameState.solution.flat(),
+													time: timer,
+													difficulty: difficulty,
+													actions: gameState.actions,
+												},
+											});
+										}}
+										className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10"
+									>
+										Review Game
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setShowWin(false);
+											navigate("/");
+										}}
+										className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all text-white"
+									>
+										Back to Menu
+									</button>
+								</div>
+							</MotionCard>
 						</motion.div>
 					)}
 				</AnimatePresence>
