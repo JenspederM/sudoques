@@ -7,6 +7,11 @@ export type Difficulty =
 	| "hard"
 	| "expert"
 	| "master";
+export type LabelledDifficulty = {
+	id: Difficulty;
+	label: string;
+	desc: string;
+}
 export type Board = (number | null)[][];
 export type CellNotes = Set<number>[][];
 export type DBCellNotes = Record<string, number[]>;
