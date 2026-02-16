@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type Difficulty = "25" | "27" | "30" | "35" | "40" | "45";
+export type Difficulty = "easy" | "normal" | "medium" | "hard" | "expert" | "master";
 export type Board = (number | null)[][];
 export type CellNotes = Set<number>[][];
 export type DBCellNotes = Record<string, number[]>;

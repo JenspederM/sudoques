@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import puzzlesData from "./data/puzzles.json";
+import puzzlesData from "./data/puzzles_graded.json";
 import { subscribeToUser } from "./logic/firebase";
 import { parsePuzzle, solveSudoku } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
@@ -34,7 +34,7 @@ export default function App() {
 	} | null>(null);
 
 	const { user, loading: authLoading } = useAuth();
-	const [difficulty, setDifficulty] = useState<Difficulty>("45");
+	const [difficulty, setDifficulty] = useState<Difficulty>("easy");
 	const [isLoading, setIsLoading] = useState(true);
 	const [theme, setTheme] = useState("default");
 
