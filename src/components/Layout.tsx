@@ -8,7 +8,7 @@ import { MotionCard } from "./MotionCard";
 
 type LayoutProps = PropsWithChildren<{
 	backRedirect?: string;
-	backState?: any;
+	backState?: unknown;
 	headerClassName?: string;
 	headerChildren?: React.ReactNode;
 	contentClassName?: string;

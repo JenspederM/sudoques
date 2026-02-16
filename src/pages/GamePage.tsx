@@ -2,9 +2,9 @@ import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { AnimatePresence, motion } from "framer-motion";
 import { Timer, Trophy } from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MotionCard } from "@/components/MotionCard";
 import { GameControls } from "../components/GameControls";
 import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
@@ -14,7 +14,6 @@ import { saveGameState, saveHighScore } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
-import { MotionCard } from "@/components/MotionCard";
 
 interface GamePageProps {
 	user: User | null;
@@ -39,6 +38,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [showWin, setShowWin] = useState(false);
+	const lastActionTimeRef = React.useRef<number>(Date.now());
 
 	// Compute current state from actions
 	const currentDerivedState = applyActions(
@@ -127,6 +127,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 		const initialRow = gameState.initial[r];
 		if (!initialRow || initialRow[c] !== null) return;
 
+		const now = Date.now();
+		const delta = now - lastActionTimeRef.current;
+		lastActionTimeRef.current = now;
+
 		let action: GameAction;
 		if (isNoteMode && num !== null) {
 			const rowNotes = currentDerivedState.notes[r];
@@ -134,19 +138,28 @@ export const GamePage: React.FC<GamePageProps> = ({
 			if (targetCellNotes?.has(num)) {
 				action = {
 					type: "removeNote",
+					delta,
 					payload: { row: r, col: c, value: num },
 				};
 			} else {
-				action = { type: "addNote", payload: { row: r, col: c, value: num } };
+				action = {
+					type: "addNote",
+					delta,
+					payload: { row: r, col: c, value: num },
+				};
 			}
 		} else {
 			if (num === null) {
-				action = { type: "removeValue", payload: { row: r, col: c } };
+				action = { type: "removeValue", delta, payload: { row: r, col: c } };
 			} else {
 				// If the value hasn't changed, don't update
 				const currentRow = currentDerivedState.current[r];
 				if (currentRow && currentRow[c] === num) return;
-				action = { type: "addValue", payload: { row: r, col: c, value: num } };
+				action = {
+					type: "addValue",
+					delta,
+					payload: { row: r, col: c, value: num },
+				};
 			}
 		}
 
@@ -200,7 +213,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const undo = () => {
 		if (canUndo) {
-			const newActions: GameAction[] = [...gameState.actions, { type: "undo" }];
+			const now = Date.now();
+			const delta = now - lastActionTimeRef.current;
+			lastActionTimeRef.current = now;
+
+			const newActions: GameAction[] = [
+				...gameState.actions,
+				{ type: "undo", delta },
+			];
 			const newState = applyActions(
 				gameState.initial,
 				gameState.solution,
@@ -217,7 +237,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const redo = () => {
 		if (canRedo) {
-			const newActions: GameAction[] = [...gameState.actions, { type: "redo" }];
+			const now = Date.now();
+			const delta = now - lastActionTimeRef.current;
+			lastActionTimeRef.current = now;
+
+			const newActions: GameAction[] = [
+				...gameState.actions,
+				{ type: "redo", delta },
+			];
 			const newState = applyActions(
 				gameState.initial,
 				gameState.solution,
@@ -311,6 +338,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 							actions: [],
 						});
 						setTimer(0);
+						lastActionTimeRef.current = Date.now();
 					}}
 					canUndo={canUndo}
 					canRedo={canRedo}
@@ -331,6 +359,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 									...gameState.actions,
 									{
 										type: "addValue",
+										delta: Date.now() - lastActionTimeRef.current,
 										payload: { row: 0, col: 0, value: firstVal },
 									},
 								],

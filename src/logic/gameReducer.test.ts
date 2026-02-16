@@ -25,6 +25,7 @@ describe("gameReducer", () => {
 		};
 		const action: GameAction = {
 			type: "addValue",
+			delta: 0,
 			payload: { row: 0, col: 0, value: 5 },
 		};
 		const newState = gameReducer(initialState, action);
@@ -51,6 +52,7 @@ describe("gameReducer", () => {
 
 		const action: GameAction = {
 			type: "removeValue",
+			delta: 0,
 			payload: { row: 0, col: 0 },
 		};
 		const newState = gameReducer(initialState, action);
@@ -74,12 +76,14 @@ describe("gameReducer", () => {
 
 		let state = gameReducer(initialState, {
 			type: "addNote",
+			delta: 0,
 			payload: { row: 0, col: 0, value: 3 },
 		});
 		expect(state.notes[0]?.[0]?.has(3)).toBe(true);
 
 		state = gameReducer(state, {
 			type: "removeNote",
+			delta: 0,
 			payload: { row: 0, col: 0, value: 3 },
 		});
 		expect(state.notes[0]?.[0]?.has(3)).toBe(false);
@@ -89,10 +93,10 @@ describe("gameReducer", () => {
 describe("applyActions", () => {
 	test("should reconstruct final state from actions", () => {
 		const actions: GameAction[] = [
-			{ type: "addValue", payload: { row: 0, col: 0, value: 5 } },
-			{ type: "addValue", payload: { row: 0, col: 1, value: 3 } },
-			{ type: "undo" },
-			{ type: "addValue", payload: { row: 0, col: 2, value: 9 } },
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 0, value: 5 } },
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 1, value: 3 } },
+			{ type: "undo", delta: 0 },
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 2, value: 9 } },
 		];
 
 		const finalState = applyActions(emptyBoard, solution, actions);
@@ -103,9 +107,9 @@ describe("applyActions", () => {
 
 	test("redo should work", () => {
 		const actions: GameAction[] = [
-			{ type: "addValue", payload: { row: 0, col: 0, value: 5 } },
-			{ type: "undo" },
-			{ type: "redo" },
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 0, value: 5 } },
+			{ type: "undo", delta: 0 },
+			{ type: "redo", delta: 0 },
 		];
 
 		const finalState = applyActions(emptyBoard, solution, actions);
@@ -114,10 +118,10 @@ describe("applyActions", () => {
 
 	test("new move after undo should branch (clear redo history)", () => {
 		const actions: GameAction[] = [
-			{ type: "addValue", payload: { row: 0, col: 0, value: 5 } },
-			{ type: "undo" },
-			{ type: "addValue", payload: { row: 0, col: 1, value: 3 } },
-			{ type: "redo" }, // should do nothing as redo history was cleared
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 0, value: 5 } },
+			{ type: "undo", delta: 0 },
+			{ type: "addValue", delta: 0, payload: { row: 0, col: 1, value: 3 } },
+			{ type: "redo", delta: 0 }, // should do nothing as redo history was cleared
 		];
 
 		const finalState = applyActions(emptyBoard, solution, actions);
@@ -128,12 +132,16 @@ describe("applyActions", () => {
 	test("auto-remove notes when a number is completed", () => {
 		const actions: GameAction[] = [];
 		for (let i = 0; i < 9; i++) {
-			actions.push({ type: "addValue", payload: { row: i, col: 0, value: 1 } });
+			actions.push({
+				type: "addValue",
+				delta: 0,
+				payload: { row: i, col: 0, value: 1 },
+			});
 		}
 
 		const initialWithNotes: Board = emptyBoard.map((r) => [...r]);
 		const finalState = applyActions(initialWithNotes, solution, [
-			{ type: "addNote", payload: { row: 0, col: 1, value: 1 } },
+			{ type: "addNote", delta: 0, payload: { row: 0, col: 1, value: 1 } },
 			...actions,
 		]);
 

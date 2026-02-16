@@ -31,20 +31,25 @@ export const ReviewPage: React.FC = () => {
 
 	const [playbackIndex, setPlaybackIndex] = useState(0);
 	const [isPlaying, setIsPlaying] = useState(false);
+	const [speedMultiplier, setSpeedMultiplier] = useState(1);
 
 	const actions = state?.actions || [];
 	const totalSteps = actions.length;
 
 	useEffect(() => {
 		if (isPlaying && playbackIndex < totalSteps) {
+			const nextAction = actions[playbackIndex];
+			// Use the delta of the action we are about to play, or a default if missing
+			const delay = (nextAction?.delta || 500) / speedMultiplier;
+
 			const timer = setTimeout(() => {
 				setPlaybackIndex((prev) => prev + 1);
-			}, 500);
+			}, delay);
 			return () => clearTimeout(timer);
 		} else if (playbackIndex >= totalSteps) {
 			setIsPlaying(false);
 		}
-	}, [isPlaying, playbackIndex, totalSteps]);
+	}, [isPlaying, playbackIndex, totalSteps, actions, speedMultiplier]);
 
 	const initialBoard = useMemo(
 		() => unflattenBoard(state?.initial || []),
@@ -176,6 +181,24 @@ export const ReviewPage: React.FC = () => {
 							onChange={(e) => setPlaybackIndex(parseInt(e.target.value, 10))}
 							className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-primary"
 						/>
+					</div>
+
+					{/* Speed Controls */}
+					<div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5">
+						{[1, 2, 4, 8].map((speed) => (
+							<button
+								key={speed}
+								type="button"
+								onClick={() => setSpeedMultiplier(speed)}
+								className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+									speedMultiplier === speed
+										? "bg-brand-primary text-white"
+										: "text-slate-500 hover:text-white"
+								}`}
+							>
+								{speed}x
+							</button>
+						))}
 					</div>
 				</div>
 			)}

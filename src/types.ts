@@ -53,6 +53,7 @@ export type HighScore = {
 
 export type AddValueAction = {
 	type: "addValue";
+	delta: number;
 	payload: {
 		row: number;
 		col: number;
@@ -62,6 +63,7 @@ export type AddValueAction = {
 
 export type RemoveValueAction = {
 	type: "removeValue";
+	delta: number;
 	payload: {
 		row: number;
 		col: number;
@@ -70,6 +72,7 @@ export type RemoveValueAction = {
 
 export type AddNoteAction = {
 	type: "addNote";
+	delta: number;
 	payload: {
 		row: number;
 		col: number;
@@ -79,6 +82,7 @@ export type AddNoteAction = {
 
 export type RemoveNoteAction = {
 	type: "removeNote";
+	delta: number;
 	payload: {
 		row: number;
 		col: number;
@@ -88,10 +92,12 @@ export type RemoveNoteAction = {
 
 export type UndoAction = {
 	type: "undo";
+	delta: number;
 };
 
 export type RedoAction = {
 	type: "redo";
+	delta: number;
 };
 
 export type GameAction =
