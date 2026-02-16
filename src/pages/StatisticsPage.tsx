@@ -14,7 +14,7 @@ export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const initialDiff =
-		(location.state as { activeDiff?: string })?.activeDiff || "45";
+		(location.state as { activeDiff?: string })?.activeDiff || "easy";
 	const [activeDiff, setActiveDiff] = useState(initialDiff);
 	const [scores, setScores] = useState<HighScore[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
