@@ -11,8 +11,9 @@ import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { subscribeToUser } from "./logic/firebase";
 import { parsePuzzle, solveSudoku } from "./logic/sudoku";
+import type { Board, CellNotes, Difficulty, GameAction } from "./types";
+
 import { GamePage } from "./pages/GamePage";
-// Pages
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { NewGamePage } from "./pages/NewGamePage";
@@ -21,7 +22,6 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Board, CellNotes, Difficulty, GameAction } from "./types";
 
 export default function App() {
 	const [gameState, setGameState] = useState<{
