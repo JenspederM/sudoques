@@ -5,6 +5,7 @@ import { Timer, Trophy } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
+import { formatTime } from "@/lib/utils";
 import { GameControls } from "../components/GameControls";
 import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
@@ -14,7 +15,6 @@ import { saveGameState, saveHighScore } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
-import { formatTime } from "@/lib/utils";
 
 interface GamePageProps {
 	user: User | null;
@@ -259,8 +259,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 			});
 		}
 	};
-
-
 
 	const conflicts = checkBoard(currentDerivedState.current, gameState.solution);
 

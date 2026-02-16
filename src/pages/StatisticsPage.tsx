@@ -3,12 +3,12 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
+import { formatTime } from "@/lib/utils";
 import type { HighScore } from "@/types";
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 import { getUserScores } from "../logic/firebase";
-import { formatTime } from "@/lib/utils";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();

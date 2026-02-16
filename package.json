@@ -10,7 +10,7 @@
 		"deploy": "bun run build && bun firebase:deploy",
 		"lint": "biome check",
 		"format": "biome format --fix",
-		"test": "bun test",
+		"test": "bun test src",
 		"test:ui": "playwright test",
 		"firebase:login": "firebase login",
 		"firebase:init": "firebase init",

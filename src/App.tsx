@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import puzzlesData from "./data/puzzles_graded.json";
 import { subscribeToUser } from "./logic/firebase";
 import { parsePuzzle, solveSudoku } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
@@ -91,11 +90,22 @@ export default function App() {
 
 	// Initialize a new game
 	const startNewGame = useCallback(
-		(diff: Difficulty) => {
+		async (diff: Difficulty) => {
 			setDifficulty(diff);
-			const list = puzzlesData[diff as keyof typeof puzzlesData] as string[];
-			if (!list || list.length === 0) return;
-			const puzzleStr = list[Math.floor(Math.random() * list.length)];
+
+			let puzzleStr = "";
+			try {
+				const data = await import(`./data/${diff}.json`);
+				const puzzles = data.default || data;
+				const ids = Object.keys(puzzles);
+				if (ids.length === 0) return;
+				const randomId = ids[Math.floor(Math.random() * ids.length)]!;
+				puzzleStr = puzzles[randomId];
+			} catch (e) {
+				console.error("Failed to load puzzles", e);
+				return;
+			}
+
 			if (!puzzleStr) return;
 			const initial = parsePuzzle(puzzleStr);
 			const solution = solveSudoku(initial);

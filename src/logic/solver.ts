@@ -3,24 +3,54 @@ import type { Board } from "../types";
 export type Technique =
 	| "Naked Single"
 	| "Hidden Single"
-	| "Pointing Pair/Triple"
-	| "Box/Line Reduction"
 	| "Naked Pair"
 	| "Naked Triple"
-	| "Naked Quad"
 	| "Hidden Pair"
 	| "Hidden Triple"
+	| "Naked Quad"
 	| "Hidden Quad"
+	| "Pointing Pairs"
+	| "Line/Box Reduction"
+	| "Gurth's Theorem"
+	| "BUG+1"
 	| "X-Wing"
+	| "Unique Rectangle Type 1"
+	| "Chute Remote Pair"
+	| "Simple Colouring"
+	| "Y-Wing"
+	| "Rectangle Elimination"
 	| "Swordfish"
-	| "Jellyfish"
-	| "XY-Wing"
 	| "XYZ-Wing"
-	| "Unique Rectangle"
-	| "Simple Coloring"
-	| "X-Cycles"
+	| "Tridagon"
+	| "X-Cycle"
 	| "XY-Chain"
-	| "Forcing Chain"
+	| "3D Medusa"
+	| "Jellyfish"
+	| "Unique Rectangle 2,3,4,5"
+	| "Avoidable Rectangle"
+	| "Twinned XY-Chain"
+	| "Fireworks"
+	| "SK Loop"
+	| "Extended Unique Rectangle"
+	| "Hidden Unique Rectangle"
+	| "WXYZ-Wing"
+	| "Aligned Pair Exclusion"
+	| "Exocet"
+	| "Grouped X-Cycle"
+	| "Finned X-Wing"
+	| "Finned Swordfish"
+	| "Franken Swordfish"
+	| "Alternating Inference Chain"
+	| "Sue-de-Coq"
+	| "Digit Forcing Chain"
+	| "Nishio Forcing Chain"
+	| "Cell Forcing Chain"
+	| "Unit Forcing Chain"
+	| "Almost Locked Set"
+	| "Death Blossom"
+	| "Pattern Overlay"
+	| "Quad Forcing Chain"
+	| "Bowman Bingo"
 	| "Backtracking";
 
 export interface SolveStep {
@@ -37,28 +67,57 @@ export interface GradedBoard {
 	solution: Board | null;
 }
 
-const TECHNIQUE_SCORES: Record<Technique, number> = {
-	"Naked Single": 4,
-	"Hidden Single": 8,
-	"Pointing Pair/Triple": 50,
-	"Box/Line Reduction": 75,
-	"Naked Pair": 40,
-	"Hidden Pair": 60,
-	"Naked Triple": 60,
-	"Hidden Triple": 90,
-	"Naked Quad": 100,
-	"Hidden Quad": 150,
-	"X-Wing": 140,
-	"Swordfish": 250,
-	"Jellyfish": 500,
-	"XY-Wing": 160,
-	"XYZ-Wing": 180,
-	"Unique Rectangle": 100,
-	"Simple Coloring": 150,
-	"X-Cycles": 200,
-	"XY-Chain": 250,
-	"Forcing Chain": 500,
-	Backtracking: 1000,
+const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
+	"Naked Single": 1, // Will be multiplied by F
+	"Hidden Single": 2, // Will be multiplied by F
+	"Naked Pair": 5, // Will be multiplied by F
+	"Naked Triple": 10, // Will be multiplied by F
+	"Hidden Pair": 10,
+	"Hidden Triple": 25,
+	"Naked Quad": 40,
+	"Hidden Quad": 60,
+	"Pointing Pairs": 20,
+	"Line/Box Reduction": 20,
+	"Gurth's Theorem": 80,
+	"BUG+1": 30,
+	"X-Wing": 30,
+	"Unique Rectangle Type 1": 20,
+	"Chute Remote Pair": 25,
+	"Simple Colouring": 50,
+	"Y-Wing": 50,
+	"Rectangle Elimination": 25,
+	Swordfish: 50,
+	"XYZ-Wing": 60,
+	Tridagon: 60,
+	"X-Cycle": 60, // + chain length
+	"XY-Chain": 50, // + chain length
+	"3D Medusa": 80,
+	Jellyfish: 80,
+	"Unique Rectangle 2,3,4,5": 50,
+	"Avoidable Rectangle": 60,
+	"Twinned XY-Chain": 100,
+	Fireworks: 100,
+	"SK Loop": 100,
+	"Extended Unique Rectangle": 90,
+	"Hidden Unique Rectangle": 100,
+	"WXYZ-Wing": 100,
+	"Aligned Pair Exclusion": 140,
+	Exocet: 300,
+	"Grouped X-Cycle": 100, // + chain length
+	"Finned X-Wing": 160,
+	"Finned Swordfish": 190,
+	"Franken Swordfish": 150,
+	"Alternating Inference Chain": 100, // + chain length
+	"Sue-de-Coq": 180,
+	"Digit Forcing Chain": 120, // + chain length
+	"Nishio Forcing Chain": 120, // + chain length
+	"Cell Forcing Chain": 180, // + chain length
+	"Unit Forcing Chain": 180, // + chain length
+	"Almost Locked Set": 140,
+	"Death Blossom": 200,
+	"Pattern Overlay": 100,
+	"Quad Forcing Chain": 200, // + chain length
+	"Bowman Bingo": 100,
 };
 
 export class SudokuSolver {
@@ -120,99 +179,105 @@ export class SudokuSolver {
 		while (changed) {
 			changed = false;
 			const F = this.getCandidateDensityFactor();
-			
+
 			if (this.findNakedSingles()) {
-				totalScore += 1 * F;
+				totalScore += TECHNIQUE_SCORES["Naked Single"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findHiddenSingles()) {
-				totalScore += 2 * F;
+				totalScore += TECHNIQUE_SCORES["Hidden Single"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findPointingPairs()) {
-				totalScore += TECHNIQUE_SCORES["Pointing Pair/Triple"] * F;
+				totalScore += TECHNIQUE_SCORES["Pointing Pairs"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findBoxLineReduction()) {
-				totalScore += TECHNIQUE_SCORES["Box/Line Reduction"] * F;
+				totalScore += TECHNIQUE_SCORES["Line/Box Reduction"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findNakedPairs()) {
-				totalScore += TECHNIQUE_SCORES["Naked Pair"] * F;
+				totalScore += TECHNIQUE_SCORES["Naked Pair"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findHiddenPairs()) {
-				totalScore += TECHNIQUE_SCORES["Hidden Pair"] * F;
+				totalScore += TECHNIQUE_SCORES["Hidden Pair"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findNakedTriples()) {
-				totalScore += TECHNIQUE_SCORES["Naked Triple"] * F;
+				totalScore += TECHNIQUE_SCORES["Naked Triple"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findHiddenTriples()) {
-				totalScore += TECHNIQUE_SCORES["Hidden Triple"] * F;
+				totalScore += TECHNIQUE_SCORES["Hidden Triple"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findNakedQuads()) {
-				totalScore += TECHNIQUE_SCORES["Naked Quad"] * F;
+				totalScore += TECHNIQUE_SCORES["Naked Quad"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findHiddenQuads()) {
-				totalScore += TECHNIQUE_SCORES["Hidden Quad"] * F;
+				totalScore += TECHNIQUE_SCORES["Hidden Quad"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findXWings()) {
-				totalScore += TECHNIQUE_SCORES["X-Wing"] * F;
-				changed = true;
-				continue;
-			}
-			if (this.findXYWings()) {
-				totalScore += TECHNIQUE_SCORES["XY-Wing"] * F;
-				changed = true;
-				continue;
-			}
-			if (this.findXYZWings()) {
-				totalScore += TECHNIQUE_SCORES["XYZ-Wing"] * F;
+				totalScore += TECHNIQUE_SCORES["X-Wing"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findSwordfish()) {
-				totalScore += TECHNIQUE_SCORES["Swordfish"] * F;
+				totalScore += TECHNIQUE_SCORES["Swordfish"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findJellyfish()) {
-				totalScore += TECHNIQUE_SCORES["Jellyfish"] * F;
+				totalScore += TECHNIQUE_SCORES["Jellyfish"]! * F;
 				changed = true;
 				continue;
 			}
 			if (this.findUniqueRectangles()) {
-				totalScore += TECHNIQUE_SCORES["Unique Rectangle"] * F;
+				totalScore += TECHNIQUE_SCORES["Unique Rectangle Type 1"]! * F;
 				changed = true;
 				continue;
 			}
-			if (this.findXYChains()) {
-				totalScore += TECHNIQUE_SCORES["XY-Chain"] * F;
+			if (this.findYWings()) {
+				totalScore += TECHNIQUE_SCORES["Y-Wing"]! * F;
+				changed = true;
+				continue;
+			}
+			if (this.findXYZWings()) {
+				totalScore += TECHNIQUE_SCORES["XYZ-Wing"]! * F;
+				changed = true;
+				continue;
+			}
+			const xyChainResult = this.findXYChains();
+			if (xyChainResult) {
+				totalScore += (TECHNIQUE_SCORES["XY-Chain"]! + xyChainResult.length) * F;
 				changed = true;
 				continue;
 			}
 			if (this.findSimpleColoring()) {
-				totalScore += TECHNIQUE_SCORES["Simple Coloring"] * F;
+				totalScore += TECHNIQUE_SCORES["Simple Colouring"]! * F;
+				changed = true;
+				continue;
+			}
+			if (this.findBUGPlusOne()) {
+				totalScore += TECHNIQUE_SCORES["BUG+1"]! * F;
 				changed = true;
 				continue;
 			}
 		}
-		
+
 		let isFinished = this.board.every((row) =>
 			row.every((cell) => cell !== null),
 		);
@@ -220,7 +285,7 @@ export class SudokuSolver {
 		if (!isFinished) {
 			if (this.backtrack()) {
 				this.techniquesUsed.add("Backtracking");
-				totalScore += TECHNIQUE_SCORES["Backtracking"];
+				totalScore += 0; // Backtracking is not scored in the new scheme
 				isFinished = true;
 			} else {
 				return {
@@ -240,6 +305,72 @@ export class SudokuSolver {
 			isSolvable: isFinished,
 			solution: isFinished ? (this.board as Board) : null,
 		};
+	}
+
+	private findBUGPlusOne(): boolean {
+		let bugCell: { r: number; c: number; vals: number[] } | null = null;
+		let multiCellCount = 0;
+
+		for (let r = 0; r < 9; r++) {
+			for (let c = 0; c < 9; c++) {
+				if (this.board[r]?.[c] === null) {
+					const candy = this.candidates[r]?.[c];
+					if (!candy) return false;
+					if (candy.size < 2) {
+						// This should have been caught by Naked Singles or resulted in unsolvable
+						return false;
+					}
+					if (candy.size === 2) {
+						// OK
+					} else if (candy.size === 3) {
+						if (bugCell) {
+							return false;
+						}
+						bugCell = { r, c, vals: Array.from(candy) };
+						multiCellCount++;
+					} else {
+						return false;
+					}
+				}
+			}
+		}
+
+		if (!bugCell || multiCellCount !== 1) return false;
+
+		// Verify that every candidate in the multi-cell appears exactly thrice in its houses
+		// and others appear twice.
+		// Actually, the easiest way to find the Correct candidate:
+		// The candidate that appears 3 times in its row, column, and box is the correct one.
+		for (const val of bugCell.vals) {
+			let rowCount = 0;
+			let colCount = 0;
+			let boxCount = 0;
+
+			// Row
+			for (let c = 0; c < 9; c++) {
+				if (this.candidates[bugCell.r]?.[c]?.has(val)) rowCount++;
+			}
+			// Col
+			for (let r = 0; r < 9; r++) {
+				if (this.candidates[r]?.[bugCell.c]?.has(val)) colCount++;
+			}
+			// Box
+			const startRow = Math.floor(bugCell.r / 3) * 3;
+			const startCol = Math.floor(bugCell.c / 3) * 3;
+			for (let r = 0; r < 3; r++) {
+				for (let c = 0; c < 3; c++) {
+					if (this.candidates[startRow + r]?.[startCol + c]?.has(val))
+						boxCount++;
+				}
+			}
+
+			if (rowCount === 3 && colCount === 3 && boxCount === 3) {
+				this.applyMove(bugCell.r, bugCell.c, val, "BUG+1");
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private getCandidateDensityFactor(): number {
@@ -289,7 +420,10 @@ export class SudokuSolver {
 				// Check row
 				const rowPositions = [];
 				for (let c = 0; c < 9; c++) {
-					if (this.board[i]?.[c] === null && this.candidates[i]?.[c]?.has(val)) {
+					if (
+						this.board[i]?.[c] === null &&
+						this.candidates[i]?.[c]?.has(val)
+					) {
 						rowPositions.push(c);
 					}
 				}
@@ -302,7 +436,10 @@ export class SudokuSolver {
 				// Check col
 				const colPositions = [];
 				for (let r = 0; r < 9; r++) {
-					if (this.board[r]?.[i] === null && this.candidates[r]?.[i]?.has(val)) {
+					if (
+						this.board[r]?.[i] === null &&
+						this.candidates[r]?.[i]?.has(val)
+					) {
 						colPositions.push(r);
 					}
 				}
@@ -334,7 +471,6 @@ export class SudokuSolver {
 						"Hidden Single",
 					);
 					found = true;
-					continue;
 				}
 			}
 		}
@@ -351,7 +487,10 @@ export class SudokuSolver {
 					for (let c = 0; c < 3; c++) {
 						const row = startRow + r;
 						const col = startCol + c;
-						if (this.board[row]?.[col] === null && this.candidates[row]?.[col]?.has(val)) {
+						if (
+							this.board[row]?.[col] === null &&
+							this.candidates[row]?.[col]?.has(val)
+						) {
 							positions.push({ r: row, c: col });
 						}
 					}
@@ -374,7 +513,7 @@ export class SudokuSolver {
 							}
 						}
 						if (removed) {
-							this.techniquesUsed.add("Pointing Pair/Triple");
+							this.techniquesUsed.add("Pointing Pairs");
 							return true;
 						}
 					}
@@ -393,7 +532,7 @@ export class SudokuSolver {
 							}
 						}
 						if (removed) {
-							this.techniquesUsed.add("Pointing Pair/Triple");
+							this.techniquesUsed.add("Pointing Pairs");
 							return true;
 						}
 					}
@@ -409,14 +548,21 @@ export class SudokuSolver {
 				// Check row i
 				const rowPositions: number[] = [];
 				for (let c = 0; c < 9; c++) {
-					if (this.board[i]?.[c] === null && this.candidates[i]?.[c]?.has(val)) {
+					if (
+						this.board[i]?.[c] === null &&
+						this.candidates[i]?.[c]?.has(val)
+					) {
 						rowPositions.push(c);
 					}
 				}
 				if (rowPositions.length >= 2 && rowPositions.length <= 3) {
 					const firstCol = rowPositions[0]!;
 					const boxIdx = Math.floor(i / 3) * 3 + Math.floor(firstCol / 3);
-					if (rowPositions.every(c => Math.floor(c / 3) === Math.floor(firstCol / 3))) {
+					if (
+						rowPositions.every(
+							(c) => Math.floor(c / 3) === Math.floor(firstCol / 3),
+						)
+					) {
 						let removed = false;
 						const startRow = Math.floor(boxIdx / 3) * 3;
 						const startCol = (boxIdx % 3) * 3;
@@ -434,7 +580,7 @@ export class SudokuSolver {
 							}
 						}
 						if (removed) {
-							this.techniquesUsed.add("Box/Line Reduction");
+							this.techniquesUsed.add("Line/Box Reduction");
 							return true;
 						}
 					}
@@ -443,14 +589,21 @@ export class SudokuSolver {
 				// Check col i
 				const colPositions: number[] = [];
 				for (let r = 0; r < 9; r++) {
-					if (this.board[r]?.[i] === null && this.candidates[r]?.[i]?.has(val)) {
+					if (
+						this.board[r]?.[i] === null &&
+						this.candidates[r]?.[i]?.has(val)
+					) {
 						colPositions.push(r);
 					}
 				}
 				if (colPositions.length >= 2 && colPositions.length <= 3) {
 					const firstRow = colPositions[0]!;
 					const boxIdx = Math.floor(firstRow / 3) * 3 + Math.floor(i / 3);
-					if (colPositions.every(r => Math.floor(r / 3) === Math.floor(firstRow / 3))) {
+					if (
+						colPositions.every(
+							(r) => Math.floor(r / 3) === Math.floor(firstRow / 3),
+						)
+					) {
 						let removed = false;
 						const startRow = Math.floor(boxIdx / 3) * 3;
 						const startCol = (boxIdx % 3) * 3;
@@ -468,7 +621,7 @@ export class SudokuSolver {
 							}
 						}
 						if (removed) {
-							this.techniquesUsed.add("Box/Line Reduction");
+							this.techniquesUsed.add("Line/Box Reduction");
 							return true;
 						}
 					}
@@ -480,54 +633,78 @@ export class SudokuSolver {
 
 	private findNakedPairs(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 2, "Naked Pair")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 2, "Naked Pair")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 2, "Naked Pair")) return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 2, "Naked Pair"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 2, "Naked Pair"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 2, "Naked Pair"))
+				return true;
 		}
 		return false;
 	}
 
 	private findHiddenPairs(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 2, "Hidden Pair")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 2, "Hidden Pair")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 2, "Hidden Pair")) return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 2, "Hidden Pair"))
+				return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 2, "Hidden Pair"))
+				return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 2, "Hidden Pair"))
+				return true;
 		}
 		return false;
 	}
 
 	private findNakedTriples(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 3, "Naked Triple")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 3, "Naked Triple")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 3, "Naked Triple")) return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 3, "Naked Triple"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 3, "Naked Triple"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 3, "Naked Triple"))
+				return true;
 		}
 		return false;
 	}
 
 	private findHiddenTriples(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 3, "Hidden Triple")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 3, "Hidden Triple")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 3, "Hidden Triple")) return true;
+			if (
+				this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 3, "Hidden Triple")
+			)
+				return true;
+			if (
+				this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 3, "Hidden Triple")
+			)
+				return true;
+			if (
+				this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 3, "Hidden Triple")
+			)
+				return true;
 		}
 		return false;
 	}
 
 	private findNakedQuads(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 4, "Naked Quad")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 4, "Naked Quad")) return true;
-			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 4, "Naked Quad")) return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInRow(i), 4, "Naked Quad"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInCol(i), 4, "Naked Quad"))
+				return true;
+			if (this.findNakedSubsetsInUnit(this.getCellsInBox(i), 4, "Naked Quad"))
+				return true;
 		}
 		return false;
 	}
 
 	private findHiddenQuads(): boolean {
 		for (let i = 0; i < 9; i++) {
-			if (this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 4, "Hidden Quad")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 4, "Hidden Quad")) return true;
-			if (this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 4, "Hidden Quad")) return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInRow(i), 4, "Hidden Quad"))
+				return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInCol(i), 4, "Hidden Quad"))
+				return true;
+			if (this.findHiddenSubsetsInUnit(this.getCellsInBox(i), 4, "Hidden Quad"))
+				return true;
 		}
 		return false;
 	}
@@ -550,7 +727,11 @@ export class SudokuSolver {
 		return cells;
 	}
 
-	private findNakedSubsetsInUnit(cells: { r: number; c: number }[], size: number, technique: Technique): boolean {
+	private findNakedSubsetsInUnit(
+		cells: { r: number; c: number }[],
+		size: number,
+		technique: Technique,
+	): boolean {
 		const candidatesList: { r: number; c: number; candy: Set<number> }[] = [];
 		for (const cell of cells) {
 			if (this.board[cell.r]?.[cell.c] === null) {
@@ -571,7 +752,7 @@ export class SudokuSolver {
 
 			if (combined.size === size) {
 				let removed = false;
-				const subsetCells = new Set(currentSet.map(i => `${i.r},${i.c}`));
+				const subsetCells = new Set(currentSet.map((i) => `${i.r},${i.c}`));
 				for (const cell of cells) {
 					if (!subsetCells.has(`${cell.r},${cell.c}`)) {
 						const cellCand = this.candidates[cell.r]?.[cell.c];
@@ -594,16 +775,24 @@ export class SudokuSolver {
 		return false;
 	}
 
-	private findHiddenSubsetsInUnit(cells: { r: number; c: number }[], size: number, technique: Technique): boolean {
+	private findHiddenSubsetsInUnit(
+		cells: { r: number; c: number }[],
+		size: number,
+		technique: Technique,
+	): boolean {
 		const valMap = new Map<number, { r: number; c: number }[]>();
 		for (let val = 1; val <= 9; val++) {
 			const positions = [];
 			for (const cell of cells) {
-				if (this.board[cell.r]?.[cell.c] === null && this.candidates[cell.r]?.[cell.c]?.has(val)) {
+				if (
+					this.board[cell.r]?.[cell.c] === null &&
+					this.candidates[cell.r]?.[cell.c]?.has(val)
+				) {
 					positions.push(cell);
 				}
 			}
-			if (positions.length >= 2 && positions.length <= size) valMap.set(val, positions);
+			if (positions.length >= 2 && positions.length <= size)
+				valMap.set(val, positions);
 		}
 
 		const vals = Array.from(valMap.keys());
@@ -683,16 +872,23 @@ export class SudokuSolver {
 		return false;
 	}
 
-	private findFishInUnits(val: number, size: number, technique: Technique, horizontal: boolean): boolean {
+	private findFishInUnits(
+		val: number,
+		size: number,
+		technique: Technique,
+		horizontal: boolean,
+	): boolean {
 		const unitLines: { idx: number; positions: number[] }[] = [];
 		for (let i = 0; i < 9; i++) {
 			const positions = [];
 			for (let j = 0; j < 9; j++) {
 				const r = horizontal ? i : j;
 				const c = horizontal ? j : i;
-				if (this.board[r]?.[c] === null && this.candidates[r]?.[c]?.has(val)) positions.push(j);
+				if (this.board[r]?.[c] === null && this.candidates[r]?.[c]?.has(val))
+					positions.push(j);
 			}
-			if (positions.length >= 2 && positions.length <= size) unitLines.push({ idx: i, positions });
+			if (positions.length >= 2 && positions.length <= size)
+				unitLines.push({ idx: i, positions });
 		}
 		if (unitLines.length < size) return false;
 
@@ -705,7 +901,7 @@ export class SudokuSolver {
 
 			if (targetIndices.size === size) {
 				let removed = false;
-				const sourceIndices = new Set(currentLines.map(l => l.idx));
+				const sourceIndices = new Set(currentLines.map((l) => l.idx));
 				for (const targetIdx of targetIndices) {
 					for (let i = 0; i < 9; i++) {
 						if (!sourceIndices.has(i)) {
@@ -728,50 +924,59 @@ export class SudokuSolver {
 		return false;
 	}
 
-	private findXYWings(): boolean {
+	private findYWings(): boolean {
 		const bivalueCells: { r: number; c: number; vals: number[] }[] = [];
 		for (let r = 0; r < 9; r++) {
 			for (let c = 0; c < 9; c++) {
-				if (this.board[r]?.[c] === null) {
-					const candy = this.candidates[r]?.[c];
-					if (candy?.size === 2) bivalueCells.push({ r, c, vals: Array.from(candy) });
+				const cand = this.candidates[r]?.[c];
+				if (this.board[r]?.[c] === null && cand?.size === 2) {
+					bivalueCells.push({ r, c, vals: Array.from(cand) });
 				}
 			}
 		}
 
 		for (let i = 0; i < bivalueCells.length; i++) {
-			const pivot = bivalueCells[i]!;
 			for (let j = 0; j < bivalueCells.length; j++) {
 				if (i === j) continue;
-				const wing1 = bivalueCells[j]!;
-				if (!this.areSeen(pivot.r, pivot.c, wing1.r, wing1.c)) continue;
-				const commonWithPivot1 = wing1.vals.find(v => pivot.vals.includes(v));
-				if (commonWithPivot1 === undefined) continue;
-				
-				const otherInWing1 = wing1.vals.find(v => v !== commonWithPivot1)!;
-				const otherInPivot = pivot.vals.find(v => v !== commonWithPivot1)!;
+				const pivot = bivalueCells[i]!;
+				const pincer1 = bivalueCells[j]!;
+
+				if (!this.areSeen(pivot.r, pivot.c, pincer1.r, pincer1.c)) continue;
+
+				const common = pivot.vals.find((v) => pincer1.vals.includes(v));
+				if (common === undefined) continue;
+
+				const z = pincer1.vals.find((v) => v !== common)!;
+				const y = pivot.vals.find((v) => v !== common)!;
+				if (z === y) continue;
 
 				for (let k = j + 1; k < bivalueCells.length; k++) {
-					if (i === k) continue;
-					const wing2 = bivalueCells[k]!;
-					if (!this.areSeen(pivot.r, pivot.c, wing2.r, wing2.c)) continue;
-					if (wing2.vals.includes(otherInPivot) && wing2.vals.includes(otherInWing1)) {
+					if (k === i) continue;
+					const pincer2 = bivalueCells[k]!;
+
+					if (!this.areSeen(pivot.r, pivot.c, pincer2.r, pincer2.c)) continue;
+
+					if (pincer2.vals.includes(y) && pincer2.vals.includes(z)) {
 						let removed = false;
 						for (let r = 0; r < 9; r++) {
 							for (let c = 0; c < 9; c++) {
-								if (this.board[r]?.[c] === null && (r !== wing1.r || c !== wing1.c) && (r !== wing2.r || c !== wing2.c) && (r !== pivot.r || c !== pivot.c)) {
-									if (this.areSeen(r, c, wing1.r, wing1.c) && this.areSeen(r, c, wing2.r, wing2.c)) {
-										const cellCand = this.candidates[r]?.[c];
-										if (cellCand?.has(otherInWing1)) {
-											cellCand.delete(otherInWing1);
-											removed = true;
-										}
+								if (
+									this.board[r]?.[c] === null &&
+									(r !== pincer1.r || c !== pincer1.c) &&
+									(r !== pincer2.r || c !== pincer2.c) &&
+									this.areSeen(r, c, pincer1.r, pincer1.c) &&
+									this.areSeen(r, c, pincer2.r, pincer2.c)
+								) {
+									const cand = this.candidates[r]?.[c];
+									if (cand?.has(z)) {
+										cand.delete(z);
+										removed = true;
 									}
 								}
 							}
 						}
 						if (removed) {
-							this.techniquesUsed.add("XY-Wing");
+							this.techniquesUsed.add("Y-Wing");
 							return true;
 						}
 					}
@@ -788,8 +993,10 @@ export class SudokuSolver {
 			for (let c = 0; c < 9; c++) {
 				if (this.board[r]?.[c] === null) {
 					const candy = this.candidates[r]?.[c];
-					if (candy?.size === 3) trivalueCells.push({ r, c, vals: Array.from(candy) });
-					else if (candy?.size === 2) bivalueCells.push({ r, c, vals: Array.from(candy) });
+					if (candy?.size === 3)
+						trivalueCells.push({ r, c, vals: Array.from(candy) });
+					else if (candy?.size === 2)
+						bivalueCells.push({ r, c, vals: Array.from(candy) });
 				}
 			}
 		}
@@ -798,23 +1005,34 @@ export class SudokuSolver {
 			for (let i = 0; i < bivalueCells.length; i++) {
 				const wing1 = bivalueCells[i]!;
 				if (!this.areSeen(pivot.r, pivot.c, wing1.r, wing1.c)) continue;
-				if (!wing1.vals.every(v => pivot.vals.includes(v))) continue;
-				
+				if (!wing1.vals.every((v) => pivot.vals.includes(v))) continue;
+
 				for (let j = i + 1; j < bivalueCells.length; j++) {
 					const wing2 = bivalueCells[j]!;
 					if (!this.areSeen(pivot.r, pivot.c, wing2.r, wing2.c)) continue;
-					if (!wing2.vals.every(v => pivot.vals.includes(v))) continue;
-					
+					if (!wing2.vals.every((v) => pivot.vals.includes(v))) continue;
+
 					// Z is the one candidate shared by all three
-					const allThreeShared = pivot.vals.filter(v => wing1.vals.includes(v) && wing2.vals.includes(v));
+					const allThreeShared = pivot.vals.filter(
+						(v) => wing1.vals.includes(v) && wing2.vals.includes(v),
+					);
 					if (allThreeShared.length !== 1) continue;
 					const Z = allThreeShared[0]!;
 
 					let removed = false;
 					for (let r = 0; r < 9; r++) {
 						for (let c = 0; c < 9; c++) {
-							if (this.board[r]?.[c] === null && (r !== pivot.r || c !== pivot.c) && (r !== wing1.r || c !== wing1.c) && (r !== wing2.r || c !== wing2.c)) {
-								if (this.areSeen(r, c, pivot.r, pivot.c) && this.areSeen(r, c, wing1.r, wing1.c) && this.areSeen(r, c, wing2.r, wing2.c)) {
+							if (
+								this.board[r]?.[c] === null &&
+								(r !== pivot.r || c !== pivot.c) &&
+								(r !== wing1.r || c !== wing1.c) &&
+								(r !== wing2.r || c !== wing2.c)
+							) {
+								if (
+									this.areSeen(r, c, pivot.r, pivot.c) &&
+									this.areSeen(r, c, wing1.r, wing1.c) &&
+									this.areSeen(r, c, wing2.r, wing2.c)
+								) {
 									const cellCand = this.candidates[r]?.[c];
 									if (cellCand?.has(Z)) {
 										cellCand.delete(Z);
@@ -841,30 +1059,36 @@ export class SudokuSolver {
 				for (let c1 = 0; c1 < 9; c1++) {
 					for (let c2 = c1 + 1; c2 < 9; c2++) {
 						const cells = [
-							{ r: r1, c: c1 }, { r: r1, c: c2 },
-							{ r: r2, c: c1 }, { r: r2, c: c2 }
+							{ r: r1, c: c1 },
+							{ r: r1, c: c2 },
+							{ r: r2, c: c1 },
+							{ r: r2, c: c2 },
 						];
-						
+
 						// Must span exactly 2 boxes
-						const boxes = new Set(cells.map(c => Math.floor(c.r / 3) * 3 + Math.floor(c.c / 3)));
+						const boxes = new Set(
+							cells.map((c) => Math.floor(c.r / 3) * 3 + Math.floor(c.c / 3)),
+						);
 						if (boxes.size !== 2) continue;
 
-						const nullCells = cells.filter(c => this.board[c.r]?.[c.c] === null);
+						const nullCells = cells.filter(
+							(c) => this.board[c.r]?.[c.c] === null,
+						);
 						if (nullCells.length !== 4) continue;
 
-						const cands = cells.map(c => this.candidates[c.r]?.[c.c]);
-						if (cands.some(c => !c)) continue;
+						const cands = cells.map((c) => this.candidates[c.r]?.[c.c]);
+						if (cands.some((c) => !c)) continue;
 
 						// Look for two shared candidates
 						const allCands = new Set<number>();
 						for (const c of cands) for (const val of c!) allCands.add(val);
-						
+
 						for (const v1 of allCands) {
 							for (const v2 of allCands) {
 								if (v1 >= v2) continue;
-								
+
 								const subset = [v1, v2];
-								const counts = cands.map(c => {
+								const counts = cands.map((c) => {
 									const hasV1 = c!.has(v1);
 									const hasV2 = c!.has(v2);
 									const isBivalue = c!.size === 2;
@@ -872,9 +1096,13 @@ export class SudokuSolver {
 								});
 
 								// Type 1: Three cells are exactly {v1, v2}, one is {v1, v2, ...}
-								const identical = counts.filter(x => x.hasV1 && x.hasV2 && x.isBivalue);
+								const identical = counts.filter(
+									(x) => x.hasV1 && x.hasV2 && x.isBivalue,
+								);
 								if (identical.length === 3) {
-									const fourthIdx = counts.findIndex(x => !(x.hasV1 && x.hasV2 && x.isBivalue));
+									const fourthIdx = counts.findIndex(
+										(x) => !(x.hasV1 && x.hasV2 && x.isBivalue),
+									);
 									const fourth = counts[fourthIdx]!;
 									if (fourth.hasV1 && fourth.hasV2) {
 										const cell = cells[fourthIdx]!;
@@ -882,7 +1110,7 @@ export class SudokuSolver {
 										if (cand) {
 											cand.delete(v1);
 											cand.delete(v2);
-											this.techniquesUsed.add("Unique Rectangle");
+											this.techniquesUsed.add("Unique Rectangle Type 1");
 											return true;
 										}
 									}
@@ -896,7 +1124,7 @@ export class SudokuSolver {
 		return false;
 	}
 
-	private findXYChains(): boolean {
+	private findXYChains(): { length: number } | null {
 		const bivalueCells: { r: number; c: number; vals: number[] }[] = [];
 		for (let r = 0; r < 9; r++) {
 			for (let c = 0; c < 9; c++) {
@@ -909,23 +1137,34 @@ export class SudokuSolver {
 
 		for (const startCell of bivalueCells) {
 			for (const startVal of startCell.vals) {
-				const endVal = startCell.vals.find(v => v !== startVal)!;
+				const endVal = startCell.vals.find((v) => v !== startVal)!;
 				const visited = new Set<string>([`${startCell.r},${startCell.c}`]);
-				
-				const findChain = (currR: number, currC: number, seekVal: number): boolean => {
+
+				const findChain = (
+					currR: number,
+					currC: number,
+					seekVal: number,
+				): { length: number } | null => {
 					for (const next of bivalueCells) {
 						const key = `${next.r},${next.c}`;
 						if (visited.has(key)) continue;
 						if (!this.areSeen(currR, currC, next.r, next.c)) continue;
-						
+
 						if (next.vals.includes(seekVal)) {
-							const otherVal = next.vals.find(v => v !== seekVal)!;
+							const otherVal = next.vals.find((v) => v !== seekVal)!;
 							if (otherVal === startVal) {
 								let removed = false;
 								for (let r = 0; r < 9; r++) {
 									for (let c = 0; c < 9; c++) {
-										if (this.board[r]?.[c] === null && (r !== startCell.r || c !== startCell.c) && (r !== next.r || c !== next.c)) {
-											if (this.areSeen(r, c, startCell.r, startCell.c) && this.areSeen(r, c, next.r, next.c)) {
+										if (
+											this.board[r]?.[c] === null &&
+											(r !== startCell.r || c !== startCell.c) &&
+											(r !== next.r || c !== next.c)
+										) {
+											if (
+												this.areSeen(r, c, startCell.r, startCell.c) &&
+												this.areSeen(r, c, next.r, next.c)
+											) {
 												const cand = this.candidates[r]?.[c];
 												if (cand?.has(startVal)) {
 													cand.delete(startVal);
@@ -935,24 +1174,26 @@ export class SudokuSolver {
 										}
 									}
 								}
-								if (removed) return true;
+								if (removed) {
+									this.techniquesUsed.add("XY-Chain");
+									return { length: visited.size };
+								}
 							}
-							
+
 							visited.add(key);
-							if (findChain(next.r, next.c, otherVal)) return true;
+							const result = findChain(next.r, next.c, otherVal);
+							if (result) return result;
 							visited.delete(key);
 						}
 					}
-					return false;
+					return null;
 				};
 
-				if (findChain(startCell.r, startCell.c, endVal)) {
-					this.techniquesUsed.add("XY-Chain");
-					return true;
-				}
+				const result = findChain(startCell.r, startCell.c, endVal);
+				if (result) return result;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private findSimpleColoring(): boolean {
@@ -960,7 +1201,10 @@ export class SudokuSolver {
 			const nodes: { r: number; c: number }[] = [];
 			for (let r = 0; r < 9; r++) {
 				for (let c = 0; c < 9; c++) {
-					if (this.board[r]?.[c] === null && this.candidates[r]?.[c]?.has(val)) {
+					if (
+						this.board[r]?.[c] === null &&
+						this.candidates[r]?.[c]?.has(val)
+					) {
 						nodes.push({ r, c });
 					}
 				}
@@ -969,9 +1213,11 @@ export class SudokuSolver {
 			const adj = new Map<number, number[]>();
 			for (let i = 0; i < 9; i++) {
 				const houses = [
-					nodes.filter(n => n.r === i),
-					nodes.filter(n => n.c === i),
-					nodes.filter(n => Math.floor(n.r / 3) * 3 + Math.floor(n.c / 3) === i)
+					nodes.filter((n) => n.r === i),
+					nodes.filter((n) => n.c === i),
+					nodes.filter(
+						(n) => Math.floor(n.r / 3) * 3 + Math.floor(n.c / 3) === i,
+					),
 				];
 				for (const house of houses) {
 					if (house.length === 2) {
@@ -1004,11 +1250,15 @@ export class SudokuSolver {
 
 				// Rule 2: Twice in a House (Same color twice in a row/col/box)
 				for (let color = 0; color <= 1; color++) {
-					const coloredNodes = component.filter(n => colors.get(n) === color).map(idx => nodes[idx]!);
+					const coloredNodes = component
+						.filter((n) => colors.get(n) === color)
+						.map((idx) => nodes[idx]!);
 					for (let j = 0; j < 9; j++) {
-						const rCount = coloredNodes.filter(n => n.r === j).length;
-						const cCount = coloredNodes.filter(n => n.c === j).length;
-						const bCount = coloredNodes.filter(n => Math.floor(n.r / 3) * 3 + Math.floor(n.c / 3) === j).length;
+						const rCount = coloredNodes.filter((n) => n.r === j).length;
+						const cCount = coloredNodes.filter((n) => n.c === j).length;
+						const bCount = coloredNodes.filter(
+							(n) => Math.floor(n.r / 3) * 3 + Math.floor(n.c / 3) === j,
+						).length;
 						if (rCount > 1 || cCount > 1 || bCount > 1) {
 							let removed = false;
 							for (const nodeIdx of component) {
@@ -1021,7 +1271,10 @@ export class SudokuSolver {
 									}
 								}
 							}
-							if (removed) return true;
+							if (removed) {
+								this.techniquesUsed.add("Simple Colouring");
+								return true;
+							}
 						}
 					}
 				}
@@ -1042,6 +1295,7 @@ export class SudokuSolver {
 						const cand = this.candidates[node.r]?.[node.c];
 						if (cand?.has(val)) {
 							cand.delete(val);
+							this.techniquesUsed.add("Simple Colouring");
 							return true;
 						}
 					}
@@ -1053,7 +1307,11 @@ export class SudokuSolver {
 
 	private areSeen(r1: number, c1: number, r2: number, c2: number): boolean {
 		if (r1 === r2 || c1 === c2) return true;
-		if (Math.floor(r1 / 3) === Math.floor(r2 / 3) && Math.floor(c1 / 3) === Math.floor(c2 / 3)) return true;
+		if (
+			Math.floor(r1 / 3) === Math.floor(r2 / 3) &&
+			Math.floor(c1 / 3) === Math.floor(c2 / 3)
+		)
+			return true;
 		return false;
 	}
 
