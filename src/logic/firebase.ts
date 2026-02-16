@@ -57,7 +57,7 @@ export async function saveGameState(
 				notes: notesObj,
 				actions: state.actions,
 				lastUpdated: Timestamp.now(),
-				puzzleId: state.puzzleId,
+				puzzleId: state.puzzleId || null,
 			},
 		},
 		{ merge: true },

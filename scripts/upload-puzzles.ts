@@ -1,13 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { 
-	collection, 
-	writeBatch, 
-	doc, 
-	getFirestore, 
-	connectFirestoreEmulator 
-} from "firebase/firestore";
 import { initializeApp } from "firebase/app";
+import {
+	connectFirestoreEmulator,
+	doc,
+	getFirestore,
+	writeBatch,
+} from "firebase/firestore";
 import type { PuzzleData } from "./types";
 
 const firebaseConfig = {
@@ -33,25 +32,22 @@ async function uploadPuzzles() {
 	console.log("Connected to Firestore Emulator");
 
 	const files = (await readdir(DATA_DIR)).filter(
-		(f) => f.endsWith(".json") && f !== "unsolvables.json"
+		(f) => f.endsWith(".json") && f !== "unsolvables.json",
 	);
 
 	for (const file of files) {
 		const difficulty = file.replace(".json", "");
 		console.log(`Processing ${file} (${difficulty})...`);
 		const content = await readFile(join(DATA_DIR, file), "utf-8");
-		const puzzles = JSON.parse(content) as Record<
-			string,
-			PuzzleData
-		>;
+		const puzzles = JSON.parse(content) as Record<string, PuzzleData>;
 		const entries = Object.entries(puzzles);
-		
+
 		console.log(`Uploading ${entries.length} puzzles for ${difficulty}...`);
-		
+
 		for (let i = 0; i < entries.length; i += BATCH_SIZE) {
 			const batch = writeBatch(db);
 			const chunk = entries.slice(i, i + BATCH_SIZE);
-			
+
 			for (const [id, data] of chunk) {
 				const puzzleRef = doc(db, COLLECTION_NAME, id);
 				batch.set(puzzleRef, {
@@ -63,9 +59,11 @@ async function uploadPuzzles() {
 					updatedAt: new Date(),
 				});
 			}
-			
+
 			await batch.commit();
-			console.log(`  Uploaded ${Math.min(i + BATCH_SIZE, entries.length)}/${entries.length}...`);
+			console.log(
+				`  Uploaded ${Math.min(i + BATCH_SIZE, entries.length)}/${entries.length}...`,
+			);
 		}
 		console.log(`Done with ${difficulty}`);
 	}

@@ -1,8 +1,7 @@
-import { parsePuzzle } from "../src/logic/sudoku";
 import { gradePuzzle } from "../src/logic/solver";
+import { parsePuzzle } from "../src/logic/sudoku";
 import type { WorkerRequest, WorkerResponse } from "./types";
 
-// @ts-ignore
 declare var self: Worker;
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {

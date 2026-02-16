@@ -1,7 +1,7 @@
-import { readFileSync } from "fs";
-import { join } from "path";
-import { parsePuzzle } from "../src/logic/sudoku";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { gradePuzzle } from "../src/logic/solver";
+import { parsePuzzle } from "../src/logic/sudoku";
 
 const FILES = ["easy.txt", "medium.txt", "hard.txt", "diabolical.txt"];
 const SAMPLE_SIZE = 100;
@@ -41,7 +41,7 @@ async function verifyBank() {
 			if (!puzzleStr) continue;
 			const bankRating = parseFloat(parts[2] || "0");
 
-			const board = parsePuzzle(puzzleStr!);
+			const board = parsePuzzle(puzzleStr as string);
 			const graded = gradePuzzle(board);
 
 			totalBankRating += bankRating;

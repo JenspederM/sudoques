@@ -97,3 +97,10 @@ export function checkBoard(
 	}
 	return conflicts;
 }
+
+export function boardToString(board: Board): string {
+	return board
+		.flat()
+		.map((val) => (val === null ? "." : val.toString()))
+		.join("");
+}

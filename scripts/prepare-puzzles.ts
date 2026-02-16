@@ -1,7 +1,7 @@
-import { readdir, readFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import { cpus } from "node:os";
+import { join } from "node:path";
 import { boardToString } from "../src/logic/sudoku";
 import type { PuzzleData, WorkerRequest, WorkerResponse } from "./types";
 
@@ -9,7 +9,6 @@ const PUZZLES_DIR = join(process.cwd(), "puzzles");
 const OUTPUT_DIR = join(process.cwd(), "src/data");
 const UNSOLVABLES = join(OUTPUT_DIR, "unsolvables.json");
 const WORKER_COUNT = Math.max(1, cpus().length - 1);
-
 
 async function generateId(puzzleStr: string): Promise<string> {
 	return createHash("sha256").update(puzzleStr).digest("hex").slice(0, 12);
@@ -31,7 +30,7 @@ async function preparePuzzles() {
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
 	const tasks: WorkerRequest[] = [];
 
-	const MAX_LINES_FROM_FILE = 100000;
+	const MAX_LINES_FROM_FILE = 5000;
 	console.log("Collecting puzzles...");
 
 	for (const entry of entries) {
@@ -41,7 +40,9 @@ async function preparePuzzles() {
 			const files = await readdir(fullPath);
 			for (const file of files) {
 				const content = await readFile(join(fullPath, file), "utf-8");
-				const lines = content.split("\n").filter((l: string) => l.trim().length === 81);
+				const lines = content
+					.split("\n")
+					.filter((l: string) => l.trim().length === 81);
 				let lff = 0;
 				for (const line of lines) {
 					if (lff >= MAX_LINES_FROM_FILE) break;
@@ -77,13 +78,7 @@ async function preparePuzzles() {
 	console.log(`Collected ${tasks.length} puzzles. Shuffling...`);
 	shuffle(tasks);
 
-	const puzzlesByDifficulty: Record<
-		string,
-		Record<
-			string,
-			PuzzleData
-		>
-	> = {
+	const puzzlesByDifficulty: Record<string, Record<string, PuzzleData>> = {
 		easy: {},
 		normal: {},
 		medium: {},
@@ -106,7 +101,9 @@ async function preparePuzzles() {
 				if (taskIdx >= tasks.length) return;
 
 				activeWorkers++;
-				const worker = new Worker(join(process.cwd(), "scripts/worker-solver.ts"));
+				const worker = new Worker(
+					join(process.cwd(), "scripts/worker-solver.ts"),
+				);
 
 				worker.onmessage = async (event: MessageEvent<WorkerResponse>) => {
 					const { puzzleStr, bankId, sourceFile, graded, success, error } =
@@ -119,7 +116,7 @@ async function preparePuzzles() {
 								const id = bankId || (await generateId(puzzleStr));
 								puzzles[id] = {
 									puzzle: puzzleStr,
-									solution: boardToString(graded.solution!),
+									solution: boardToString(graded.solution as number[][]),
 									score: graded.difficulty,
 									techniques: Array.from(graded.techniquesUsed),
 								} as PuzzleData;
