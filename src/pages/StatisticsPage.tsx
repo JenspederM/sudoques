@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
 import { formatTime } from "@/lib/utils";
-import type { HighScore } from "@/types";
+import type { Difficulty, HighScore } from "@/types";
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
@@ -14,8 +14,8 @@ export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const initialDiff =
-		(location.state as { activeDiff?: string })?.activeDiff || "easy";
-	const [activeDiff, setActiveDiff] = useState(initialDiff);
+		(location.state as { activeDiff?: Difficulty })?.activeDiff || "easy";
+	const [activeDiff, setActiveDiff] = useState<Difficulty>(initialDiff);
 	const [scores, setScores] = useState<HighScore[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 

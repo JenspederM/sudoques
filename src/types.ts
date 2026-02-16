@@ -40,7 +40,7 @@ export type DBPuzzle = {
 	id: string;
 	puzzle: string;
 	solution: string;
-	difficulty: string;
+	difficulty: Difficulty;
 	score: number;
 	techniques: string[];
 	updatedAt: Timestamp;
@@ -66,7 +66,7 @@ export type DBUserDocument = {
 };
 
 export type HighScore = {
-	difficulty: string;
+	difficulty: Difficulty;
 	time: number;
 	date: Timestamp;
 	userId: string;

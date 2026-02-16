@@ -14,13 +14,13 @@ import { Layout } from "../components/Layout";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
 import { applyActions } from "../logic/gameReducer";
-import type { DBBoard, GameAction } from "../types";
+import type { DBBoard, Difficulty, GameAction } from "../types";
 
 interface ReviewPageState {
 	initial: DBBoard;
 	solution: DBBoard;
 	time: number;
-	difficulty: string;
+	difficulty: Difficulty;
 	actions?: GameAction[];
 }
 

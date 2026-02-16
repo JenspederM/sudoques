@@ -18,7 +18,7 @@ import {
 } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
-import type { GameAction, GameState } from "../types";
+import type { Difficulty, GameAction, GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
@@ -26,7 +26,7 @@ interface GamePageProps {
 	setGameState: (state: GamePageProps["gameState"]) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
-	difficulty: string;
+	difficulty: Difficulty;
 }
 
 export const GamePage: React.FC<GamePageProps> = ({

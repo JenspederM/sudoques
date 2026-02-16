@@ -18,6 +18,7 @@ import type {
 	DBGameState,
 	DBPuzzle,
 	DBUserDocument,
+	Difficulty,
 	GameState,
 	HighScore,
 	UserDocument,
@@ -156,7 +157,7 @@ export async function saveHighScore(score: HighScore) {
  */
 export async function getUserScores(
 	userId: string,
-	difficulty: string,
+	difficulty: Difficulty,
 ): Promise<HighScore[]> {
 	const q = query(
 		collection(db, HIGHSCORES_COLLECTION),
@@ -188,7 +189,7 @@ export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
  * Fetches a random puzzle of a given difficulty from Firestore
  */
 export async function getRandomPuzzle(
-	difficulty: string,
+	difficulty: Difficulty,
 	playedPuzzleIds: string[] = [],
 ): Promise<DBPuzzle> {
 	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
