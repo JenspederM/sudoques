@@ -34,7 +34,7 @@ async function preparePuzzles() {
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
 	const tasks: PuzzleTask[] = [];
 
-	const MAX_LINES_FROM_FILE = 5000;
+	const MAX_LINES_FROM_FILE = 10000;
 	console.log("Collecting puzzles...");
 
 	for (const entry of entries) {
