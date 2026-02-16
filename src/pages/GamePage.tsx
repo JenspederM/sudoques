@@ -11,7 +11,11 @@ import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
-import { saveGameState, saveHighScore } from "../logic/firebase";
+import {
+	markPuzzleAsPlayed,
+	saveGameState,
+	saveHighScore,
+} from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
@@ -208,6 +212,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 					timer: timer,
 					actions: newActions,
 				});
+
+				if (gameState.puzzleId) {
+					markPuzzleAsPlayed(user.uid, gameState.puzzleId);
+				}
 			}
 		}
 	};

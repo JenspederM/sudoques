@@ -11,7 +11,7 @@ export type LabelledDifficulty = {
 	id: Difficulty;
 	label: string;
 	desc: string;
-}
+};
 export type Board = (number | null)[][];
 export type CellNotes = Set<number>[][];
 export type DBCellNotes = Record<string, number[]>;
@@ -25,6 +25,7 @@ export type GameState = {
 	timer: number;
 	actions: GameAction[];
 	lastUpdated: Timestamp;
+	puzzleId?: string;
 };
 
 export type UserDocument = {
@@ -32,6 +33,7 @@ export type UserDocument = {
 		theme: string;
 	};
 	gameState: GameState | null;
+	playedPuzzles?: string[];
 };
 
 export type DBGameState = {
@@ -42,6 +44,7 @@ export type DBGameState = {
 	notes: DBCellNotes;
 	actions: GameAction[];
 	lastUpdated: Timestamp;
+	puzzleId?: string;
 };
 
 export type DBUserDocument = {
@@ -49,6 +52,7 @@ export type DBUserDocument = {
 		theme: string;
 	};
 	gameState: DBGameState | null;
+	playedPuzzles?: string[];
 };
 
 export type HighScore = {
@@ -60,6 +64,7 @@ export type HighScore = {
 	initial?: DBBoard;
 	solution?: DBBoard;
 	actions?: GameAction[];
+	puzzleId?: string;
 };
 
 export type AddValueAction = {

@@ -1,13 +1,16 @@
 import {
+	arrayUnion,
 	collection,
 	doc,
 	getDoc,
 	getDocs,
+	limit,
 	onSnapshot,
+	orderBy,
 	query,
 	setDoc,
+	startAt,
 	Timestamp,
-	updateDoc,
 	where,
 } from "firebase/firestore";
 import { unflattenBoard, unflattenCellNotes } from "@/lib/utils";
@@ -22,6 +25,7 @@ import { db } from "../firebase";
 
 const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
+const PUZZLES_COLLECTION = "puzzles";
 
 /**
  * Saves the current game state for anonymous persistence
@@ -41,17 +45,22 @@ export async function saveGameState(
 	});
 
 	// We use setDoc with merge: true to avoid overwriting settings if they exist
-	await updateDoc(userRef, {
-		gameState: {
-			initial: state.initial.flat(),
-			current: state.current.flat(),
-			solution: state.solution.flat(),
-			timer: state.timer,
-			notes: notesObj,
-			actions: state.actions,
-			lastUpdated: Timestamp.now(),
+	await setDoc(
+		userRef,
+		{
+			gameState: {
+				initial: state.initial.flat(),
+				current: state.current.flat(),
+				solution: state.solution.flat(),
+				timer: state.timer,
+				notes: notesObj,
+				actions: state.actions,
+				lastUpdated: Timestamp.now(),
+				puzzleId: state.puzzleId,
+			},
 		},
-	});
+		{ merge: true },
+	);
 }
 
 /**
@@ -69,6 +78,7 @@ function parseGameState(
 		notes: unflattenCellNotes(gameData.notes),
 		timer: gameData.timer,
 		actions: gameData.actions || [],
+		puzzleId: gameData.puzzleId,
 	};
 }
 
@@ -109,6 +119,7 @@ export function subscribeToUser(
 			callback({
 				settings: { theme: "default" },
 				gameState: null,
+				playedPuzzles: [],
 			});
 		}
 	});
@@ -122,9 +133,13 @@ export async function updateUserSettings(
 	settings: Partial<UserDocument["settings"]>,
 ) {
 	const userRef = doc(db, USERS_COLLECTION, userId);
-	await updateDoc(userRef, {
-		settings,
-	});
+	await setDoc(
+		userRef,
+		{
+			settings,
+		},
+		{ merge: true },
+	);
 }
 
 /**
@@ -152,4 +167,96 @@ export async function getUserScores(
 		.map((doc) => doc.data() as HighScore)
 		.filter((score) => score.difficulty === difficulty)
 		.sort((a, b) => a.time - b.time);
+}
+
+/**
+ * Marks a puzzle as played for a user
+ */
+export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
+	const userRef = doc(db, USERS_COLLECTION, userId);
+	await setDoc(
+		userRef,
+		{
+			playedPuzzles: arrayUnion(puzzleId),
+		},
+		{ merge: true },
+	);
+}
+
+/**
+ * Fetches a random puzzle of a given difficulty from Firestore
+ */
+export async function getRandomPuzzle(
+	difficulty: string,
+	playedPuzzleIds: string[] = [],
+): Promise<{ id: string; puzzle: string }> {
+	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
+	const playedSet = new Set(playedPuzzleIds);
+	const MAX_RETRIES = 5;
+	const BATCH_SIZE = 10;
+
+	for (let i = 0; i < MAX_RETRIES; i++) {
+		// Pick a random starting point
+		const randomHash = Math.random().toString(16).slice(2, 14).padEnd(12, "0");
+
+		// Fetch a batch starting from randomHash
+		let q = query(
+			puzzlesRef,
+			where("difficulty", "==", difficulty),
+			orderBy("__name__"),
+			startAt(randomHash),
+			limit(BATCH_SIZE),
+		);
+
+		let querySnapshot = await getDocs(q);
+
+		// Wrap around if empty
+		if (querySnapshot.empty) {
+			q = query(
+				puzzlesRef,
+				where("difficulty", "==", difficulty),
+				orderBy("__name__"),
+				limit(BATCH_SIZE),
+			);
+			querySnapshot = await getDocs(q);
+		}
+
+		if (querySnapshot.empty) {
+			throw new Error(`No puzzles found for difficulty: ${difficulty}`);
+		}
+
+		// Find a puzzle not in playedSet
+		for (const docSnapshot of querySnapshot.docs) {
+			if (!playedSet.has(docSnapshot.id)) {
+				return {
+					id: docSnapshot.id,
+					puzzle: docSnapshot.data().puzzleStr as string,
+				};
+			}
+		}
+		// If all in batch are played, retry new random point
+	}
+
+	// If we exhausted retries, just return the first one found (fallback)
+	// This prevents infinite loops if user played ALL puzzles (unlikely with 100k, but possible)
+	console.warn(
+		"Could not find unplayed puzzle after retries, returning a played one.",
+	);
+	const fallbackQuery = query(
+		puzzlesRef,
+		where("difficulty", "==", difficulty),
+		limit(1),
+	);
+	const fallbackSnap = await getDocs(fallbackQuery);
+	if (!fallbackSnap.empty) {
+		const docSnapshot = fallbackSnap.docs[0];
+		if (docSnapshot) {
+			return {
+				id: docSnapshot.id,
+				puzzle: docSnapshot.data().puzzleStr as string,
+			};
+		}
+	}
+
+	throw new Error(`No puzzles found for difficulty: ${difficulty}`);
 }

@@ -9,6 +9,7 @@
 		"build": "bun run build.ts",
 		"deploy": "bun run build && bun firebase:deploy",
 		"lint": "biome check",
+		"lint:fix": "biome check --fix",
 		"format": "biome format --fix",
 		"test": "bun test src",
 		"test:ui": "playwright test",

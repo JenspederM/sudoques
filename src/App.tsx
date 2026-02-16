@@ -9,10 +9,8 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { subscribeToUser } from "./logic/firebase";
+import { getRandomPuzzle, subscribeToUser } from "./logic/firebase";
 import { parsePuzzle, solveSudoku } from "./logic/sudoku";
-import type { Board, CellNotes, Difficulty, GameAction } from "./types";
-
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -22,6 +20,7 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
+import type { Board, CellNotes, Difficulty, GameAction } from "./types";
 
 export default function App() {
 	const [gameState, setGameState] = useState<{
@@ -30,12 +29,14 @@ export default function App() {
 		notes: CellNotes;
 		solution: Board;
 		actions: GameAction[];
+		puzzleId?: string;
 	} | null>(null);
 
 	const { user, loading: authLoading } = useAuth();
 	const [difficulty, setDifficulty] = useState<Difficulty>("easy");
 	const [isLoading, setIsLoading] = useState(true);
 	const [theme, setTheme] = useState("default");
+	const [playedPuzzles, setPlayedPuzzles] = useState<string[]>([]);
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -47,6 +48,7 @@ export default function App() {
 			const unsubscribe = subscribeToUser(user.uid, (data) => {
 				// Update theme
 				setTheme(data.settings?.theme || "default");
+				setPlayedPuzzles(data.playedPuzzles || []);
 
 				// Update game state
 				if (data.gameState) {
@@ -77,6 +79,7 @@ export default function App() {
 			setGameState(null);
 			setTimer(0);
 			setTheme("default");
+			setPlayedPuzzles([]);
 			setIsLoading(false);
 		}
 	}, [user, authLoading]);
@@ -94,17 +97,19 @@ export default function App() {
 			setDifficulty(diff);
 
 			let puzzleStr = "";
+			let puzzleId = "";
 			try {
-				const data = await import(`./data/${diff}.json`);
-				const puzzles = data.default || data;
-				const ids = Object.keys(puzzles);
-				if (ids.length === 0) return;
-				const randomId = ids[Math.floor(Math.random() * ids.length)];
-				if (!randomId) return;
-				puzzleStr = puzzles[randomId];
+				setIsLoading(true);
+				const result = await getRandomPuzzle(diff, playedPuzzles);
+				puzzleStr = result.puzzle;
+				puzzleId = result.id;
 			} catch (e) {
-				console.error("Failed to load puzzles", e);
+				console.error("Failed to load puzzles from Firestore", e);
+				// Fallback to local data if needed, or just show error
+				alert("Failed to fetch puzzle. Please try again.");
 				return;
+			} finally {
+				setIsLoading(false);
 			}
 
 			if (!puzzleStr) return;
@@ -126,11 +131,12 @@ export default function App() {
 				notes,
 				solution,
 				actions: [],
+				puzzleId,
 			});
 			setTimer(0);
 			navigate("/game");
 		},
-		[navigate],
+		[navigate, playedPuzzles],
 	);
 
 	if (authLoading) {
