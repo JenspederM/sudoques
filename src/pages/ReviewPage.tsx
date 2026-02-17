@@ -7,7 +7,7 @@ import {
 	Trophy,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatTime, unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
@@ -29,27 +29,58 @@ export const ReviewPage: React.FC = () => {
 	const location = useLocation();
 	const state = location.state as ReviewPageState;
 
-	const [playbackIndex, setPlaybackIndex] = useState(0);
+	const [playbackTime, setPlaybackTime] = useState(0);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [speedMultiplier, setSpeedMultiplier] = useState(1);
+	const lastTickRef = useRef<number>(0);
 
 	const actions = state?.actions || [];
-	const totalSteps = actions.length;
+	const totalTime = state?.time || 0;
 
-	useEffect(() => {
-		if (isPlaying && playbackIndex < totalSteps) {
-			const nextAction = actions[playbackIndex];
-			// Use the delta of the action we are about to play, or a default if missing
-			const delay = (nextAction?.delta || 500) / speedMultiplier;
-
-			const timer = setTimeout(() => {
-				setPlaybackIndex((prev) => prev + 1);
-			}, delay);
-			return () => clearTimeout(timer);
-		} else if (playbackIndex >= totalSteps) {
-			setIsPlaying(false);
+	// Compute the playback index from the current playback time
+	const playbackIndex = useMemo(() => {
+		let index = 0;
+		for (let i = 0; i < actions.length; i++) {
+			const action = actions[i];
+			if (action && action.delta <= playbackTime) {
+				index = i + 1;
+			} else {
+				break;
+			}
 		}
-	}, [isPlaying, playbackIndex, totalSteps, actions, speedMultiplier]);
+		return index;
+	}, [actions, playbackTime]);
+
+	// Timer tick effect
+	useEffect(() => {
+		if (!isPlaying) {
+			lastTickRef.current = 0;
+			return;
+		}
+
+		let animId: number;
+		const tick = (timestamp: number) => {
+			if (lastTickRef.current === 0) {
+				lastTickRef.current = timestamp;
+			}
+			const elapsed = (timestamp - lastTickRef.current) / 1000;
+			lastTickRef.current = timestamp;
+
+			setPlaybackTime((prev) => {
+				const next = prev + elapsed * speedMultiplier;
+				if (next >= totalTime) {
+					setIsPlaying(false);
+					return totalTime;
+				}
+				return next;
+			});
+
+			animId = requestAnimationFrame(tick);
+		};
+
+		animId = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(animId);
+	}, [isPlaying, speedMultiplier, totalTime]);
 
 	const initialBoard = useMemo(
 		() => unflattenBoard(state?.initial || []),
@@ -68,6 +99,32 @@ export const ReviewPage: React.FC = () => {
 		);
 	}, [initialBoard, solutionBoard, actions, playbackIndex]);
 
+	const stepForward = useCallback(() => {
+		const nextAction = actions[playbackIndex];
+		if (nextAction) {
+			setPlaybackTime(nextAction.delta);
+		} else {
+			setPlaybackTime(totalTime);
+		}
+	}, [actions, playbackIndex, totalTime]);
+
+	const stepBack = useCallback(() => {
+		if (playbackIndex > 0) {
+			const prevAction = actions[playbackIndex - 1];
+			// Go to just before this action's timestamp
+			const prevTime =
+				playbackIndex >= 2 ? (actions[playbackIndex - 2]?.delta ?? 0) : 0;
+			// If we're exactly at prevAction's time, go further back
+			if (prevAction && playbackTime <= prevAction.delta) {
+				setPlaybackTime(prevTime);
+			} else {
+				setPlaybackTime(prevAction?.delta ?? 0);
+			}
+		} else {
+			setPlaybackTime(0);
+		}
+	}, [actions, playbackIndex, playbackTime]);
+
 	if (!state || !state.initial || !state.solution) {
 		return (
 			<Layout>
@@ -85,7 +142,6 @@ export const ReviewPage: React.FC = () => {
 		);
 	}
 
-	const initialBoardActual = initialBoard;
 	const currentBoard = currentDerivedState.current;
 	const notes = currentDerivedState.notes;
 
@@ -99,7 +155,7 @@ export const ReviewPage: React.FC = () => {
 					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
 						<Timer size={20} />
 						<span data-testid="timer" className="font-mono text-lg sm:text-xl">
-							{formatTime(state.time)}
+							{formatTime(Math.floor(playbackTime))}
 						</span>
 					</div>
 					<div className="flex items-center gap-2 text-yellow-500">
@@ -115,7 +171,7 @@ export const ReviewPage: React.FC = () => {
 			{/* Grid */}
 			<div className="w-full flex justify-center py-2 opacity-90">
 				<SudokuGrid
-					initialBoard={initialBoardActual}
+					initialBoard={initialBoard}
 					currentBoard={currentBoard}
 					notes={notes}
 					selectedCell={null}
@@ -130,7 +186,7 @@ export const ReviewPage: React.FC = () => {
 					<div className="flex items-center gap-8">
 						<button
 							type="button"
-							onClick={() => setPlaybackIndex((prev) => Math.max(0, prev - 1))}
+							onClick={stepBack}
 							className="p-3 text-slate-400 hover:text-white transition-colors"
 						>
 							<SkipBack size={28} />
@@ -138,7 +194,12 @@ export const ReviewPage: React.FC = () => {
 
 						<button
 							type="button"
-							onClick={() => setIsPlaying(!isPlaying)}
+							onClick={() => {
+								if (playbackTime >= totalTime) {
+									setPlaybackTime(0);
+								}
+								setIsPlaying(!isPlaying);
+							}}
 							className="w-16 h-16 flex items-center justify-center bg-brand-primary rounded-full text-white shadow-lg shadow-brand-primary/30 hover:scale-105 active:scale-95 transition-all"
 						>
 							{isPlaying ? (
@@ -150,9 +211,7 @@ export const ReviewPage: React.FC = () => {
 
 						<button
 							type="button"
-							onClick={() =>
-								setPlaybackIndex((prev) => Math.min(totalSteps, prev + 1))
-							}
+							onClick={stepForward}
 							className="p-3 text-slate-400 hover:text-white transition-colors"
 						>
 							<SkipForward size={28} />
@@ -161,18 +220,20 @@ export const ReviewPage: React.FC = () => {
 
 					<div className="w-full max-w-md px-4 flex flex-col gap-2">
 						<div className="flex justify-between text-xs font-medium text-slate-500 uppercase tracking-wider">
-							<span>Start</span>
+							<span>{formatTime(0)}</span>
 							<span>
-								{playbackIndex} / {totalSteps} moves
+								{playbackIndex} / {actions.length} moves
 							</span>
-							<span>Finish</span>
+							<span>{formatTime(totalTime)}</span>
 						</div>
 						<input
 							type="range"
 							min="0"
-							max={totalSteps}
-							value={playbackIndex}
-							onChange={(e) => setPlaybackIndex(parseInt(e.target.value, 10))}
+							max={totalTime * 100}
+							value={Math.floor(playbackTime * 100)}
+							onChange={(e) =>
+								setPlaybackTime(parseInt(e.target.value, 10) / 100)
+							}
 							className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-primary"
 						/>
 					</div>

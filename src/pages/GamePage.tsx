@@ -2,7 +2,8 @@ import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { AnimatePresence, motion } from "framer-motion";
 import { Timer, Trophy } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
 import { formatTime } from "@/lib/utils";
@@ -43,7 +44,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [showWin, setShowWin] = useState(false);
-	const lastActionTimeRef = React.useRef<number>(Date.now());
 
 	// Compute current state from actions
 	const currentDerivedState = applyActions(
@@ -133,7 +133,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 			newActions,
 		);
 
-		lastActionTimeRef.current = Date.now();
 		setGameState({
 			...gameState,
 			current: newState.current,
@@ -185,8 +184,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 		const initialRow = gameState.initial[r];
 		if (!initialRow || initialRow[c] !== null) return;
 
-		const delta = Date.now() - lastActionTimeRef.current;
-
 		let action: GameAction;
 		if (isNoteMode && num !== null) {
 			const rowNotes = currentDerivedState.notes[r];
@@ -194,26 +191,30 @@ export const GamePage: React.FC<GamePageProps> = ({
 			if (targetCellNotes?.has(num)) {
 				action = {
 					type: "removeNote",
-					delta,
+					delta: timer,
 					payload: { row: r, col: c, value: num },
 				};
 			} else {
 				action = {
 					type: "addNote",
-					delta,
+					delta: timer,
 					payload: { row: r, col: c, value: num },
 				};
 			}
 		} else {
 			if (num === null) {
-				action = { type: "removeValue", delta, payload: { row: r, col: c } };
+				action = {
+					type: "removeValue",
+					delta: timer,
+					payload: { row: r, col: c },
+				};
 			} else {
 				// If the value hasn't changed, don't update
 				const currentRow = currentDerivedState.current[r];
 				if (currentRow && currentRow[c] === num) return;
 				action = {
 					type: "addValue",
-					delta,
+					delta: timer,
 					payload: { row: r, col: c, value: num },
 				};
 			}
@@ -224,13 +225,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const undo = () => {
 		if (canUndo) {
-			const now = Date.now();
-			const delta = now - lastActionTimeRef.current;
-			lastActionTimeRef.current = now;
-
 			const newActions: GameAction[] = [
 				...gameState.actions,
-				{ type: "undo", delta },
+				{ type: "undo", delta: timer },
 			];
 			const newState = applyActions(
 				gameState.initial,
@@ -248,13 +245,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const redo = () => {
 		if (canRedo) {
-			const now = Date.now();
-			const delta = now - lastActionTimeRef.current;
-			lastActionTimeRef.current = now;
-
 			const newActions: GameAction[] = [
 				...gameState.actions,
-				{ type: "redo", delta },
+				{ type: "redo", delta: timer },
 			];
 			const newState = applyActions(
 				gameState.initial,
@@ -343,7 +336,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 							actions: [],
 						});
 						setTimer(0);
-						lastActionTimeRef.current = Date.now();
 					}}
 					canUndo={canUndo}
 					canRedo={canRedo}
@@ -362,7 +354,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 									if (initialRow[c] === null && value != null) {
 										solveActions.push({
 											type: "addValue",
-											delta: 0,
+											delta: timer,
 											payload: { row: r, col: c, value },
 										});
 									}
