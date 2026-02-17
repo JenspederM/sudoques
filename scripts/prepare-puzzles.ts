@@ -30,7 +30,7 @@ async function preparePuzzles() {
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
 	const tasks: WorkerRequest[] = [];
 
-	const MAX_LINES_FROM_FILE = 5000;
+	const MAX_LINES_FROM_FILE = -1;
 	console.log("Collecting puzzles...");
 
 	for (const entry of entries) {
@@ -45,7 +45,7 @@ async function preparePuzzles() {
 					.filter((l: string) => l.trim().length === 81);
 				let lff = 0;
 				for (const line of lines) {
-					if (lff >= MAX_LINES_FROM_FILE) break;
+					if (MAX_LINES_FROM_FILE > 0 && lff >= MAX_LINES_FROM_FILE) break;
 					lff++;
 					tasks.push({
 						puzzleStr: line.trim(),
@@ -58,7 +58,7 @@ async function preparePuzzles() {
 			const lines = content.trim().split("\n");
 			let lff = 0;
 			for (const line of lines) {
-				if (lff >= MAX_LINES_FROM_FILE) break;
+				if (MAX_LINES_FROM_FILE > 0 && lff >= MAX_LINES_FROM_FILE) break;
 				lff++;
 				const parts = line.trim().split(/\s+/);
 				const puzzleStr = parts[1];
