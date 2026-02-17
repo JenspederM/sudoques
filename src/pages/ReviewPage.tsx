@@ -1,18 +1,12 @@
-import {
-	Pause,
-	Play,
-	SkipBack,
-	SkipForward,
-	Timer,
-	Trophy,
-} from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Timer } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatTime, unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
+import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
 import { SudokuGrid } from "../components/SudokuGrid";
-import { DIFFICULTIES } from "../logic/constants";
+
 import { applyActions } from "../logic/gameReducer";
 import type { DBBoard, Difficulty, GameAction } from "../types";
 
@@ -22,6 +16,8 @@ interface ReviewPageState {
 	time: number;
 	difficulty: Difficulty;
 	actions?: GameAction[];
+	score?: number;
+	techniques?: string[];
 }
 
 export const ReviewPage: React.FC = () => {
@@ -158,13 +154,11 @@ export const ReviewPage: React.FC = () => {
 							{formatTime(Math.floor(playbackTime))}
 						</span>
 					</div>
-					<div className="flex items-center gap-2 text-yellow-500">
-						<Trophy size={20} />
-						<span className="font-bold">
-							{DIFFICULTIES.find((d) => d.id === state.difficulty)?.label ||
-								state.difficulty}
-						</span>
-					</div>
+					<PuzzleInfoDialog
+						difficulty={state.difficulty}
+						score={state.score}
+						techniques={state.techniques}
+					/>
 				</>
 			}
 		>

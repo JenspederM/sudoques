@@ -1,15 +1,15 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-import { AnimatePresence, motion } from "framer-motion";
 import { Timer, Trophy } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MotionCard } from "@/components/MotionCard";
 import { formatTime } from "@/lib/utils";
+import { Dialog } from "../components/Dialog";
 import { GameControls } from "../components/GameControls";
 import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
+import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { DIFFICULTIES } from "../logic/constants";
 import {
@@ -45,10 +45,12 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [showWin, setShowWin] = useState(false);
 
+	const { puzzle } = gameState;
+
 	// Compute current state from actions
 	const currentDerivedState = applyActions(
-		gameState.initial,
-		gameState.solution,
+		puzzle.initial,
+		puzzle.solution,
 		gameState.actions,
 	);
 
@@ -87,10 +89,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 		if (user && gameState) {
 			const timeout = setTimeout(() => {
 				saveGameState(user.uid, {
-					initial: gameState.initial,
+					puzzle: gameState.puzzle,
 					current: gameState.current,
 					notes: gameState.notes,
-					solution: gameState.solution,
 					timer: timer,
 					actions: gameState.actions,
 				});
@@ -104,14 +105,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 		if (showWin) return;
 		const isComplete = gameState.current.every((row, ri) =>
 			row.every((val, ci) => {
-				const solRow = gameState.solution[ri];
+				const solRow = puzzle.solution[ri];
 				return solRow ? val === solRow[ci] : false;
 			}),
 		);
 		if (isComplete) {
 			setShowWin(true);
 		}
-	}, [gameState, showWin]);
+	}, [gameState, showWin, puzzle.solution]);
 
 	// Timer logic
 	useEffect(() => {
@@ -127,11 +128,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	};
 
 	const commitActions = (newActions: GameAction[]) => {
-		const newState = applyActions(
-			gameState.initial,
-			gameState.solution,
-			newActions,
-		);
+		const newState = applyActions(puzzle.initial, puzzle.solution, newActions);
 
 		setGameState({
 			...gameState,
@@ -143,7 +140,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		// Check for win
 		const isComplete = newState.current.every((row, ri) =>
 			row.every((val, ci) => {
-				const solRow = gameState.solution[ri];
+				const solRow = puzzle.solution[ri];
 				return solRow ? val === solRow[ci] : false;
 			}),
 		);
@@ -152,28 +149,23 @@ export const GamePage: React.FC<GamePageProps> = ({
 			setShowWin(true);
 			if (user) {
 				saveHighScore({
-					difficulty,
+					puzzle,
 					time: timer,
 					date: Timestamp.now(),
 					userId: user.uid,
 					userName: user.displayName || "Anonymous",
-					initial: gameState.initial.flat(),
-					solution: gameState.solution.flat(),
 					actions: newActions,
 				}).then(() => {});
 
 				saveGameState(user.uid, {
-					initial: gameState.initial,
+					puzzle,
 					current: newState.current,
 					notes: newState.notes,
-					solution: gameState.solution,
 					timer: timer,
 					actions: newActions,
 				});
 
-				if (gameState.puzzleId) {
-					markPuzzleAsPlayed(user.uid, gameState.puzzleId);
-				}
+				markPuzzleAsPlayed(user.uid, puzzle.id);
 			}
 		}
 	};
@@ -181,7 +173,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const handleInput = (num: number | null) => {
 		if (!selectedCell) return;
 		const [r, c] = selectedCell;
-		const initialRow = gameState.initial[r];
+		const initialRow = puzzle.initial[r];
 		if (!initialRow || initialRow[c] !== null) return;
 
 		let action: GameAction;
@@ -230,8 +222,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 				{ type: "undo", delta: timer },
 			];
 			const newState = applyActions(
-				gameState.initial,
-				gameState.solution,
+				puzzle.initial,
+				puzzle.solution,
 				newActions,
 			);
 			setGameState({
@@ -250,8 +242,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 				{ type: "redo", delta: timer },
 			];
 			const newState = applyActions(
-				gameState.initial,
-				gameState.solution,
+				puzzle.initial,
+				puzzle.solution,
 				newActions,
 			);
 			setGameState({
@@ -263,7 +255,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		}
 	};
 
-	const conflicts = checkBoard(currentDerivedState.current, gameState.solution);
+	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
 
 	// Calculate disabled numbers (completed 9 instances)
 	const counts = new Map<number, number>();
@@ -291,13 +283,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 							{formatTime(timer)}
 						</span>
 					</div>
-					<div className="flex items-center gap-2 text-yellow-500">
-						<Trophy size={20} />
-						<span className="font-bold">
-							{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
-								difficulty}
-						</span>
-					</div>
+					<PuzzleInfoDialog
+						difficulty={difficulty}
+						score={puzzle.score}
+						techniques={puzzle.techniques}
+					/>
 				</>
 			}
 		>
@@ -305,7 +295,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			<div className="flex flex-col flex-1 sm:flex-0 w-full">
 				<div className="w-full">
 					<SudokuGrid
-						initialBoard={gameState.initial}
+						initialBoard={puzzle.initial}
 						currentBoard={gameState.current}
 						notes={gameState.notes}
 						selectedCell={selectedCell}
@@ -325,7 +315,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					onRestart={() => {
 						setGameState({
 							...gameState,
-							current: gameState.initial.map((r) => [...r]),
+							current: puzzle.initial.map((r) => [...r]),
 							notes: Array(9)
 								.fill(null)
 								.map(() =>
@@ -346,8 +336,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 						onClick={() => {
 							const solveActions: GameAction[] = [];
 							for (let r = 0; r < 9; r++) {
-								const initialRow = gameState.initial[r];
-								const solutionRow = gameState.solution[r];
+								const initialRow = puzzle.initial[r];
+								const solutionRow = puzzle.solution[r];
 								if (!initialRow || !solutionRow) continue;
 								for (let c = 0; c < 9; c++) {
 									const value = solutionRow[c];
@@ -368,65 +358,50 @@ export const GamePage: React.FC<GamePageProps> = ({
 					</button>
 				)}
 				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
-				<AnimatePresence>
-					{showWin && (
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							exit={{ opacity: 0 }}
-							className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
+				<Dialog open={showWin} className="text-center">
+					<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
+					<h2 className="text-3xl font-bold mb-2">Victory!</h2>
+					<div className="flex flex-col gap-1 mb-6">
+						<p className="text-slate-400">Solved in {formatTime(timer)}</p>
+						<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
+							{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
+								difficulty}{" "}
+							Difficulty
+						</p>
+					</div>
+					<div className="flex flex-col gap-3">
+						<button
+							type="button"
+							onClick={() => {
+								setShowWin(false);
+								navigate("/review", {
+									state: {
+										initial: puzzle.initial.flat(),
+										solution: puzzle.solution.flat(),
+										time: timer,
+										difficulty: difficulty,
+										actions: gameState.actions,
+										score: puzzle.score,
+										techniques: puzzle.techniques,
+									},
+								});
+							}}
+							className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10"
 						>
-							<MotionCard
-								initial={{ scale: 0.9, y: 20 }}
-								animate={{ scale: 1, y: 0 }}
-								className="glass p-10 rounded-3xl text-center"
-							>
-								<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
-								<h2 className="text-3xl font-bold mb-2">Victory!</h2>
-								<div className="flex flex-col gap-1 mb-6">
-									<p className="text-slate-400">
-										Solved in {formatTime(timer)}
-									</p>
-									<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
-										{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
-											difficulty}{" "}
-										Difficulty
-									</p>
-								</div>
-								<div className="flex flex-col gap-3">
-									<button
-										type="button"
-										onClick={() => {
-											setShowWin(false);
-											navigate("/review", {
-												state: {
-													initial: gameState.initial.flat(),
-													solution: gameState.solution.flat(),
-													time: timer,
-													difficulty: difficulty,
-													actions: gameState.actions,
-												},
-											});
-										}}
-										className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10"
-									>
-										Review Game
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setShowWin(false);
-											navigate("/");
-										}}
-										className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all text-white"
-									>
-										Back to Menu
-									</button>
-								</div>
-							</MotionCard>
-						</motion.div>
-					)}
-				</AnimatePresence>
+							Review Game
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setShowWin(false);
+								navigate("/");
+							}}
+							className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all text-white"
+						>
+							Back to Menu
+						</button>
+					</div>
+				</Dialog>
 			</div>
 		</Layout>
 	);

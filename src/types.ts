@@ -17,23 +17,14 @@ export type CellNotes = Set<number>[][];
 export type DBCellNotes = Record<string, number[]>;
 export type DBBoard = (number | null)[];
 
-export type GameState = {
+// ─── Puzzle ────────────────────────────────────────
+export type Puzzle = {
+	id: string;
 	initial: Board;
-	current: Board;
-	notes: CellNotes;
 	solution: Board;
-	timer: number;
-	actions: GameAction[];
-	lastUpdated: Timestamp;
-	puzzleId?: string;
-};
-
-export type UserDocument = {
-	settings: {
-		theme: string;
-	};
-	gameState: GameState | null;
-	playedPuzzles?: string[];
+	difficulty: Difficulty;
+	score: number;
+	techniques: string[];
 };
 
 export type DBPuzzle = {
@@ -46,15 +37,37 @@ export type DBPuzzle = {
 	updatedAt: Timestamp;
 };
 
+// ─── Game State ────────────────────────────────────
+export type GameState = {
+	puzzle: Puzzle;
+	current: Board;
+	notes: CellNotes;
+	timer: number;
+	actions: GameAction[];
+	lastUpdated: Timestamp;
+};
+
 export type DBGameState = {
+	puzzleId: string;
 	initial: DBBoard;
 	current: DBBoard;
 	solution: DBBoard;
+	difficulty: Difficulty;
+	score: number;
+	techniques: string[];
 	timer: number;
 	notes: DBCellNotes;
 	actions: GameAction[];
 	lastUpdated: Timestamp;
-	puzzleId?: string;
+};
+
+// ─── User Document ─────────────────────────────────
+export type UserDocument = {
+	settings: {
+		theme: string;
+	};
+	gameState: Omit<GameState, "lastUpdated"> | null;
+	playedPuzzles?: string[];
 };
 
 export type DBUserDocument = {
@@ -65,7 +78,17 @@ export type DBUserDocument = {
 	playedPuzzles?: string[];
 };
 
+// ─── High Score ────────────────────────────────────
 export type HighScore = {
+	puzzle: Puzzle;
+	time: number;
+	date: Timestamp;
+	userId: string;
+	userName?: string;
+	actions?: GameAction[];
+};
+
+export type DBHighScore = {
 	difficulty: Difficulty;
 	time: number;
 	date: Timestamp;
@@ -75,8 +98,11 @@ export type HighScore = {
 	solution?: DBBoard;
 	actions?: GameAction[];
 	puzzleId?: string;
+	score?: number;
+	techniques?: string[];
 };
 
+// ─── Game Actions ──────────────────────────────────
 export type AddValueAction = {
 	type: "addValue";
 	delta: number;

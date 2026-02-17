@@ -75,15 +75,19 @@ export const StatisticsPage: React.FC = () => {
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: idx * 0.05 }}
 							onClick={() => {
-								if (score.initial && score.solution) {
-									navigate("/review", { state: score });
-								}
+								navigate("/review", {
+									state: {
+										initial: score.puzzle.initial.flat(),
+										solution: score.puzzle.solution.flat(),
+										time: score.time,
+										difficulty: score.puzzle.difficulty,
+										actions: score.actions,
+										score: score.puzzle.score,
+										techniques: score.puzzle.techniques,
+									},
+								});
 							}}
-							className={`flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-colors ${
-								score.initial && score.solution
-									? "cursor-pointer hover:bg-white/10"
-									: ""
-							}`}
+							className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-colors cursor-pointer hover:bg-white/10"
 						>
 							<div className="flex items-center gap-4">
 								<span

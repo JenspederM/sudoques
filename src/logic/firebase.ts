@@ -14,13 +14,16 @@ import {
 	where,
 } from "firebase/firestore";
 import { unflattenBoard, unflattenCellNotes } from "@/lib/utils";
+import { parsePuzzle } from "@/logic/sudoku";
 import type {
 	DBGameState,
+	DBHighScore,
 	DBPuzzle,
 	DBUserDocument,
 	Difficulty,
 	GameState,
 	HighScore,
+	Puzzle,
 	UserDocument,
 } from "@/types";
 import { db } from "../firebase";
@@ -29,8 +32,67 @@ const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
 const PUZZLES_COLLECTION = "puzzles";
 
+// ─── Conversion Helpers ────────────────────────────
+
 /**
- * Saves the current game state for anonymous persistence
+ * Converts a DBPuzzle (Firestore) to a Puzzle (runtime)
+ */
+export function toPuzzle(dbPuzzle: DBPuzzle): Puzzle {
+	return {
+		id: dbPuzzle.id,
+		initial: parsePuzzle(dbPuzzle.puzzle),
+		solution: parsePuzzle(dbPuzzle.solution),
+		difficulty: dbPuzzle.difficulty,
+		score: dbPuzzle.score,
+		techniques: dbPuzzle.techniques,
+	};
+}
+
+/**
+ * Converts a DBHighScore (Firestore) to a HighScore (runtime)
+ */
+function toHighScore(dbScore: DBHighScore): HighScore {
+	return {
+		puzzle: {
+			id: dbScore.puzzleId || "",
+			initial: unflattenBoard(dbScore.initial || []),
+			solution: unflattenBoard(dbScore.solution || []),
+			difficulty: dbScore.difficulty,
+			score: dbScore.score || 0,
+			techniques: dbScore.techniques || [],
+		},
+		time: dbScore.time,
+		date: dbScore.date,
+		userId: dbScore.userId,
+		userName: dbScore.userName,
+		actions: dbScore.actions,
+	};
+}
+
+/**
+ * Converts a DBGameState (Firestore) to a GameState (runtime)
+ */
+function toGameState(gameData: DBGameState): Omit<GameState, "lastUpdated"> {
+	return {
+		puzzle: {
+			id: gameData.puzzleId,
+			initial: unflattenBoard(gameData.initial),
+			solution: unflattenBoard(gameData.solution),
+			difficulty: gameData.difficulty,
+			score: gameData.score,
+			techniques: gameData.techniques,
+		},
+		current: unflattenBoard(gameData.current),
+		notes: unflattenCellNotes(gameData.notes),
+		timer: gameData.timer,
+		actions: gameData.actions || [],
+	};
+}
+
+// ─── Game State ────────────────────────────────────
+
+/**
+ * Saves the current game state for persistence
  */
 export async function saveGameState(
 	userId: string,
@@ -46,42 +108,23 @@ export async function saveGameState(
 		}
 	});
 
-	// We use setDoc with merge: true to avoid overwriting settings if they exist
-	await setDoc(
-		userRef,
-		{
-			gameState: {
-				initial: state.initial.flat(),
-				current: state.current.flat(),
-				solution: state.solution.flat(),
-				timer: state.timer,
-				notes: notesObj,
-				actions: state.actions,
-				lastUpdated: Timestamp.now(),
-				puzzleId: state.puzzleId || null,
-			},
-		},
-		{ merge: true },
-	);
-}
-
-/**
- * Helper to parse raw firestore data into GameState
- */
-function parseGameState(
-	gameData: DBGameState | null,
-): Omit<GameState, "lastUpdated"> | null {
-	if (!gameData) return null;
-
-	return {
-		initial: unflattenBoard(gameData.initial),
-		current: unflattenBoard(gameData.current),
-		solution: unflattenBoard(gameData.solution),
-		notes: unflattenCellNotes(gameData.notes),
-		timer: gameData.timer,
-		actions: gameData.actions || [],
-		puzzleId: gameData.puzzleId,
+	const dbState: Omit<DBGameState, "lastUpdated"> & {
+		lastUpdated: ReturnType<typeof Timestamp.now>;
+	} = {
+		puzzleId: state.puzzle.id,
+		initial: state.puzzle.initial.flat(),
+		current: state.current.flat(),
+		solution: state.puzzle.solution.flat(),
+		difficulty: state.puzzle.difficulty,
+		score: state.puzzle.score,
+		techniques: state.puzzle.techniques,
+		timer: state.timer,
+		notes: notesObj,
+		actions: state.actions,
+		lastUpdated: Timestamp.now(),
 	};
+
+	await setDoc(userRef, { gameState: dbState }, { merge: true });
 }
 
 /**
@@ -95,7 +138,8 @@ export async function loadGameState(
 
 	if (userSnap.exists()) {
 		const data = userSnap.data() as DBUserDocument;
-		return parseGameState(data.gameState);
+		if (!data.gameState) return null;
+		return toGameState(data.gameState);
 	}
 	return null;
 }
@@ -110,14 +154,13 @@ export function subscribeToUser(
 	return onSnapshot(doc(db, USERS_COLLECTION, userId), (doc) => {
 		if (doc.exists()) {
 			const data = doc.data() as DBUserDocument;
-			// Manually parse gameState to unflatten arrays
+			const gameState = data.gameState ? toGameState(data.gameState) : null;
 			const parsedData: UserDocument = {
 				...data,
-				gameState: parseGameState(data.gameState) as GameState,
+				gameState,
 			};
 			callback(parsedData);
 		} else {
-			// If document doesn't exist, call with defaults
 			callback({
 				settings: { theme: "default" },
 				gameState: null,
@@ -135,21 +178,30 @@ export async function updateUserSettings(
 	settings: Partial<UserDocument["settings"]>,
 ) {
 	const userRef = doc(db, USERS_COLLECTION, userId);
-	await setDoc(
-		userRef,
-		{
-			settings,
-		},
-		{ merge: true },
-	);
+	await setDoc(userRef, { settings }, { merge: true });
 }
+
+// ─── High Scores ───────────────────────────────────
 
 /**
  * Saves a high score
  */
 export async function saveHighScore(score: HighScore) {
 	const scoreRef = doc(collection(db, HIGHSCORES_COLLECTION));
-	await setDoc(scoreRef, score);
+	const dbScore: DBHighScore = {
+		difficulty: score.puzzle.difficulty,
+		time: score.time,
+		date: score.date,
+		userId: score.userId,
+		userName: score.userName,
+		initial: score.puzzle.initial.flat(),
+		solution: score.puzzle.solution.flat(),
+		actions: score.actions,
+		puzzleId: score.puzzle.id,
+		score: score.puzzle.score,
+		techniques: score.puzzle.techniques,
+	};
+	await setDoc(scoreRef, dbScore);
 }
 
 /**
@@ -166,10 +218,12 @@ export async function getUserScores(
 
 	const querySnapshot = await getDocs(q);
 	return querySnapshot.docs
-		.map((doc) => doc.data() as HighScore)
-		.filter((score) => score.difficulty === difficulty)
+		.map((doc) => toHighScore(doc.data() as DBHighScore))
+		.filter((score) => score.puzzle.difficulty === difficulty)
 		.sort((a, b) => a.time - b.time);
 }
+
+// ─── Puzzle Management ─────────────────────────────
 
 /**
  * Marks a puzzle as played for a user
@@ -178,9 +232,7 @@ export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
 	const userRef = doc(db, USERS_COLLECTION, userId);
 	await setDoc(
 		userRef,
-		{
-			playedPuzzles: arrayUnion(puzzleId),
-		},
+		{ playedPuzzles: arrayUnion(puzzleId) },
 		{ merge: true },
 	);
 }
@@ -191,17 +243,15 @@ export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
 export async function getRandomPuzzle(
 	difficulty: Difficulty,
 	playedPuzzleIds: string[] = [],
-): Promise<DBPuzzle> {
+): Promise<Puzzle> {
 	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
 	const playedSet = new Set(playedPuzzleIds);
 	const MAX_RETRIES = 5;
 	const BATCH_SIZE = 10;
 
 	for (let i = 0; i < MAX_RETRIES; i++) {
-		// Pick a random starting point
 		const randomHash = Math.random().toString(16).slice(2, 14).padEnd(12, "0");
 
-		// Fetch a batch starting from randomHash
 		let q = query(
 			puzzlesRef,
 			where("difficulty", "==", difficulty),
@@ -212,7 +262,6 @@ export async function getRandomPuzzle(
 
 		let querySnapshot = await getDocs(q);
 
-		// Wrap around if empty
 		if (querySnapshot.empty) {
 			q = query(
 				puzzlesRef,
@@ -227,26 +276,14 @@ export async function getRandomPuzzle(
 			throw new Error(`No puzzles found for difficulty: ${difficulty}`);
 		}
 
-		// Find a puzzle not in playedSet
 		for (const docSnapshot of querySnapshot.docs) {
 			if (!playedSet.has(docSnapshot.id)) {
 				const data = docSnapshot.data() as DBPuzzle;
-				return {
-					id: docSnapshot.id,
-					puzzle: data.puzzle,
-					solution: data.solution,
-					difficulty: data.difficulty,
-					score: data.score,
-					techniques: data.techniques,
-					updatedAt: data.updatedAt,
-				};
+				return toPuzzle({ ...data, id: docSnapshot.id });
 			}
 		}
-		// If all in batch are played, retry new random point
 	}
 
-	// If we exhausted retries, just return the first one found (fallback)
-	// This prevents infinite loops if user played ALL puzzles (unlikely with 100k, but possible)
 	console.warn(
 		"Could not find unplayed puzzle after retries, returning a played one.",
 	);
@@ -260,15 +297,7 @@ export async function getRandomPuzzle(
 		const docSnapshot = fallbackSnap.docs[0];
 		if (docSnapshot) {
 			const data = docSnapshot.data() as DBPuzzle;
-			return {
-				id: docSnapshot.id,
-				puzzle: data.puzzle,
-				solution: data.solution,
-				difficulty: data.difficulty,
-				score: data.score,
-				techniques: data.techniques,
-				updatedAt: data.updatedAt,
-			};
+			return toPuzzle({ ...data, id: docSnapshot.id });
 		}
 	}
 

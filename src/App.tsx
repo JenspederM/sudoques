@@ -10,7 +10,6 @@ import {
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { getRandomPuzzle, subscribeToUser } from "./logic/firebase";
-import { parsePuzzle } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -20,17 +19,13 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Board, CellNotes, Difficulty, GameAction } from "./types";
+import type { Difficulty, GameState } from "./types";
 
 export default function App() {
-	const [gameState, setGameState] = useState<{
-		initial: Board;
-		current: Board;
-		notes: CellNotes;
-		solution: Board;
-		actions: GameAction[];
-		puzzleId?: string;
-	} | null>(null);
+	const [gameState, setGameState] = useState<Omit<
+		GameState,
+		"lastUpdated" | "timer"
+	> | null>(null);
 
 	const { user, loading: authLoading } = useAuth();
 	const [difficulty, setDifficulty] = useState<Difficulty>("easy");
@@ -53,18 +48,6 @@ export default function App() {
 				// Update game state
 				if (data.gameState) {
 					setGameState(data.gameState);
-					// Initialize timer only if we are loading fresh
-					// But since we sync constantly, we might want to stay in sync?
-					// If we are playing, the local timer takes precedence?
-					// Actually, simpler: just sync.
-					// But we need to avoid jitter.
-					// For now, let's sync. If user is playing, local updates will act as "optimistic" and write back.
-					// Check if we strictly need to sync timer.
-					// Let's protect timer from jumping back if local is ahead?
-					// Nah, just set it.
-					// Wait, if local timer is running, and we get an update, we might reset it?
-					// But we are the only writer usually.
-					// Unless multiple tabs.
 					setTimer(data.gameState.timer);
 				} else {
 					setGameState(null);
@@ -96,48 +79,32 @@ export default function App() {
 		async (diff: Difficulty) => {
 			setDifficulty(diff);
 
-			let puzzleStr = "";
-			let puzzleId = "";
-			let solutionStr = "";
 			try {
 				setIsLoading(true);
-				const result = await getRandomPuzzle(diff, playedPuzzles);
-				puzzleStr = result.puzzle;
-				puzzleId = result.id;
-				solutionStr = result.solution;
-				// We can also use result.score and result.techniques if we want to store them
+				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
+
+				const notes: GameState["notes"] = Array(9)
+					.fill(null)
+					.map(() =>
+						Array(9)
+							.fill(null)
+							.map(() => new Set<number>()),
+					);
+
+				setGameState({
+					puzzle,
+					current: puzzle.initial.map((r) => [...r]),
+					notes,
+					actions: [],
+				});
+				setTimer(0);
+				navigate("/game");
 			} catch (e) {
 				console.error("Failed to load puzzles from Firestore", e);
-				// Fallback to local data if needed, or just show error
 				alert("Failed to fetch puzzle. Please try again.");
-				return;
 			} finally {
 				setIsLoading(false);
 			}
-
-			if (!puzzleStr) return;
-			const initial = parsePuzzle(puzzleStr);
-			const solution = parsePuzzle(solutionStr);
-			if (!solution) return;
-
-			const notes: CellNotes = Array(9)
-				.fill(null)
-				.map(() =>
-					Array(9)
-						.fill(null)
-						.map(() => new Set<number>()),
-				);
-
-			setGameState({
-				initial,
-				current: initial.map((r) => [...r]),
-				notes,
-				solution,
-				actions: [],
-				puzzleId,
-			});
-			setTimer(0);
-			navigate("/game");
 		},
 		[navigate, playedPuzzles],
 	);
@@ -165,7 +132,8 @@ export default function App() {
 									!!gameState &&
 									!gameState.current.every((row, ri) =>
 										row.every(
-											(val, ci) => val === gameState.solution?.[ri]?.[ci],
+											(val, ci) =>
+												val === gameState.puzzle.solution?.[ri]?.[ci],
 										),
 									)
 								}
