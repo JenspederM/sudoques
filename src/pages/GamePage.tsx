@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-import { Timer, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
 import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
 import { SudokuGrid } from "../components/SudokuGrid";
+import { Timer } from "../components/Timer";
 import { DIFFICULTIES } from "../logic/constants";
 import {
 	markPuzzleAsPlayed,
@@ -358,14 +359,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			backRedirect="/"
 			contentClassName="mb-8"
 			headerClassName="justify-between"
-			headerCenter={
-				<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-					<Timer size={20} />
-					<span data-testid="timer" className="font-mono text-lg sm:text-xl">
-						{formatTime(timer)}
-					</span>
-				</div>
-			}
+			headerCenter={<Timer time={timer} />}
 			headerRight={
 				<PuzzleInfoDialog
 					difficulty={difficulty}

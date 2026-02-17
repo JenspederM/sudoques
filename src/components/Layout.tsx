@@ -22,6 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({
 	backRedirect,
 	backState,
 	headerChildren,
+	headerCenter,
 	headerRight,
 	contentClassName,
 }) => {
@@ -66,7 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({
 								</div>
 
 								<div className="flex justify-center flex-1">
-									{headerChildren}
+									{headerCenter || headerChildren}
 								</div>
 
 								<div className="flex justify-end">{headerRight}</div>

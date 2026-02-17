@@ -1,4 +1,4 @@
-import { Pause, Play, SkipBack, SkipForward, Timer } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -6,7 +6,7 @@ import { formatTime, unflattenBoard } from "@/lib/utils";
 import { Layout } from "../components/Layout";
 import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
 import { SudokuGrid } from "../components/SudokuGrid";
-
+import { Timer } from "../components/Timer";
 import { applyActions } from "../logic/gameReducer";
 import type { DBBoard, Difficulty, GameAction } from "../types";
 
@@ -146,14 +146,7 @@ export const ReviewPage: React.FC = () => {
 			backRedirect="/statistics"
 			backState={{ activeDiff: state.difficulty }}
 			headerClassName="justify-between"
-			headerCenter={
-				<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-					<Timer size={20} />
-					<span data-testid="timer" className="font-mono text-lg sm:text-xl">
-						{formatTime(Math.floor(playbackTime))}
-					</span>
-				</div>
-			}
+			headerCenter={<Timer time={playbackTime} />}
 			headerRight={
 				<PuzzleInfoDialog
 					difficulty={state.difficulty}
@@ -213,12 +206,12 @@ export const ReviewPage: React.FC = () => {
 					</div>
 
 					<div className="w-full max-w-md px-4 flex flex-col gap-2">
-						<div className="flex justify-between text-xs font-medium text-slate-500 uppercase tracking-wider">
-							<span>{formatTime(0)}</span>
-							<span>
+						<div className="grid grid-cols-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
+							<span className="flex justify-start">{formatTime(0)}</span>
+							<span className="flex flex-1 justify-center">
 								{playbackIndex} / {actions.length} moves
 							</span>
-							<span>{formatTime(totalTime)}</span>
+							<span className="flex justify-end">{formatTime(totalTime)}</span>
 						</div>
 						<input
 							type="range"
