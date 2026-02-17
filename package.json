@@ -10,6 +10,9 @@
 		"deploy": "bun run build && bun firebase:deploy",
 		"lint": "biome check",
 		"lint:fix": "biome check --fix",
+		"prepare-puzzles": "bun scripts/prepare-puzzles.ts",
+		"upload-puzzles": "NODE_ENV=development bun scripts/upload-puzzles.ts",
+		"upload-puzzles:prod": "NODE_ENV=production bun scripts/upload-puzzles.ts",
 		"format": "biome format --fix",
 		"test": "bun test src",
 		"test:ui": "playwright test",
@@ -36,6 +39,7 @@
 		"@types/bun": "latest",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
+		"firebase-admin": "^13.6.1",
 		"firebase-tools": "^15.6.0"
 	}
 }

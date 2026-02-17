@@ -346,7 +346,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					canUndo={canUndo}
 					canRedo={canRedo}
 				/>
-				{import.meta.env?.DEV && (
+				{import.meta.env?.NODE_ENV !== "production" && (
 					<button
 						type="button"
 						onClick={() => {
