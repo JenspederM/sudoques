@@ -27,6 +27,7 @@ async function uploadPuzzles() {
 	console.log("Initializing Firebase...");
 	const app = initializeApp(firebaseConfig);
 	const db = getFirestore(app);
+	let total = 0
 
 	// Always connect to emulator for this script as requested
 	if (process.env.NODE_ENV !== "production") {
@@ -37,13 +38,14 @@ async function uploadPuzzles() {
 	const files = (await readdir(DATA_DIR)).filter(
 		(f) => f.endsWith(".json") && f !== "unsolvables.json",
 	);
-
+	
 	for (const file of files) {
 		const difficulty = file.replace(".json", "");
 		console.log(`Processing ${file} (${difficulty})...`);
 		const content = await readFile(join(DATA_DIR, file), "utf-8");
 		const puzzles = JSON.parse(content) as Record<string, PuzzleData>;
 		const allEntries = Object.entries(puzzles);
+		
 		let entries = allEntries;
 		if (MAX_PUZZLES_PER_DIFFICULTY > 0) {
 			entries = allEntries.slice(0, MAX_PUZZLES_PER_DIFFICULTY);
@@ -53,6 +55,8 @@ async function uploadPuzzles() {
 		} else {
 			console.log(`Uploading all ${entries.length} puzzles for ${difficulty}...`);
 		}
+
+		total += entries.length;
 
 		for (let i = 0; i < entries.length; i += BATCH_SIZE) {
 			const batch = writeBatch(db);
@@ -77,8 +81,7 @@ async function uploadPuzzles() {
 		}
 		console.log(`Done with ${difficulty}`);
 	}
-
-	console.log("All puzzles uploaded successfully!");
+	console.log(`${total} puzzles uploaded successfully!`);
 }
 
 uploadPuzzles().catch(console.error);
