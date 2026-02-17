@@ -8,13 +8,13 @@
 	"theme_color": "#38bdf8",
 	"icons": [
 		{
-			"src": "logo.svg",
+			"src": "./logo.svg",
 			"sizes": "any",
 			"type": "image/svg+xml",
 			"purpose": "any"
 		},
 		{
-			"src": "logo.svg",
+			"src": "./logo.svg",
 			"sizes": "any",
 			"type": "image/svg+xml",
 			"purpose": "maskable"
