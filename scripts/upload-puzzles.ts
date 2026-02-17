@@ -44,11 +44,15 @@ async function uploadPuzzles() {
 		const content = await readFile(join(DATA_DIR, file), "utf-8");
 		const puzzles = JSON.parse(content) as Record<string, PuzzleData>;
 		const allEntries = Object.entries(puzzles);
-		const entries = allEntries.slice(0, MAX_PUZZLES_PER_DIFFICULTY);
-
-		console.log(
-			`Uploading ${entries.length}/${allEntries.length} puzzles for ${difficulty}...`,
-		);
+		let entries = allEntries;
+		if (MAX_PUZZLES_PER_DIFFICULTY > 0) {
+			entries = allEntries.slice(0, MAX_PUZZLES_PER_DIFFICULTY);
+			console.log(
+				`Uploading ${entries.length}/${allEntries.length} puzzles for ${difficulty}...`,
+			);
+		} else {
+			console.log(`Uploading all ${entries.length} puzzles for ${difficulty}...`);
+		}
 
 		for (let i = 0; i < entries.length; i += BATCH_SIZE) {
 			const batch = writeBatch(db);
