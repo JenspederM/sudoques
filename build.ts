@@ -146,13 +146,16 @@ console.log(
 );
 
 const result = await Bun.build({
-	entrypoints: ["./src/index.html"],
+	entrypoints: ["./src/index.html", "./src/sw.ts"],
 	outdir: "dist",
 	plugins: [plugin],
 	minify: true,
 	target: "browser",
 	sourcemap: "linked",
 	env: "BUN_PUBLIC_*",
+	naming: {
+		entry: "[name].[ext]",
+	},
 	define: {
 		"process.env.NODE_ENV": JSON.stringify("production"),
 	},
