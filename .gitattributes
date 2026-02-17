@@ -1,0 +1,7 @@
+src/data/easy.json filter=lfs diff=lfs merge=lfs -text
+src/data/expert.json filter=lfs diff=lfs merge=lfs -text
+src/data/hard.json filter=lfs diff=lfs merge=lfs -text
+src/data/master.json filter=lfs diff=lfs merge=lfs -text
+src/data/medium.json filter=lfs diff=lfs merge=lfs -text
+src/data/normal.json filter=lfs diff=lfs merge=lfs -text
+src/data/unsolvables.json filter=lfs diff=lfs merge=lfs -text
