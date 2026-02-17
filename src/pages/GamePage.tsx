@@ -2,7 +2,7 @@ import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { Timer, Trophy } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatTime } from "@/lib/utils";
 import { Dialog } from "../components/Dialog";
@@ -127,95 +127,114 @@ export const GamePage: React.FC<GamePageProps> = ({
 		else setSelectedCell([r, c]);
 	};
 
-	const commitActions = (newActions: GameAction[]) => {
-		const newState = applyActions(puzzle.initial, puzzle.solution, newActions);
+	const commitActions = useCallback(
+		(newActions: GameAction[]) => {
+			const newState = applyActions(
+				puzzle.initial,
+				puzzle.solution,
+				newActions,
+			);
 
-		setGameState({
-			...gameState,
-			current: newState.current,
-			notes: newState.notes,
-			actions: newActions,
-		});
+			setGameState({
+				...gameState,
+				current: newState.current,
+				notes: newState.notes,
+				actions: newActions,
+			});
 
-		// Check for win
-		const isComplete = newState.current.every((row, ri) =>
-			row.every((val, ci) => {
-				const solRow = puzzle.solution[ri];
-				return solRow ? val === solRow[ci] : false;
-			}),
-		);
+			// Check for win
+			const isComplete = newState.current.every((row, ri) =>
+				row.every((val, ci) => {
+					const solRow = puzzle.solution[ri];
+					return solRow ? val === solRow[ci] : false;
+				}),
+			);
 
-		if (isComplete) {
-			setShowWin(true);
-			if (user) {
-				saveHighScore({
-					puzzle,
-					time: timer,
-					date: Timestamp.now(),
-					userId: user.uid,
-					userName: user.displayName || "Anonymous",
-					actions: newActions,
-				}).then(() => {});
+			if (isComplete) {
+				setShowWin(true);
+				if (user) {
+					saveHighScore({
+						puzzle,
+						time: timer,
+						date: Timestamp.now(),
+						userId: user.uid,
+						userName: user.displayName || "Anonymous",
+						actions: newActions,
+					}).then(() => {});
 
-				saveGameState(user.uid, {
-					puzzle,
-					current: newState.current,
-					notes: newState.notes,
-					timer: timer,
-					actions: newActions,
-				});
+					saveGameState(user.uid, {
+						puzzle,
+						current: newState.current,
+						notes: newState.notes,
+						timer: timer,
+						actions: newActions,
+					});
 
-				markPuzzleAsPlayed(user.uid, puzzle.id);
+					markPuzzleAsPlayed(user.uid, puzzle.id);
+				}
 			}
-		}
-	};
+		},
+		[puzzle, setGameState, gameState, user, timer],
+	);
 
-	const handleInput = (num: number | null) => {
-		if (!selectedCell) return;
-		const [r, c] = selectedCell;
-		const initialRow = puzzle.initial[r];
-		if (!initialRow || initialRow[c] !== null) return;
+	const handleInput = useCallback(
+		(num: number | null) => {
+			if (!selectedCell) return;
+			const [r, c] = selectedCell;
+			const initialRow = puzzle.initial[r];
+			if (!initialRow || initialRow[c] !== null) return;
 
-		let action: GameAction;
-		if (isNoteMode && num !== null) {
-			const rowNotes = currentDerivedState.notes[r];
-			const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
-			if (targetCellNotes?.has(num)) {
-				action = {
-					type: "removeNote",
-					delta: timer,
-					payload: { row: r, col: c, value: num },
-				};
+			let action: GameAction;
+			if (isNoteMode && num !== null) {
+				const rowNotes = currentDerivedState.notes[r];
+				const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
+				if (targetCellNotes?.has(num)) {
+					action = {
+						type: "removeNote",
+						delta: timer,
+						payload: { row: r, col: c, value: num },
+					};
+				} else {
+					action = {
+						type: "addNote",
+						delta: timer,
+						payload: { row: r, col: c, value: num },
+					};
+				}
 			} else {
-				action = {
-					type: "addNote",
-					delta: timer,
-					payload: { row: r, col: c, value: num },
-				};
+				if (num === null) {
+					action = {
+						type: "removeValue",
+						delta: timer,
+						payload: { row: r, col: c },
+					};
+				} else {
+					// If the value hasn't changed, don't update
+					const currentRow = currentDerivedState.current[r];
+					if (currentRow && currentRow[c] === num) return;
+					action = {
+						type: "addValue",
+						delta: timer,
+						payload: { row: r, col: c, value: num },
+					};
+				}
 			}
-		} else {
-			if (num === null) {
-				action = {
-					type: "removeValue",
-					delta: timer,
-					payload: { row: r, col: c },
-				};
-			} else {
-				// If the value hasn't changed, don't update
-				const currentRow = currentDerivedState.current[r];
-				if (currentRow && currentRow[c] === num) return;
-				action = {
-					type: "addValue",
-					delta: timer,
-					payload: { row: r, col: c, value: num },
-				};
-			}
-		}
 
-		commitActions([...gameState.actions, action]);
-	};
+			commitActions([...gameState.actions, action]);
+		},
+		[
+			selectedCell,
+			puzzle,
+			isNoteMode,
+			currentDerivedState.notes,
+			currentDerivedState.current,
+			timer,
+			gameState.actions,
+			commitActions,
+		],
+	);
 
-	const undo = () => {
+	const undo = useCallback(() => {
 		if (canUndo) {
 			const newActions: GameAction[] = [
 				...gameState.actions,
@@ -233,9 +252,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 				actions: newActions,
 			});
 		}
-	};
+	}, [canUndo, gameState.actions, timer, puzzle, setGameState, gameState]);
 
-	const redo = () => {
+	const redo = useCallback(() => {
 		if (canRedo) {
 			const newActions: GameAction[] = [
 				...gameState.actions,
@@ -253,7 +272,71 @@ export const GamePage: React.FC<GamePageProps> = ({
 				actions: newActions,
 			});
 		}
-	};
+	}, [canRedo, gameState.actions, timer, puzzle, setGameState, gameState]);
+
+	// Keyboard support
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Don't handle keyboard if a dialog is open (simple check for showWin)
+			if (showWin) return;
+
+			// Navigation
+			if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+				e.preventDefault();
+				setSelectedCell((prev) => {
+					if (!prev) return [0, 0];
+					const [r, c] = prev;
+					let nr = r;
+					let nc = c;
+					if (e.key === "ArrowUp") nr = Math.max(0, r - 1);
+					if (e.key === "ArrowDown") nr = Math.min(8, r + 1);
+					if (e.key === "ArrowLeft") nc = Math.max(0, c - 1);
+					if (e.key === "ArrowRight") nc = Math.min(8, c + 1);
+					return [nr, nc];
+				});
+				return;
+			}
+
+			// Number input (1-9)
+			if (/^[1-9]$/.test(e.key)) {
+				handleInput(parseInt(e.key, 10));
+				return;
+			}
+
+			// Clear cell (Backspace or Delete)
+			if (e.key === "Backspace" || e.key === "Delete") {
+				handleInput(null);
+				return;
+			}
+
+			// Toggle note mode ('n' or 'N')
+			if (e.key.toLowerCase() === "n") {
+				setIsNoteMode((prev) => !prev);
+				return;
+			}
+
+			// Undo/Redo (Ctrl+Z / Cmd+Z)
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+				e.preventDefault();
+				if (e.shiftKey) {
+					redo();
+				} else {
+					undo();
+				}
+				return;
+			}
+
+			// Redo also with Ctrl+Y / Cmd+Y
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+				e.preventDefault();
+				redo();
+				return;
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [showWin, handleInput, undo, redo]); // stable dependencies
 
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
 
