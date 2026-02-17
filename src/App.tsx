@@ -9,7 +9,12 @@ import {
 } from "react-router-dom";
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { getRandomPuzzle, subscribeToUser } from "./logic/firebase";
+import {
+	getRandomPuzzle,
+	loadGameState,
+	subscribeToUser,
+	subscribeToUserScores,
+} from "./logic/firebase";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -19,7 +24,7 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Difficulty, GameState } from "./types";
+import type { Difficulty, GameState, HighScore } from "./types";
 
 export default function App() {
 	const [gameState, setGameState] = useState<Omit<
@@ -32,30 +37,43 @@ export default function App() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [theme, setTheme] = useState("default");
 	const [playedPuzzles, setPlayedPuzzles] = useState<string[]>([]);
+	const [scores, setScores] = useState<HighScore[]>([]);
 
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	// Persistence effect: Subscribe to user data
+	// Persistence effect: Subscribe to user data & scores
 	useEffect(() => {
 		if (user) {
 			setIsLoading(true);
-			const unsubscribe = subscribeToUser(user.uid, (data) => {
-				// Update theme
+
+			// Metadata subscription (theme, played puzzles)
+			const unsubscribeUser = subscribeToUser(user.uid, (data) => {
 				setTheme(data.settings?.theme || "default");
 				setPlayedPuzzles(data.playedPuzzles || []);
+			});
 
-				// Update game state
-				if (data.gameState) {
-					setGameState(data.gameState);
-					setTimer(data.gameState.timer);
+			// Scores subscription (pre-load for StatisticsPage)
+			const unsubscribeScores = subscribeToUserScores(user.uid, (newScores) => {
+				setScores(newScores);
+			});
+
+			// One-time Game State load (decoupled from subscription)
+			loadGameState(user.uid).then((savedState) => {
+				if (savedState) {
+					setGameState(savedState);
+					setTimer(savedState.timer);
 				} else {
 					setGameState(null);
 					setTimer(0);
 				}
 				setIsLoading(false);
 			});
-			return () => unsubscribe();
+
+			return () => {
+				unsubscribeUser();
+				unsubscribeScores();
+			};
 		}
 
 		if (!user && !authLoading) {
@@ -63,6 +81,7 @@ export default function App() {
 			setTimer(0);
 			setTheme("default");
 			setPlayedPuzzles([]);
+			setScores([]);
 			setIsLoading(false);
 		}
 	}, [user, authLoading]);
@@ -164,7 +183,7 @@ export default function App() {
 					path="/statistics"
 					element={
 						<ProtectedRoute>
-							<StatisticsPage />
+							<StatisticsPage scores={scores} />
 						</ProtectedRoute>
 					}
 				/>

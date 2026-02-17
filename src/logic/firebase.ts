@@ -98,7 +98,7 @@ export async function saveGameState(
 	userId: string,
 	state: Omit<GameState, "lastUpdated">,
 ) {
-	const userRef = doc(db, USERS_COLLECTION, userId);
+	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
 
 	// Convert notes to an object with keys "0" to "80" to avoid nested arrays
 	const notesObj: Record<string, number[]> = {};
@@ -124,7 +124,7 @@ export async function saveGameState(
 		lastUpdated: Timestamp.now(),
 	};
 
-	await setDoc(userRef, { gameState: dbState }, { merge: true });
+	await setDoc(stateRef, dbState);
 }
 
 /**
@@ -133,13 +133,12 @@ export async function saveGameState(
 export async function loadGameState(
 	userId: string,
 ): Promise<Omit<GameState, "lastUpdated"> | null> {
-	const userRef = doc(db, USERS_COLLECTION, userId);
-	const userSnap = await getDoc(userRef);
+	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
+	const stateSnap = await getDoc(stateRef);
 
-	if (userSnap.exists()) {
-		const data = userSnap.data() as DBUserDocument;
-		if (!data.gameState) return null;
-		return toGameState(data.gameState);
+	if (stateSnap.exists()) {
+		const data = stateSnap.data() as DBGameState;
+		return toGameState(data);
 	}
 	return null;
 }
@@ -205,7 +204,27 @@ export async function saveHighScore(score: HighScore) {
 }
 
 /**
- * Fetches user's scores for a specific difficulty
+ * Subscribes to high scores for a specific user
+ */
+export function subscribeToUserScores(
+	userId: string,
+	callback: (scores: HighScore[]) => void,
+) {
+	const q = query(
+		collection(db, HIGHSCORES_COLLECTION),
+		where("userId", "==", userId),
+	);
+
+	return onSnapshot(q, (snapshot) => {
+		const scores = snapshot.docs.map((doc) =>
+			toHighScore(doc.data() as DBHighScore),
+		);
+		callback(scores);
+	});
+}
+
+/**
+ * Fetches user's scores for a specific difficulty (legacy, kept for compatibility if needed)
  */
 export async function getUserScores(
 	userId: string,
@@ -214,12 +233,12 @@ export async function getUserScores(
 	const q = query(
 		collection(db, HIGHSCORES_COLLECTION),
 		where("userId", "==", userId),
+		where("difficulty", "==", difficulty),
 	);
 
 	const querySnapshot = await getDocs(q);
 	return querySnapshot.docs
 		.map((doc) => toHighScore(doc.data() as DBHighScore))
-		.filter((score) => score.puzzle.difficulty === difficulty)
 		.sort((a, b) => a.time - b.time);
 }
 
@@ -246,8 +265,8 @@ export async function getRandomPuzzle(
 ): Promise<Puzzle> {
 	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
 	const playedSet = new Set(playedPuzzleIds);
-	const MAX_RETRIES = 5;
-	const BATCH_SIZE = 10;
+	const MAX_RETRIES = 3;
+	const BATCH_SIZE = 5;
 
 	for (let i = 0; i < MAX_RETRIES; i++) {
 		const randomHash = Math.random().toString(16).slice(2, 14).padEnd(12, "0");

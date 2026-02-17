@@ -1,37 +1,29 @@
 import { Timer, Trophy } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
 import { formatTime } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
-import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
-import { getUserScores } from "../logic/firebase";
 
-export const StatisticsPage: React.FC = () => {
+interface StatisticsPageProps {
+	scores: HighScore[];
+}
+
+export const StatisticsPage: React.FC<StatisticsPageProps> = ({
+	scores: allScores,
+}) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const initialDiff =
 		(location.state as { activeDiff?: Difficulty })?.activeDiff || "easy";
 	const [activeDiff, setActiveDiff] = useState<Difficulty>(initialDiff);
-	const [scores, setScores] = useState<HighScore[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
 
-	const { user } = useAuth();
-
-	useEffect(() => {
-		if (!user) return;
-		setIsLoading(true);
-		getUserScores(user.uid, activeDiff)
-			.then(setScores)
-			.catch((error) => {
-				console.error("Failed to fetch scores:", error);
-				setScores([]);
-			})
-			.finally(() => setIsLoading(false));
-	}, [activeDiff, user]);
+	const scores = allScores
+		.filter((s) => s.puzzle.difficulty === activeDiff)
+		.sort((a, b) => a.time - b.time);
 
 	return (
 		<Layout
@@ -62,12 +54,7 @@ export const StatisticsPage: React.FC = () => {
 
 			{/* Score List */}
 			<div className="w-full h-full overflow-y-auto space-y-3 pr-1 custom-scrollbar min-h-0">
-				{isLoading ? (
-					<MotionCard className="flex flex-col items-center justify-center py-12 text-slate-500">
-						<div className="w-10 h-10 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mb-4" />
-						<p className="font-medium">Loading scores...</p>
-					</MotionCard>
-				) : scores.length > 0 ? (
+				{scores.length > 0 ? (
 					scores.map((score, idx) => (
 						<MotionCard
 							key={score.date.toMillis()}
