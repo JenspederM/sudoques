@@ -22,8 +22,8 @@ export const GameControls: React.FC<GameControlsProps> = ({
 	canRedo,
 }) => {
 	return (
-		<div className="flex items-center justify-between w-full py-0 sm:py-4 gap-2 sm:gap-4 shrink-0">
-			<div className="flex gap-2">
+		<div className="grid grid-cols-[1fr_auto_1fr] items-center w-full py-0 sm:py-4 gap-2 sm:gap-4 shrink-0">
+			<div className="flex gap-2 justify-start">
 				<button
 					type="button"
 					data-testid="undo-button"
@@ -52,32 +52,36 @@ export const GameControls: React.FC<GameControlsProps> = ({
 				</button>
 			</div>
 
-			<button
-				type="button"
-				data-testid="note-toggle"
-				onClick={onToggleNoteMode}
-				className={cn(
-					"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300",
-					isNoteMode
-						? "bg-brand-primary text-white shadow-lg shadow-brand-primary/40 ring-2 ring-brand-primary/50"
-						: "glass text-slate-400 hover:text-white hover:bg-white/10",
-				)}
-			>
-				<Pencil size={20} className={isNoteMode ? "animate-bounce" : ""} />
-				<span className="font-semibold uppercase tracking-wider text-sm">
-					{isNoteMode ? "Notes On" : "Notes Off"}
-				</span>
-			</button>
+			<div className="flex justify-center">
+				<button
+					type="button"
+					data-testid="note-toggle"
+					onClick={onToggleNoteMode}
+					className={cn(
+						"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300",
+						isNoteMode
+							? "bg-brand-primary text-white shadow-lg shadow-brand-primary/40 ring-2 ring-brand-primary/50"
+							: "glass text-slate-400 hover:text-white hover:bg-white/10",
+					)}
+				>
+					<Pencil size={20} className={isNoteMode ? "animate-bounce" : ""} />
+					<span className="font-semibold uppercase tracking-wider text-sm">
+						{isNoteMode ? "Notes On" : "Notes Off"}
+					</span>
+				</button>
+			</div>
 
-			<button
-				type="button"
-				data-testid="restart-button"
-				onClick={onRestart}
-				className="p-2 sm:p-3 rounded-full glass hover:bg-red-500/10 hover:text-red-400 transition-all"
-				title="Restart"
-			>
-				<RotateCcw size={24} />
-			</button>
+			<div className="flex justify-end">
+				<button
+					type="button"
+					data-testid="restart-button"
+					onClick={onRestart}
+					className="p-2 sm:p-3 rounded-full glass hover:bg-red-500/10 hover:text-red-400 transition-all"
+					title="Restart"
+				>
+					<RotateCcw size={24} />
+				</button>
+			</div>
 		</div>
 	);
 };

@@ -146,20 +146,20 @@ export const ReviewPage: React.FC = () => {
 			backRedirect="/statistics"
 			backState={{ activeDiff: state.difficulty }}
 			headerClassName="justify-between"
-			headerChildren={
-				<>
-					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-						<Timer size={20} />
-						<span data-testid="timer" className="font-mono text-lg sm:text-xl">
-							{formatTime(Math.floor(playbackTime))}
-						</span>
-					</div>
-					<PuzzleInfoDialog
-						difficulty={state.difficulty}
-						score={state.score}
-						techniques={state.techniques}
-					/>
-				</>
+			headerCenter={
+				<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
+					<Timer size={20} />
+					<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+						{formatTime(Math.floor(playbackTime))}
+					</span>
+				</div>
+			}
+			headerRight={
+				<PuzzleInfoDialog
+					difficulty={state.difficulty}
+					score={state.score}
+					techniques={state.techniques}
+				/>
 			}
 		>
 			{/* Grid */}

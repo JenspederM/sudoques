@@ -358,20 +358,20 @@ export const GamePage: React.FC<GamePageProps> = ({
 			backRedirect="/"
 			contentClassName="mb-8"
 			headerClassName="justify-between"
-			headerChildren={
-				<>
-					<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
-						<Timer size={20} />
-						<span data-testid="timer" className="font-mono text-lg sm:text-xl">
-							{formatTime(timer)}
-						</span>
-					</div>
-					<PuzzleInfoDialog
-						difficulty={difficulty}
-						score={puzzle.score}
-						techniques={puzzle.techniques}
-					/>
-				</>
+			headerCenter={
+				<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary">
+					<Timer size={20} />
+					<span data-testid="timer" className="font-mono text-lg sm:text-xl">
+						{formatTime(timer)}
+					</span>
+				</div>
+			}
+			headerRight={
+				<PuzzleInfoDialog
+					difficulty={difficulty}
+					score={puzzle.score}
+					techniques={puzzle.techniques}
+				/>
 			}
 		>
 			{/* Grid */}

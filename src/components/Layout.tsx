@@ -11,6 +11,8 @@ type LayoutProps = PropsWithChildren<{
 	backState?: unknown;
 	headerClassName?: string;
 	headerChildren?: React.ReactNode;
+	headerCenter?: React.ReactNode;
+	headerRight?: React.ReactNode;
 	contentClassName?: string;
 }>;
 
@@ -20,6 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({
 	backRedirect,
 	backState,
 	headerChildren,
+	headerRight,
 	contentClassName,
 }) => {
 	const navigate = useNavigate();
@@ -45,21 +48,28 @@ export const Layout: React.FC<LayoutProps> = ({
 							contentClassName,
 						)}
 					>
-						{headerChildren && backRedirect && (
+						{backRedirect && (
 							<MotionCard
 								className={cn(
-									"w-full flex items-center gap-4 p-4 rounded-2xl border border-white/10 shadow-xl",
+									"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-white/10 shadow-xl",
 									headerClassName,
 								)}
 							>
-								<button
-									type="button"
-									onClick={() => navigate(backRedirect, { state: backState })}
-									className="py-2 hover:bg-white/10 rounded-xl transition-all active:scale-90"
-								>
-									<ChevronLeft size={28} />
-								</button>
-								{headerChildren}
+								<div className="flex justify-start">
+									<button
+										type="button"
+										onClick={() => navigate(backRedirect, { state: backState })}
+										className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-90"
+									>
+										<ChevronLeft size={28} />
+									</button>
+								</div>
+
+								<div className="flex justify-center flex-1">
+									{headerChildren}
+								</div>
+
+								<div className="flex justify-end">{headerRight}</div>
 							</MotionCard>
 						)}
 						{children}
