@@ -126,55 +126,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 		else setSelectedCell([r, c]);
 	};
 
-	const handleInput = (num: number | null) => {
-		if (!selectedCell) return;
-		const [r, c] = selectedCell;
-		const initialRow = gameState.initial[r];
-		if (!initialRow || initialRow[c] !== null) return;
-
-		const now = Date.now();
-		const delta = now - lastActionTimeRef.current;
-		lastActionTimeRef.current = now;
-
-		let action: GameAction;
-		if (isNoteMode && num !== null) {
-			const rowNotes = currentDerivedState.notes[r];
-			const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
-			if (targetCellNotes?.has(num)) {
-				action = {
-					type: "removeNote",
-					delta,
-					payload: { row: r, col: c, value: num },
-				};
-			} else {
-				action = {
-					type: "addNote",
-					delta,
-					payload: { row: r, col: c, value: num },
-				};
-			}
-		} else {
-			if (num === null) {
-				action = { type: "removeValue", delta, payload: { row: r, col: c } };
-			} else {
-				// If the value hasn't changed, don't update
-				const currentRow = currentDerivedState.current[r];
-				if (currentRow && currentRow[c] === num) return;
-				action = {
-					type: "addValue",
-					delta,
-					payload: { row: r, col: c, value: num },
-				};
-			}
-		}
-
-		const newActions = [...gameState.actions, action];
+	const commitActions = (newActions: GameAction[]) => {
 		const newState = applyActions(
 			gameState.initial,
 			gameState.solution,
 			newActions,
 		);
 
+		lastActionTimeRef.current = Date.now();
 		setGameState({
 			...gameState,
 			current: newState.current,
@@ -218,6 +177,49 @@ export const GamePage: React.FC<GamePageProps> = ({
 				}
 			}
 		}
+	};
+
+	const handleInput = (num: number | null) => {
+		if (!selectedCell) return;
+		const [r, c] = selectedCell;
+		const initialRow = gameState.initial[r];
+		if (!initialRow || initialRow[c] !== null) return;
+
+		const delta = Date.now() - lastActionTimeRef.current;
+
+		let action: GameAction;
+		if (isNoteMode && num !== null) {
+			const rowNotes = currentDerivedState.notes[r];
+			const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
+			if (targetCellNotes?.has(num)) {
+				action = {
+					type: "removeNote",
+					delta,
+					payload: { row: r, col: c, value: num },
+				};
+			} else {
+				action = {
+					type: "addNote",
+					delta,
+					payload: { row: r, col: c, value: num },
+				};
+			}
+		} else {
+			if (num === null) {
+				action = { type: "removeValue", delta, payload: { row: r, col: c } };
+			} else {
+				// If the value hasn't changed, don't update
+				const currentRow = currentDerivedState.current[r];
+				if (currentRow && currentRow[c] === num) return;
+				action = {
+					type: "addValue",
+					delta,
+					payload: { row: r, col: c, value: num },
+				};
+			}
+		}
+
+		commitActions([...gameState.actions, action]);
 	};
 
 	const undo = () => {
@@ -350,23 +352,23 @@ export const GamePage: React.FC<GamePageProps> = ({
 					<button
 						type="button"
 						onClick={() => {
-							const firstRow = gameState.solution[0];
-							if (!firstRow) return;
-							const firstVal = firstRow[0];
-							if (typeof firstVal !== "number") return;
-
-							setGameState({
-								...gameState,
-								current: gameState.solution.map((r) => [...r]),
-								actions: [
-									...gameState.actions,
-									{
-										type: "addValue",
-										delta: Date.now() - lastActionTimeRef.current,
-										payload: { row: 0, col: 0, value: firstVal },
-									},
-								],
-							});
+							const solveActions: GameAction[] = [];
+							for (let r = 0; r < 9; r++) {
+								const initialRow = gameState.initial[r];
+								const solutionRow = gameState.solution[r];
+								if (!initialRow || !solutionRow) continue;
+								for (let c = 0; c < 9; c++) {
+									const value = solutionRow[c];
+									if (initialRow[c] === null && value != null) {
+										solveActions.push({
+											type: "addValue",
+											delta: 0,
+											payload: { row: r, col: c, value },
+										});
+									}
+								}
+							}
+							commitActions([...gameState.actions, ...solveActions]);
 						}}
 						className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500/50 hover:bg-red-500/30 transition-all text-xs uppercase tracking-widest"
 					>
