@@ -9,7 +9,7 @@ export default defineConfig({
 		react(),
 		VitePWA({
 			registerType: "autoUpdate",
-			includeAssets: ["logo.svg", "apple-touch-icon.png"],
+			includeAssets: ["apple-touch-icon.png"],
 			manifest: {
 				name: "Sudoques",
 				short_name: "Sudoques",
