@@ -20,7 +20,7 @@ import {
 } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { checkBoard } from "../logic/sudoku";
-import type { Difficulty, GameAction, GameState } from "../types";
+import type { GameAction, GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
@@ -28,7 +28,6 @@ interface GamePageProps {
 	setGameState: (state: GamePageProps["gameState"]) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
-	difficulty: Difficulty;
 }
 
 export const GamePage: React.FC<GamePageProps> = ({
@@ -37,7 +36,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 	setGameState,
 	timer,
 	setTimer,
-	difficulty,
 }) => {
 	const navigate = useNavigate();
 	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
@@ -362,7 +360,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			headerCenter={<Timer time={timer} />}
 			headerRight={
 				<PuzzleInfoDialog
-					difficulty={difficulty}
+					difficulty={puzzle.difficulty}
 					score={puzzle.score}
 					techniques={puzzle.techniques}
 				/>
@@ -441,8 +439,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 					<div className="flex flex-col gap-1 mb-6">
 						<p className="text-slate-400">Solved in {formatTime(timer)}</p>
 						<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
-							{DIFFICULTIES.find((d) => d.id === difficulty)?.label ||
-								difficulty}{" "}
+							{DIFFICULTIES.find((d) => d.id === puzzle.difficulty)?.label ||
+								puzzle.difficulty}{" "}
 							Difficulty
 						</p>
 					</div>
@@ -456,7 +454,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 										initial: puzzle.initial.flat(),
 										solution: puzzle.solution.flat(),
 										time: timer,
-										difficulty: difficulty,
+										difficulty: puzzle.difficulty,
 										actions: gameState.actions,
 										score: puzzle.score,
 										techniques: puzzle.techniques,

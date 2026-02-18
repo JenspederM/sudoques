@@ -34,7 +34,6 @@ export default function App() {
 	> | null>(null);
 
 	const { user, loading: authLoading } = useAuth();
-	const [difficulty, setDifficulty] = useState<Difficulty>("easy");
 	const [isLoading, setIsLoading] = useState(true);
 	const [theme, setTheme] = useState("default");
 	const [playedPuzzles, setPlayedPuzzles] = useState<string[]>([]);
@@ -100,8 +99,6 @@ export default function App() {
 	// Initialize a new game
 	const startNewGame = useCallback(
 		async (diff: Difficulty) => {
-			setDifficulty(diff);
-
 			try {
 				setIsLoading(true);
 				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
@@ -216,7 +213,6 @@ export default function App() {
 									setGameState={setGameState}
 									timer={timer}
 									setTimer={setTimer}
-									difficulty={difficulty}
 								/>
 							) : (
 								<Navigate to="/new-game" replace />
