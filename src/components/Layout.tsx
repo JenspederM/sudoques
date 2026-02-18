@@ -64,7 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({
 									</button>
 								</div>
 
-								<div className="flex justify-center flex-1">{headerCenter}</div>
+								<div className="flex justify-center flex-1 whitespace-nowrap">{headerCenter}</div>
 
 								<div className="flex justify-end">{headerRight}</div>
 							</MotionCard>
