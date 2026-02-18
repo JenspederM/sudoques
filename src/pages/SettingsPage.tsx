@@ -85,7 +85,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 			<MotionCard
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.1 }}
+				transition={{ delay: 0.05 }}
 			>
 				<MotionCardTitle className="flex items-center gap-3">
 					<Palette size={24} className="text-brand-primary" />

@@ -23,9 +23,9 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 				{DIFFICULTIES.map((d, i) => (
 					<motion.button
 						key={d.id}
-						initial={{ opacity: 0, x: -20 }}
-						animate={{ opacity: 1, x: 0 }}
-						transition={{ delay: i * 0.1 }}
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ delay: i * 0.05 }}
 						type="button"
 						onClick={() => onSelectDifficulty(d.id)}
 						className="w-full group relative flex items-center justify-between p-6 rounded-xl glass hover:bg-brand-primary/10 border border-white/10 hover:border-brand-primary/30 active:scale-[0.98] transition-all text-left overflow-hidden"
