@@ -322,3 +322,35 @@ export async function getRandomPuzzle(
 
 	throw new Error(`No puzzles found for difficulty: ${difficulty}`);
 }
+/**
+ * Prefetches a batch of puzzles for each difficulty to warm the Firestore local cache.
+ * This ensures that these puzzles are available even when the user is offline.
+ */
+export async function prefetchPuzzles() {
+	const difficulties: Difficulty[] = [
+		"easy",
+		"normal",
+		"medium",
+		"hard",
+		"expert",
+		"master",
+	];
+	const PREFETCH_COUNT = 10;
+
+	try {
+		await Promise.all(
+			difficulties.map(async (diff) => {
+				const q = query(
+					collection(db, PUZZLES_COLLECTION),
+					where("difficulty", "==", diff),
+					limit(PREFETCH_COUNT),
+				);
+				// This call populates the local persistence cache
+				await getDocs(q);
+			}),
+		);
+		console.log("Puzzles prefetched successfully for offline use.");
+	} catch (error) {
+		console.error("Failed to prefetch puzzles:", error);
+	}
+}

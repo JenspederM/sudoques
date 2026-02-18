@@ -12,6 +12,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import {
 	getRandomPuzzle,
 	loadGameState,
+	prefetchPuzzles,
 	subscribeToUser,
 	subscribeToUserScores,
 } from "./logic/firebase";
@@ -69,6 +70,9 @@ export default function App() {
 				}
 				setIsLoading(false);
 			});
+
+			// Prefetch puzzles for offline use
+			prefetchPuzzles();
 
 			return () => {
 				unsubscribeUser();
