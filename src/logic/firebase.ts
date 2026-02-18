@@ -335,7 +335,7 @@ export async function prefetchPuzzles() {
 		"expert",
 		"master",
 	];
-	const PREFETCH_COUNT = 10;
+	const PREFETCH_COUNT = 50;
 
 	try {
 		await Promise.all(
