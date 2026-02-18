@@ -206,12 +206,14 @@ export const ReviewPage: React.FC = () => {
 					</div>
 
 					<div className="w-full max-w-md px-4 flex flex-col gap-2">
-						<div className="grid grid-cols-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-							<span className="flex justify-start">{formatTime(0)}</span>
-							<span className="flex flex-1 justify-center">
+						<div className="flex justify-between items-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+							<span className="w-16 flex justify-start">{formatTime(0)}</span>
+							<span className="flex-1 flex justify-center whitespace-nowrap px-2 tabular-nums">
 								{playbackIndex} / {actions.length} moves
 							</span>
-							<span className="flex justify-end">{formatTime(totalTime)}</span>
+							<span className="w-16 flex justify-end">
+								{formatTime(totalTime)}
+							</span>
 						</div>
 						<input
 							type="range"
