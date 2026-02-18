@@ -17,7 +17,7 @@ jobs:
       - run: bun install
       - run: bun run build
         env:
-          BUN_PUBLIC_FIREBASE_API_KEY: ${{ secrets.BUN_PUBLIC_FIREBASE_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

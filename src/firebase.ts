@@ -10,7 +10,7 @@ import {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-	apiKey: process.env.BUN_PUBLIC_FIREBASE_API_KEY,
+	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
 	authDomain: "sudoques.firebaseapp.com",
 	projectId: "sudoques",
 	storageBucket: "sudoques.firebasestorage.app",
@@ -28,7 +28,7 @@ export const db = initializeFirestore(app, {
 });
 export const auth = getAuth(app);
 
-if (process.env.NODE_ENV !== "production") {
+if (import.meta.env.DEV) {
 	connectFirestoreEmulator(db, "127.0.0.1", 8080);
 	connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
 }

@@ -7,7 +7,14 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["src/**/*", "public/**/*", "!!src/**/*.json", "scripts/**/*"]
+		"includes": [
+			"index.html",
+			"vite.config.ts",
+			"src/**/*",
+			"public/**/*",
+			"!!src/**/*.json",
+			"scripts/**/*"
+		]
 	},
 	"formatter": {
 		"enabled": true,

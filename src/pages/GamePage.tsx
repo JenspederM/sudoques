@@ -407,34 +407,33 @@ export const GamePage: React.FC<GamePageProps> = ({
 					canUndo={canUndo}
 					canRedo={canRedo}
 				/>
-				{import.meta.env?.NODE_ENV &&
-					import.meta.env?.NODE_ENV === "development" && (
-						<button
-							type="button"
-							onClick={() => {
-								const solveActions: GameAction[] = [];
-								for (let r = 0; r < 9; r++) {
-									const initialRow = puzzle.initial[r];
-									const solutionRow = puzzle.solution[r];
-									if (!initialRow || !solutionRow) continue;
-									for (let c = 0; c < 9; c++) {
-										const value = solutionRow[c];
-										if (initialRow[c] === null && value != null) {
-											solveActions.push({
-												type: "addValue",
-												delta: timer,
-												payload: { row: r, col: c, value },
-											});
-										}
+				{import.meta.env.DEV && (
+					<button
+						type="button"
+						onClick={() => {
+							const solveActions: GameAction[] = [];
+							for (let r = 0; r < 9; r++) {
+								const initialRow = puzzle.initial[r];
+								const solutionRow = puzzle.solution[r];
+								if (!initialRow || !solutionRow) continue;
+								for (let c = 0; c < 9; c++) {
+									const value = solutionRow[c];
+									if (initialRow[c] === null && value != null) {
+										solveActions.push({
+											type: "addValue",
+											delta: timer,
+											payload: { row: r, col: c, value },
+										});
 									}
 								}
-								commitActions([...gameState.actions, ...solveActions]);
-							}}
-							className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500/50 hover:bg-red-500/30 transition-all text-xs uppercase tracking-widest"
-						>
-							Solve (Dev Only)
-						</button>
-					)}
+							}
+							commitActions([...gameState.actions, ...solveActions]);
+						}}
+						className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500/50 hover:bg-red-500/30 transition-all text-xs uppercase tracking-widest"
+					>
+						Solve (Dev Only)
+					</button>
+				)}
 				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
 				<Dialog open={showWin} className="text-center">
 					<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
