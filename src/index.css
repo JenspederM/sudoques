@@ -53,6 +53,10 @@ body {
 	background: radial-gradient(circle at top right, #1e293b, #0f172a);
 	background-attachment: fixed;
 	overflow-x: hidden;
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
 }
 
 .glass {
