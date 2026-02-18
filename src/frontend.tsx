@@ -30,21 +30,3 @@ if (document.readyState === "loading") {
 } else {
 	start();
 }
-
-// Register Service Worker in production
-if (
-	typeof window !== "undefined" &&
-	"serviceWorker" in navigator &&
-	process.env.NODE_ENV === "production"
-) {
-	window.addEventListener("load", () => {
-		navigator.serviceWorker
-			.register("/sw.js")
-			.then((reg) => {
-				console.log("Sudoques PWA SW registered:", reg.scope);
-			})
-			.catch((err) => {
-				console.error("Sudoques PWA SW failed:", err);
-			});
-	});
-}
