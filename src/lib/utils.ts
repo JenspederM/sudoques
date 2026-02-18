@@ -41,3 +41,26 @@ export const formatTime = (s: number) => {
 	const secs = Math.floor(s % 60);
 	return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
+
+/**
+ * Builds the state object passed via react-router when navigating to the review page.
+ */
+export function buildReviewState(opts: {
+	initial: (number | null)[][];
+	solution: (number | null)[][];
+	time: number;
+	difficulty: string;
+	actions: unknown[];
+	score?: number;
+	techniques?: string[];
+}) {
+	return {
+		initial: opts.initial.flat(),
+		solution: opts.solution.flat(),
+		time: opts.time,
+		difficulty: opts.difficulty,
+		actions: opts.actions,
+		score: opts.score,
+		techniques: opts.techniques,
+	};
+}

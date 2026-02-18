@@ -27,6 +27,7 @@ import type {
 	UserDocument,
 } from "@/types";
 import { db } from "../firebase";
+import { DIFFICULTIES } from "./constants";
 
 const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";
@@ -223,25 +224,6 @@ export function subscribeToUserScores(
 	});
 }
 
-/**
- * Fetches user's scores for a specific difficulty (legacy, kept for compatibility if needed)
- */
-export async function getUserScores(
-	userId: string,
-	difficulty: Difficulty,
-): Promise<HighScore[]> {
-	const q = query(
-		collection(db, HIGHSCORES_COLLECTION),
-		where("userId", "==", userId),
-		where("difficulty", "==", difficulty),
-	);
-
-	const querySnapshot = await getDocs(q);
-	return querySnapshot.docs
-		.map((doc) => toHighScore(doc.data() as DBHighScore))
-		.sort((a, b) => a.time - b.time);
-}
-
 // ─── Puzzle Management ─────────────────────────────
 
 /**
@@ -327,25 +309,16 @@ export async function getRandomPuzzle(
  * This ensures that these puzzles are available even when the user is offline.
  */
 export async function prefetchPuzzles() {
-	const difficulties: Difficulty[] = [
-		"easy",
-		"normal",
-		"medium",
-		"hard",
-		"expert",
-		"master",
-	];
 	const PREFETCH_COUNT = 50;
 
 	try {
 		await Promise.all(
-			difficulties.map(async (diff) => {
+			DIFFICULTIES.map(async ({ id }) => {
 				const q = query(
 					collection(db, PUZZLES_COLLECTION),
-					where("difficulty", "==", diff),
+					where("difficulty", "==", id),
 					limit(PREFETCH_COUNT),
 				);
-				// This call populates the local persistence cache
 				await getDocs(q);
 			}),
 		);

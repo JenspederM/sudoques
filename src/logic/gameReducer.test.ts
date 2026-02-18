@@ -99,10 +99,16 @@ describe("applyActions", () => {
 			{ type: "addValue", delta: 0, payload: { row: 0, col: 2, value: 9 } },
 		];
 
-		const finalState = applyActions(emptyBoard, solution, actions);
+		const {
+			state: finalState,
+			pointer,
+			historyLength,
+		} = applyActions(emptyBoard, solution, actions);
 		expect(finalState.current[0]?.[0]).toBe(5);
 		expect(finalState.current[0]?.[1]).toBeNull(); // was undone
 		expect(finalState.current[0]?.[2]).toBe(9);
+		expect(pointer).toBe(2);
+		expect(historyLength).toBe(3);
 	});
 
 	test("redo should work", () => {
@@ -112,8 +118,13 @@ describe("applyActions", () => {
 			{ type: "redo", delta: 0 },
 		];
 
-		const finalState = applyActions(emptyBoard, solution, actions);
+		const { state: finalState, pointer } = applyActions(
+			emptyBoard,
+			solution,
+			actions,
+		);
 		expect(finalState.current[0]?.[0]).toBe(5);
+		expect(pointer).toBe(1);
 	});
 
 	test("new move after undo should branch (clear redo history)", () => {
@@ -124,7 +135,7 @@ describe("applyActions", () => {
 			{ type: "redo", delta: 0 }, // should do nothing as redo history was cleared
 		];
 
-		const finalState = applyActions(emptyBoard, solution, actions);
+		const { state: finalState } = applyActions(emptyBoard, solution, actions);
 		expect(finalState.current[0]?.[0]).toBeNull();
 		expect(finalState.current[0]?.[1]).toBe(3);
 	});
@@ -140,7 +151,7 @@ describe("applyActions", () => {
 		}
 
 		const initialWithNotes: Board = emptyBoard.map((r) => [...r]);
-		const finalState = applyActions(initialWithNotes, solution, [
+		const { state: finalState } = applyActions(initialWithNotes, solution, [
 			{ type: "addNote", delta: 0, payload: { row: 0, col: 1, value: 1 } },
 			...actions,
 		]);

@@ -1,25 +1,28 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-import { Trophy } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatTime } from "@/lib/utils";
-import { Dialog } from "../components/Dialog";
+import { buildReviewState } from "@/lib/utils";
 import { GameControls } from "../components/GameControls";
 import { Layout } from "../components/Layout";
 import { Numpad } from "../components/Numpad";
 import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
 import { SudokuGrid } from "../components/SudokuGrid";
 import { Timer } from "../components/Timer";
-import { DIFFICULTIES } from "../logic/constants";
+import { VictoryDialog } from "../components/VictoryDialog";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,
 	saveHighScore,
 } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
-import { checkBoard } from "../logic/sudoku";
+import {
+	checkBoard,
+	countValues,
+	createEmptyNotes,
+	isBoardComplete,
+} from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
 
 interface GamePageProps {
@@ -46,40 +49,13 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	const { puzzle } = gameState;
 
-	// Compute current state from actions
-	const currentDerivedState = applyActions(
-		puzzle.initial,
-		puzzle.solution,
-		gameState.actions,
-	);
+	// Compute current state and undo/redo info from actions
+	const {
+		state: currentDerivedState,
+		pointer,
+		historyLength,
+	} = applyActions(puzzle.initial, puzzle.solution, gameState.actions);
 
-	// We can find if we can undo/redo by looking at the history reconstruction in applyActions
-	// But since applyActions only returns the final state, let's optimize or change how we track it.
-	// For now, let's just use the derived state for rendering.
-
-	// To know canUndo/canRedo, we actually need to know where we are in the "active" history.
-	// If every undo/redo is an action, canUndo/canRedo depends on the logic in applyActions.
-
-	// Let's modify applyActions to return more info or handle it here.
-	// Actually, it's easier if GamePage just tracks the actions and we have a way to know the "effective pointer".
-
-	const getEffectivePointer = (actions: GameAction[]) => {
-		let p = 0;
-		let hLen = 1; // start state
-		for (const a of actions) {
-			if (a.type === "undo") {
-				if (p > 0) p--;
-			} else if (a.type === "redo") {
-				if (p < hLen - 1) p++;
-			} else {
-				hLen = p + 1 + 1;
-				p++;
-			}
-		}
-		return { pointer: p, historyLength: hLen };
-	};
-
-	const { pointer, historyLength } = getEffectivePointer(gameState.actions);
 	const canUndo = pointer > 0;
 	const canRedo = pointer < historyLength - 1;
 
@@ -102,13 +78,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	// Check for win on load
 	useEffect(() => {
 		if (showWin) return;
-		const isComplete = gameState.current.every((row, ri) =>
-			row.every((val, ci) => {
-				const solRow = puzzle.solution[ri];
-				return solRow ? val === solRow[ci] : false;
-			}),
-		);
-		if (isComplete) {
+		if (isBoardComplete(gameState.current, puzzle.solution)) {
 			setShowWin(true);
 		}
 	}, [gameState, showWin, puzzle.solution]);
@@ -127,8 +97,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 	};
 
 	const commitActions = useCallback(
-		(newActions: GameAction[]) => {
-			const newState = applyActions(
+		async (newActions: GameAction[]) => {
+			const { state: newState } = applyActions(
 				puzzle.initial,
 				puzzle.solution,
 				newActions,
@@ -141,35 +111,27 @@ export const GamePage: React.FC<GamePageProps> = ({
 				actions: newActions,
 			});
 
-			// Check for win
-			const isComplete = newState.current.every((row, ri) =>
-				row.every((val, ci) => {
-					const solRow = puzzle.solution[ri];
-					return solRow ? val === solRow[ci] : false;
-				}),
-			);
-
-			if (isComplete) {
+			if (isBoardComplete(newState.current, puzzle.solution)) {
 				setShowWin(true);
 				if (user) {
-					saveHighScore({
-						puzzle,
-						time: timer,
-						date: Timestamp.now(),
-						userId: user.uid,
-						userName: user.displayName || "Anonymous",
-						actions: newActions,
-					}).then(() => {});
-
-					saveGameState(user.uid, {
-						puzzle,
-						current: newState.current,
-						notes: newState.notes,
-						timer: timer,
-						actions: newActions,
-					});
-
-					markPuzzleAsPlayed(user.uid, puzzle.id);
+					await Promise.all([
+						saveHighScore({
+							puzzle,
+							time: timer,
+							date: Timestamp.now(),
+							userId: user.uid,
+							userName: user.displayName || "Anonymous",
+							actions: newActions,
+						}),
+						saveGameState(user.uid, {
+							puzzle,
+							current: newState.current,
+							notes: newState.notes,
+							timer: timer,
+							actions: newActions,
+						}),
+						markPuzzleAsPlayed(user.uid, puzzle.id),
+					]);
 				}
 			}
 		},
@@ -233,13 +195,13 @@ export const GamePage: React.FC<GamePageProps> = ({
 		],
 	);
 
-	const undo = useCallback(() => {
-		if (canUndo) {
+	const appendAction = useCallback(
+		(type: "undo" | "redo") => {
 			const newActions: GameAction[] = [
 				...gameState.actions,
-				{ type: "undo", delta: timer },
+				{ type, delta: timer },
 			];
-			const newState = applyActions(
+			const { state: newState } = applyActions(
 				puzzle.initial,
 				puzzle.solution,
 				newActions,
@@ -250,28 +212,17 @@ export const GamePage: React.FC<GamePageProps> = ({
 				notes: newState.notes,
 				actions: newActions,
 			});
-		}
-	}, [canUndo, gameState.actions, timer, puzzle, setGameState, gameState]);
+		},
+		[gameState, timer, puzzle, setGameState],
+	);
+
+	const undo = useCallback(() => {
+		if (canUndo) appendAction("undo");
+	}, [canUndo, appendAction]);
 
 	const redo = useCallback(() => {
-		if (canRedo) {
-			const newActions: GameAction[] = [
-				...gameState.actions,
-				{ type: "redo", delta: timer },
-			];
-			const newState = applyActions(
-				puzzle.initial,
-				puzzle.solution,
-				newActions,
-			);
-			setGameState({
-				...gameState,
-				current: newState.current,
-				notes: newState.notes,
-				actions: newActions,
-			});
-		}
-	}, [canRedo, gameState.actions, timer, puzzle, setGameState, gameState]);
+		if (canRedo) appendAction("redo");
+	}, [canRedo, appendAction]);
 
 	// Keyboard support
 	useEffect(() => {
@@ -340,15 +291,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
 
 	// Calculate disabled numbers (completed 9 instances)
-	const counts = new Map<number, number>();
-	currentDerivedState.current.forEach((row) => {
-		row.forEach((val) => {
-			if (val !== null) {
-				counts.set(val, (counts.get(val) || 0) + 1);
-			}
-		});
-	});
-	const disabledNumbers = Array.from(counts.entries())
+	const disabledNumbers = Array.from(
+		countValues(currentDerivedState.current).entries(),
+	)
 		.filter(([_, count]) => count >= 9)
 		.map(([num]) => num);
 
@@ -391,13 +336,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 						setGameState({
 							...gameState,
 							current: puzzle.initial.map((r) => [...r]),
-							notes: Array(9)
-								.fill(null)
-								.map(() =>
-									Array(9)
-										.fill(null)
-										.map(() => new Set<number>()),
-								),
+							notes: createEmptyNotes(),
 							actions: [],
 						});
 						setTimer(0);
@@ -433,50 +372,29 @@ export const GamePage: React.FC<GamePageProps> = ({
 					</button>
 				)}
 				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
-				<Dialog open={showWin} className="text-center">
-					<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
-					<h2 className="text-3xl font-bold mb-2">Victory!</h2>
-					<div className="flex flex-col gap-1 mb-6">
-						<p className="text-slate-400">Solved in {formatTime(timer)}</p>
-						<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
-							{DIFFICULTIES.find((d) => d.id === puzzle.difficulty)?.label ||
-								puzzle.difficulty}{" "}
-							Difficulty
-						</p>
-					</div>
-					<div className="flex flex-col gap-3">
-						<button
-							type="button"
-							onClick={() => {
-								setShowWin(false);
-								navigate("/review", {
-									state: {
-										initial: puzzle.initial.flat(),
-										solution: puzzle.solution.flat(),
-										time: timer,
-										difficulty: puzzle.difficulty,
-										actions: gameState.actions,
-										score: puzzle.score,
-										techniques: puzzle.techniques,
-									},
-								});
-							}}
-							className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10"
-						>
-							Review Game
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								setShowWin(false);
-								navigate("/");
-							}}
-							className="w-full py-4 bg-brand-primary rounded-xl font-bold shadow-lg shadow-brand-primary/40 active:scale-95 transition-all text-white"
-						>
-							Back to Menu
-						</button>
-					</div>
-				</Dialog>
+				<VictoryDialog
+					open={showWin}
+					time={timer}
+					difficulty={puzzle.difficulty}
+					onReview={() => {
+						setShowWin(false);
+						navigate("/review", {
+							state: buildReviewState({
+								initial: puzzle.initial,
+								solution: puzzle.solution,
+								time: timer,
+								difficulty: puzzle.difficulty,
+								actions: gameState.actions,
+								score: puzzle.score,
+								techniques: puzzle.techniques,
+							}),
+						});
+					}}
+					onHome={() => {
+						setShowWin(false);
+						navigate("/");
+					}}
+				/>
 			</div>
 		</Layout>
 	);

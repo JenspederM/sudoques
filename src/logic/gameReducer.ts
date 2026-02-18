@@ -1,9 +1,12 @@
-import type { Board, GameAction, GameState } from "../types";
+import type { Board, CellNotes, GameAction } from "../types";
+import { createEmptyNotes } from "./sudoku";
 
-export type ReducerGameState = Omit<
-	GameState,
-	"lastUpdated" | "timer" | "actions"
->;
+export type ReducerGameState = {
+	initial: Board;
+	current: Board;
+	notes: CellNotes;
+	solution: Board;
+};
 
 export function gameReducer(
 	state: ReducerGameState,
@@ -109,36 +112,29 @@ export function gameReducer(
 	}
 }
 
+export type ApplyActionsResult = {
+	state: ReducerGameState;
+	pointer: number;
+	historyLength: number;
+};
+
 /**
  * Reconstructs the game state from a list of actions applied to an initial board.
+ * Returns the final state along with undo/redo pointer info.
  */
 export function applyActions(
 	initialBoard: Board,
 	solution: Board,
 	actions: GameAction[],
-): ReducerGameState {
-	const state: ReducerGameState = {
+): ApplyActionsResult {
+	const initialState: ReducerGameState = {
 		initial: initialBoard,
 		current: initialBoard.map((row) => [...row]),
-		notes: Array(9)
-			.fill(null)
-			.map(() =>
-				Array(9)
-					.fill(null)
-					.map(() => new Set<number>()),
-			),
+		notes: createEmptyNotes(),
 		solution: solution,
 	};
 
-	// We only apply non-undo/redo actions here?
-	// Actually, playback usually means just replaying the move log.
-	// If the move log contains undo/redo, it gets complicated.
-	// Better to store only "canonical" moves in the playback log or handle undo/redo by popping/pushing.
-
-	// For now, let's assume actions in GameState.actions are the "undoable" history.
-	// If we want to support undo/redo in the log, we need to handle them.
-
-	const history: ReducerGameState[] = [state];
+	const history: ReducerGameState[] = [initialState];
 	let pointer = 0;
 
 	for (const action of actions) {
@@ -158,20 +154,21 @@ export function applyActions(
 
 	const finalState = history[pointer];
 	if (!finalState) {
-		// Fallback to initial state if something went wrong
 		return {
-			initial: initialBoard,
-			current: initialBoard.map((row) => [...row]),
-			notes: Array(9)
-				.fill(null)
-				.map(() =>
-					Array(9)
-						.fill(null)
-						.map(() => new Set<number>()),
-				),
-			solution: solution,
+			state: {
+				initial: initialBoard,
+				current: initialBoard.map((row) => [...row]),
+				notes: createEmptyNotes(),
+				solution: solution,
+			},
+			pointer: 0,
+			historyLength: 1,
 		};
 	}
 
-	return finalState;
+	return {
+		state: finalState,
+		pointer,
+		historyLength: history.length,
+	};
 }

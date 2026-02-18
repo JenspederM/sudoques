@@ -10,7 +10,6 @@ type LayoutProps = PropsWithChildren<{
 	backRedirect?: string;
 	backState?: unknown;
 	headerClassName?: string;
-	headerChildren?: React.ReactNode;
 	headerCenter?: React.ReactNode;
 	headerRight?: React.ReactNode;
 	contentClassName?: string;
@@ -21,7 +20,6 @@ export const Layout: React.FC<LayoutProps> = ({
 	headerClassName,
 	backRedirect,
 	backState,
-	headerChildren,
 	headerCenter,
 	headerRight,
 	contentClassName,
@@ -66,9 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({
 									</button>
 								</div>
 
-								<div className="flex justify-center flex-1">
-									{headerCenter || headerChildren}
-								</div>
+								<div className="flex justify-center flex-1">{headerCenter}</div>
 
 								<div className="flex justify-end">{headerRight}</div>
 							</MotionCard>

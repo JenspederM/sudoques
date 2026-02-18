@@ -15,7 +15,7 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
-			headerChildren={
+			headerCenter={
 				<h2 className="text-2xl font-black tracking-tight">New Game</h2>
 			}
 		>

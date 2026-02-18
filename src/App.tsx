@@ -16,6 +16,7 @@ import {
 	subscribeToUser,
 	subscribeToUserScores,
 } from "./logic/firebase";
+import { createEmptyNotes, isBoardComplete } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -103,18 +104,10 @@ export default function App() {
 				setIsLoading(true);
 				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
 
-				const notes: GameState["notes"] = Array(9)
-					.fill(null)
-					.map(() =>
-						Array(9)
-							.fill(null)
-							.map(() => new Set<number>()),
-					);
-
 				setGameState({
 					puzzle,
 					current: puzzle.initial.map((r) => [...r]),
-					notes,
+					notes: createEmptyNotes(),
 					actions: [],
 				});
 				setTimer(0);
@@ -150,12 +143,7 @@ export default function App() {
 							<HomePage
 								hasExistingGame={
 									!!gameState &&
-									!gameState.current.every((row, ri) =>
-										row.every(
-											(val, ci) =>
-												val === gameState.puzzle.solution?.[ri]?.[ci],
-										),
-									)
+									!isBoardComplete(gameState.current, gameState.puzzle.solution)
 								}
 							/>
 						</ProtectedRoute>

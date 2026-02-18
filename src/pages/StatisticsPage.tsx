@@ -3,7 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
-import { formatTime } from "@/lib/utils";
+import { buildReviewState, formatTime } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
@@ -28,7 +28,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
-			headerChildren={
+			headerCenter={
 				<h2 className="text-2xl font-black tracking-tight text-white">
 					Statistics
 				</h2>
@@ -63,15 +63,15 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 							transition={{ delay: idx * 0.05 }}
 							onClick={() => {
 								navigate("/review", {
-									state: {
-										initial: score.puzzle.initial.flat(),
-										solution: score.puzzle.solution.flat(),
+									state: buildReviewState({
+										initial: score.puzzle.initial,
+										solution: score.puzzle.solution,
 										time: score.time,
 										difficulty: score.puzzle.difficulty,
-										actions: score.actions,
+										actions: score.actions ?? [],
 										score: score.puzzle.score,
 										techniques: score.puzzle.techniques,
-									},
+									}),
 								});
 							}}
 							className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-colors cursor-pointer hover:bg-white/10"

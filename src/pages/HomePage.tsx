@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Brain, Play, Settings as SettingsIcon, Trophy } from "lucide-react";
+import { Play, Settings as SettingsIcon, Trophy } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
+import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "../components/Layout";
 
 interface HomePageProps {
@@ -18,12 +19,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center mb-12"
 			>
-				<div className="bg-brand-primary/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-brand-primary/20 border border-brand-primary/30">
-					<Brain size={56} className="text-brand-primary" />
-				</div>
-				<h1 className="text-5xl font-black mb-2 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient tracking-tight">
-					Sudoques
-				</h1>
+				<BrandHeader />
 			</motion.div>
 
 			{/* Actions */}

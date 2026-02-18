@@ -3,7 +3,7 @@ import { Layout } from "../components/Layout";
 
 export const NotFoundPage: React.FC = () => {
 	return (
-		<Layout backRedirect="/" headerChildren={<span>Back to home</span>}>
+		<Layout backRedirect="/" headerCenter={<span>Back to home</span>}>
 			<div className="text-center">
 				<h1 className="text-6xl font-black text-brand-primary mb-4">404</h1>
 				<p className="text-2xl font-bold text-white mb-2">Page Not Found</p>

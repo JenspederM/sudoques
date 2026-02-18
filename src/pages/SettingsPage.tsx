@@ -43,7 +43,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 	return (
 		<Layout
 			backRedirect="/"
-			headerChildren={
+			headerCenter={
 				<h2 className="text-2xl font-black tracking-tight">Settings</h2>
 			}
 		>

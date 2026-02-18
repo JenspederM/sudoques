@@ -1,8 +1,9 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { Brain, Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
+import { Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
 import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { BrandHeader } from "@/components/BrandHeader";
 import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
 import { Layout } from "../components/Layout";
 import { auth } from "../firebase";
@@ -47,13 +48,7 @@ export const SignupPage: React.FC = () => {
 				className="flex flex-col items-center"
 			>
 				<MotionCardTitle className="flex flex-col items-center gap-0">
-					<div className="bg-brand-primary/20 w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-brand-primary/20 border border-brand-primary/30">
-						<Brain size={56} className="text-brand-primary" />
-					</div>
-					<span className="text-5xl font-black mb-2 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient tracking-tight">
-						Sudoques
-					</span>
-					<p className="text-slate-400 font-medium">Create account</p>
+					<BrandHeader subtitle="Create account" />
 				</MotionCardTitle>
 
 				{error && (

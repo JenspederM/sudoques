@@ -7,4 +7,4 @@ export const DIFFICULTIES: LabelledDifficulty[] = [
 	{ id: "hard", label: "Hard", desc: "Focus and persistence" },
 	{ id: "expert", label: "Expert", desc: "For seasoned players" },
 	{ id: "master", label: "Master", desc: "The ultimate test" },
-] as const;
+];

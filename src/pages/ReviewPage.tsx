@@ -92,7 +92,7 @@ export const ReviewPage: React.FC = () => {
 			initialBoard,
 			solutionBoard,
 			actions.slice(0, playbackIndex),
-		);
+		).state;
 	}, [initialBoard, solutionBoard, actions, playbackIndex]);
 
 	const stepForward = useCallback(() => {

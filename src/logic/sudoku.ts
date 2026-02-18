@@ -1,8 +1,40 @@
-import type { Board } from "../types";
+import type { Board, CellNotes } from "../types";
 
-export const EMPTY_BOARD: Board = Array(9)
-	.fill(null)
-	.map(() => Array(9).fill(null));
+/**
+ * Creates a fresh 9×9 grid of empty note Sets.
+ */
+export function createEmptyNotes(): CellNotes {
+	return Array.from({ length: 9 }, () =>
+		Array.from({ length: 9 }, () => new Set<number>()),
+	);
+}
+
+/**
+ * Returns true when every cell in `current` matches `solution`.
+ */
+export function isBoardComplete(current: Board, solution: Board): boolean {
+	return current.every((row, ri) =>
+		row.every((val, ci) => {
+			const solRow = solution[ri];
+			return solRow ? val === solRow[ci] : false;
+		}),
+	);
+}
+
+/**
+ * Counts how many times each number appears on the board.
+ */
+export function countValues(board: Board): Map<number, number> {
+	const counts = new Map<number, number>();
+	for (const row of board) {
+		for (const val of row) {
+			if (val !== null) {
+				counts.set(val, (counts.get(val) || 0) + 1);
+			}
+		}
+	}
+	return counts;
+}
 
 export function parsePuzzle(puzzleStr: string): Board {
 	const board: Board = [];
