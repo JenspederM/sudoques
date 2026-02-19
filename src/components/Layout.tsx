@@ -39,6 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({
 				exit={{ opacity: 0 }}
 				transition={{ duration: 0.3 }}
 				className="relative z-10 w-full min-h-screen"
+				layout
 			>
 				<div className="safe flex flex-col items-center min-h-screen">
 					<div

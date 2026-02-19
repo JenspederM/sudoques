@@ -3,11 +3,11 @@ import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
+import { PageTitle } from "@/components/PageTitle";
 import { buildReviewState, formatTime } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
-import { PageTitle } from "@/components/PageTitle";
 
 interface StatisticsPageProps {
 	scores: HighScore[];
@@ -27,12 +27,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 		.sort((a, b) => a.time - b.time);
 
 	return (
-		<Layout
-			backRedirect="/"
-			headerCenter={
-				<PageTitle title="Statistics" />
-			}
-		>
+		<Layout backRedirect="/" headerCenter={<PageTitle title="Statistics" />}>
 			{/* Tabs */}
 			<MotionCard className="grid grid-cols-3 gap-2">
 				{DIFFICULTIES.map((d) => (

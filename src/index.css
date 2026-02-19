@@ -76,6 +76,7 @@
 
 	--bg-gradient-from: #1e293b;
 	--bg-gradient-to: #0f172a;
+	--brand-primary-light: rgba(99, 102, 241, 0.1);
 }
 
 /* ─── Light Mode ──────────────────────────────────── */
@@ -109,6 +110,7 @@
 
 	--bg-gradient-from: #e2e8f0;
 	--bg-gradient-to: #f1f5f9;
+	--brand-primary-light: rgba(99, 102, 241, 0.1);
 }
 
 body {
@@ -159,18 +161,21 @@ body {
 	--brand-primary: #f43f5e;
 	--brand-secondary: #fb7185;
 	--brand-accent: #fda4af;
+	--brand-primary-light: rgba(244, 63, 94, 0.1);
 }
 
 [data-theme="emerald"] {
 	--brand-primary: #10b981;
 	--brand-secondary: #34d399;
 	--brand-accent: #6ee7b7;
+	--brand-primary-light: rgba(16, 185, 129, 0.1);
 }
 
 [data-theme="amber"] {
 	--brand-primary: #f59e0b;
 	--brand-secondary: #fbbf24;
 	--brand-accent: #fcd34d;
+	--brand-primary-light: rgba(245, 158, 11, 0.1);
 }
 
 @layer base {
