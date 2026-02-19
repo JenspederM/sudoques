@@ -7,6 +7,7 @@ import { buildReviewState, formatTime } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
+import { PageTitle } from "@/components/PageTitle";
 
 interface StatisticsPageProps {
 	scores: HighScore[];
@@ -29,9 +30,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 		<Layout
 			backRedirect="/"
 			headerCenter={
-				<h2 className="text-2xl font-black tracking-tight text-text-primary">
-					Statistics
-				</h2>
+				<PageTitle title="Statistics" />
 			}
 		>
 			{/* Tabs */}

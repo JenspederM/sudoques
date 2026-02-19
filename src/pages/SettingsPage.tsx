@@ -11,6 +11,7 @@ import { Layout } from "../components/Layout";
 import { updateUserSettings } from "../logic/firebase";
 import type { Accent, Mode } from "../types";
 import { ThemeButton } from "@/components/ThemeButton";
+import { PageTitle } from "@/components/PageTitle";
 
 interface SettingsPageProps {
 	currentAccent: Accent;
@@ -56,7 +57,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 		<Layout
 			backRedirect="/"
 			headerCenter={
-				<h2 className="text-2xl font-black tracking-tight">Settings</h2>
+				<PageTitle title="Settings" />
 			}
 		>
 			{/* Profile Section */}
