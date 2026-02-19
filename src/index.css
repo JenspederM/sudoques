@@ -4,6 +4,7 @@
 	--color-brand-primary: var(--brand-primary);
 	--color-brand-secondary: var(--brand-secondary);
 	--color-brand-accent: var(--brand-accent);
+	--color-brand-primary-light: var(--brand-primary-light);
 	--color-glass: var(--glass-bg);
 	--color-glass-dark: var(--glass-dark-bg);
 	--color-surface-main: var(--surface-main);
@@ -36,6 +37,7 @@
 	--brand-primary: #6366f1;
 	--brand-secondary: #818cf8;
 	--brand-accent: #c084fc;
+	--brand-primary-light: rgba(99, 102, 241, 0.1);
 
 	/* Spacing & Sizing */
 	--safe-top: env(safe-area-inset-top, 0px);
@@ -80,37 +82,82 @@
 }
 
 /* ─── Light Mode ──────────────────────────────────── */
+/* ─── Light Mode ──────────────────────────────────── */
 [data-mode="light"] {
 	color-scheme: light;
 	color: #1e293b;
 	background-color: var(--surface-main);
 
-	--surface-main: #f1f5f9;
-	--surface-card: rgba(255, 255, 255, 0.7);
-	--surface-hover: rgba(0, 0, 0, 0.05);
-	--surface-input: rgba(0, 0, 0, 0.04);
+	--surface-main: #f8fafc; /* Slightly lighter bg */
+	--surface-card: rgba(255, 255, 255, 0.8);
+	--surface-hover: rgba(0, 0, 0, 0.06);
+	--surface-input: rgba(0, 0, 0, 0.05);
 
 	--text-primary: #0f172a;
-	--text-secondary: #475569;
-	--text-muted: #94a3b8;
+	--text-secondary: #334155; /* Darker for accessibility */
+	--text-muted: #64748b; /* Darker for accessibility */
 
-	--border-subtle: rgba(0, 0, 0, 0.1);
-	--border-strong: rgba(0, 0, 0, 0.2);
-	--grid-line: rgba(0, 0, 0, 0.15);
-	--cell-bg: rgba(255, 255, 255, 0.85);
+	--border-subtle: rgba(0, 0, 0, 0.12);
+	--border-strong: rgba(0, 0, 0, 0.25);
+	--grid-line: rgba(0, 0, 0, 0.2);
+	--cell-bg: rgba(255, 255, 255, 0.95);
 
-	--overlay-bg: rgba(241, 245, 249, 0.85);
+	--overlay-bg: rgba(248, 250, 252, 0.9);
 
 	/* Glassmorphism - light */
-	--glass-bg: rgba(255, 255, 255, 0.6);
-	--glass-dark-bg: rgba(241, 245, 249, 0.7);
-	--glass-border: rgba(0, 0, 0, 0.08);
+	--glass-bg: rgba(255, 255, 255, 0.7);
+	--glass-dark-bg: rgba(248, 250, 252, 0.8);
+	--glass-border: rgba(0, 0, 0, 0.1);
 	--glass-blur: 16px;
-	--glass-shadow: rgba(0, 0, 0, 0.08);
+	--glass-shadow: rgba(0, 0, 0, 0.1);
 
-	--bg-gradient-from: #e2e8f0;
-	--bg-gradient-to: #f1f5f9;
-	--brand-primary-light: rgba(99, 102, 241, 0.1);
+	--bg-gradient-from: #f1f5f9;
+	--bg-gradient-to: #f8fafc;
+
+	/* Default Accent Overrides for Light Mode */
+	--brand-primary: #4338ca; /* Indigo 700 */
+	--brand-secondary: #6366f1; /* Indigo 500 */
+	--brand-primary-light: rgba(67, 56, 202, 0.08);
+}
+
+/* ─── Theme Accents ────────────────────────────────── */
+[data-theme="rose"] {
+	--brand-primary: #f43f5e;
+	--brand-secondary: #fb7185;
+	--brand-accent: #fda4af;
+	--brand-primary-light: rgba(244, 63, 94, 0.1);
+}
+
+[data-mode="light"][data-theme="rose"] {
+	--brand-primary: #e11d48; /* Rose 600/700 */
+	--brand-secondary: #f43f5e;
+	--brand-primary-light: rgba(225, 29, 72, 0.08);
+}
+
+[data-theme="emerald"] {
+	--brand-primary: #10b981;
+	--brand-secondary: #34d399;
+	--brand-accent: #6ee7b7;
+	--brand-primary-light: rgba(16, 185, 129, 0.1);
+}
+
+[data-mode="light"][data-theme="emerald"] {
+	--brand-primary: #059669; /* Emerald 600/700 */
+	--brand-secondary: #10b981;
+	--brand-primary-light: rgba(5, 150, 105, 0.08);
+}
+
+[data-theme="amber"] {
+	--brand-primary: #f59e0b;
+	--brand-secondary: #fbbf24;
+	--brand-accent: #fcd34d;
+	--brand-primary-light: rgba(245, 158, 11, 0.1);
+}
+
+[data-mode="light"][data-theme="amber"] {
+	--brand-primary: #d97706; /* Amber 600/700 */
+	--brand-secondary: #f59e0b;
+	--brand-primary-light: rgba(217, 119, 6, 0.08);
 }
 
 body {
@@ -155,27 +202,6 @@ body {
 	padding-bottom: calc(var(--safe-bottom) + 1.5rem);
 	padding-left: calc(var(--safe-left) + 1rem);
 	padding-right: calc(var(--safe-right) + 1rem);
-}
-
-[data-theme="rose"] {
-	--brand-primary: #f43f5e;
-	--brand-secondary: #fb7185;
-	--brand-accent: #fda4af;
-	--brand-primary-light: rgba(244, 63, 94, 0.1);
-}
-
-[data-theme="emerald"] {
-	--brand-primary: #10b981;
-	--brand-secondary: #34d399;
-	--brand-accent: #6ee7b7;
-	--brand-primary-light: rgba(16, 185, 129, 0.1);
-}
-
-[data-theme="amber"] {
-	--brand-primary: #f59e0b;
-	--brand-secondary: #fbbf24;
-	--brand-accent: #fcd34d;
-	--brand-primary-light: rgba(245, 158, 11, 0.1);
 }
 
 @layer base {

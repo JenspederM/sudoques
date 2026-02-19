@@ -73,7 +73,7 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 								whileTap={{ scale: 0.95 }}
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
-									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer transition-all duration-200 select-none",
+									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
 									"bg-cell-bg",
 									r % 3 === 2 && r !== 8 && "border-b-2 border-border-strong",
 									c % 3 === 2 && c !== 8 && "border-r-2 border-border-strong",
@@ -84,13 +84,14 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 									highlighted &&
 										!selected &&
 										!conflict &&
-										"bg-brand-primary/20",
+										"bg-brand-primary/8",
 									selected &&
 										!conflict &&
-										"bg-brand-primary/40 ring-2 ring-brand-primary z-10",
+										"bg-brand-primary/16 ring-2 ring-brand-primary z-10",
 									conflict &&
 										"text-text-primary bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
 									!initial && !conflict && "text-brand-secondary font-semibold",
+									highlighted && !initial && !conflict && "text-brand-primary font-semibold",
 									initial && !conflict && "text-text-primary font-bold",
 								)}
 							>
@@ -105,7 +106,10 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 												<div
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
-													className="flex items-center justify-center"
+													className={cn(
+														"flex items-center justify-center text-brand-secondary",
+														highlighted && "text-brand-primary",
+													)}
 												>
 													{cellNotes?.has(i + 1) ? i + 1 : ""}
 												</div>
