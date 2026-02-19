@@ -94,4 +94,9 @@ async function uploadPuzzles() {
 	console.log(`${total} puzzles uploaded successfully!`);
 }
 
-uploadPuzzles().catch(console.error);
+uploadPuzzles()
+	.catch((err) => {
+		console.error(err);
+		process.exit(1);
+	})
+	.then(() => process.exit(0));
