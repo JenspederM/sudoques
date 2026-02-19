@@ -1,4 +1,9 @@
-import { AnimatePresence } from "framer-motion";
+import {
+	CheckCircleIcon,
+	CircleXIcon,
+	InfoIcon,
+	MessageCircleWarningIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
 	Navigate,
@@ -7,8 +12,10 @@ import {
 	useLocation,
 	useNavigate,
 } from "react-router-dom";
+import { Toaster, toast } from "sonner";
 import { useAuth } from "./components/AuthProvider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { UpdateNotification } from "./components/UpdateNotification";
 import {
 	getRandomPuzzle,
 	loadGameState,
@@ -118,7 +125,9 @@ export default function App() {
 				navigate("/game");
 			} catch (e) {
 				console.error("Failed to load puzzles from Firestore", e);
-				alert("Failed to fetch puzzle. Please try again.");
+				toast.error("Failed to fetch puzzle", {
+					description: (e as Error).message,
+				});
 			} finally {
 				setIsLoading(false);
 			}
@@ -135,7 +144,34 @@ export default function App() {
 	}
 
 	return (
-		<AnimatePresence mode="wait">
+		<>
+			<Toaster
+				position="bottom-center"
+				expand={false}
+				richColors
+				icons={{
+					error: <CircleXIcon className="w-4 h-4 text-red-500" />,
+					success: <CheckCircleIcon className="w-4 h-4 text-green-500" />,
+					info: <InfoIcon className="w-4 h-4 text-blue-500" />,
+					warning: (
+						<MessageCircleWarningIcon className="w-4 h-4 text-yellow-500" />
+					),
+				}}
+				toastOptions={{
+					style: {
+						backgroundColor: "var(--surface-card)",
+						color: "var(--text-primary)",
+						border: "1px solid var(--border-subtle)",
+					},
+					classNames: {
+						title: "!text-text-primary !font-bold",
+						description: "!text-text-secondary",
+						actionButton: "!text-text-primary !bg-brand-primary !font-bold",
+						cancelButton: "!text-text-primary !bg-glass-dark !font-bold",
+					},
+				}}
+			/>
+			<UpdateNotification />
 			<Routes location={location} key={location.pathname}>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
@@ -214,6 +250,6 @@ export default function App() {
 				/>
 				<Route path="*" element={<NotFoundPage />} />
 			</Routes>
-		</AnimatePresence>
+		</>
 	);
 }
