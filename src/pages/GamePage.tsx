@@ -291,11 +291,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
 
 	// Calculate disabled numbers (completed 9 instances)
-	const disabledNumbers = Array.from(
-		countValues(currentDerivedState.current).entries(),
-	)
+	const valueCounts = countValues(currentDerivedState.current);
+	const disabledNumbers = Array.from(valueCounts.entries())
 		.filter(([_, count]) => count >= 9)
 		.map(([num]) => num);
+
+	const remainingCounts = new Map<number, number>(
+		[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [n, 9 - (valueCounts.get(n) || 0)]),
+	);
 
 	return (
 		<Layout
@@ -371,7 +374,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 						Solve (Dev Only)
 					</button>
 				)}
-				<Numpad onNumberClick={handleInput} disabledNumbers={disabledNumbers} />
+				<Numpad
+					onNumberClick={handleInput}
+					disabledNumbers={disabledNumbers}
+					remainingCounts={remainingCounts}
+				/>
 				<VictoryDialog
 					open={showWin}
 					time={timer}
