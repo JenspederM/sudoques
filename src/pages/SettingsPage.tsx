@@ -10,6 +10,7 @@ import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { updateUserSettings } from "../logic/firebase";
 import type { Accent, Mode } from "../types";
+import { ThemeButton } from "@/components/ThemeButton";
 
 interface SettingsPageProps {
 	currentAccent: Accent;
@@ -107,16 +108,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 					<span className="text-xl font-bold">Mode</span>
 				</MotionCardTitle>
 				<MotionCardContent className="grid grid-cols-2 gap-3">
-					<button
-						type="button"
-						onClick={() => handleChangeMode("light")}
-						className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-							currentMode === "light"
-								? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-								: "border-transparent glass hover:bg-surface-hover"
-						}`}
-					>
-						<div
+					<ThemeButton
+						label={"Light"}
+						isActive={currentMode === "light"}
+						onChange={() => handleChangeMode("light")}
+						icon={
+							<div
 							className={`w-12 h-12 rounded-full bg-amber-100 shadow-inner flex items-center justify-center ${
 								currentMode === "light" ? "ring-2 ring-brand-primary" : ""
 							}`}
@@ -128,26 +125,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 								}
 							/>
 						</div>
-						<span
-							className={`font-bold ${
-								currentMode === "light"
-									? "text-text-primary"
-									: "text-text-secondary"
-							}`}
-						>
-							Light
-						</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => handleChangeMode("dark")}
-						className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-							currentMode === "dark"
-								? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-								: "border-transparent glass hover:bg-surface-hover"
-						}`}
-					>
-						<div
+						}
+					></ThemeButton>
+					<ThemeButton
+						label={"Dark"}
+						isActive={currentMode === "dark"}
+						onChange={() => handleChangeMode("dark")}
+						icon={
+							<div
 							className={`w-12 h-12 rounded-full bg-slate-800 shadow-inner flex items-center justify-center ${
 								currentMode === "dark" ? "ring-2 ring-brand-primary" : ""
 							}`}
@@ -159,16 +144,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 								}
 							/>
 						</div>
-						<span
-							className={`font-bold ${
-								currentMode === "dark"
-									? "text-text-primary"
-									: "text-text-secondary"
-							}`}
-						>
-							Dark
-						</span>
-					</button>
+						}
+					></ThemeButton>
 				</MotionCardContent>
 			</MotionCard>
 
@@ -184,33 +161,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 				</MotionCardTitle>
 				<MotionCardContent className="grid grid-cols-2 gap-3">
 					{accents.map((a) => (
-						<button
-							type="button"
+						<ThemeButton
 							key={a.id}
-							onClick={() => handleChangeAccent(a.id)}
-							className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-								currentAccent === a.id
-									? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-									: "border-transparent glass hover:bg-surface-hover"
-							}`}
-						>
-							<div
-								className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
-							>
-								{currentAccent === a.id && (
-									<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-								)}
-							</div>
-							<span
-								className={`font-bold ${
-									currentAccent === a.id
-										? "text-text-primary"
-										: "text-text-secondary"
-								}`}
-							>
-								{a.name}
-							</span>
-						</button>
+							label={a.name}
+							isActive={currentAccent === a.id}
+							onChange={() => handleChangeAccent(a.id)}
+							icon={
+								<div
+									className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
+								>
+									{currentAccent === a.id && (
+										<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+									)}
+								</div>
+							}
+						></ThemeButton>
 					))}
 				</MotionCardContent>
 			</MotionCard>
