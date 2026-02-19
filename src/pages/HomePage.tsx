@@ -33,7 +33,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					<button
 						type="button"
 						onClick={() => navigate("/game")}
-						className="group relative flex items-center justify-center gap-3 py-5 rounded-2xl bg-white text-slate-950 font-bold text-lg shadow-xl active:scale-95 transition-all"
+						className="group relative flex items-center justify-center gap-3 py-5 rounded-2xl bg-surface-card text-text-primary font-bold text-lg shadow-xl active:scale-95 transition-all border border-border-subtle"
 					>
 						<Play size={24} fill="currentColor" />
 						<span>Continue Game</span>
@@ -54,7 +54,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					<button
 						type="button"
 						onClick={() => navigate("/statistics")}
-						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
+						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-surface-hover text-text-primary font-bold active:scale-95 transition-all border border-border-subtle"
 					>
 						<Trophy size={20} className="text-yellow-400" />
 						<span>Statistics</span>
@@ -65,7 +65,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 						onClick={() =>
 							navigate("/settings", { state: { activeDiff: "easy" } })
 						}
-						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-white/10 text-white font-bold active:scale-95 transition-all border border-white/10"
+						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-surface-hover text-text-primary font-bold active:scale-95 transition-all border border-border-subtle"
 					>
 						<SettingsIcon size={20} />
 						<span>Settings</span>

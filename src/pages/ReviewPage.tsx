@@ -125,7 +125,7 @@ export const ReviewPage: React.FC = () => {
 		return (
 			<Layout>
 				<div className="flex flex-col items-center justify-center min-h-screen">
-					<p className="text-white mb-4">No game data found.</p>
+					<p className="text-text-primary mb-4">No game data found.</p>
 					<button
 						type="button"
 						onClick={() => navigate("/statistics")}
@@ -174,7 +174,7 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepBack}
-							className="p-3 text-slate-400 hover:text-white transition-colors"
+							className="p-3 text-text-secondary hover:text-brand-primary transition-colors"
 						>
 							<SkipBack size={28} />
 						</button>
@@ -199,14 +199,14 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepForward}
-							className="p-3 text-slate-400 hover:text-white transition-colors"
+							className="p-3 text-text-secondary hover:text-brand-primary transition-colors"
 						>
 							<SkipForward size={28} />
 						</button>
 					</div>
 
 					<div className="w-full max-w-md px-4 flex flex-col gap-2">
-						<div className="flex justify-between items-center text-xs font-medium text-slate-500 uppercase tracking-wider">
+						<div className="flex justify-between items-center text-xs font-medium text-text-muted uppercase tracking-wider">
 							<span className="w-16 flex justify-start">{formatTime(0)}</span>
 							<span className="flex-1 flex justify-center whitespace-nowrap px-2 tabular-nums">
 								{playbackIndex} / {actions.length} moves
@@ -223,12 +223,12 @@ export const ReviewPage: React.FC = () => {
 							onChange={(e) =>
 								setPlaybackTime(parseInt(e.target.value, 10) / 100)
 							}
-							className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+							className="w-full h-1.5 bg-surface-input rounded-lg appearance-none cursor-pointer accent-brand-primary"
 						/>
 					</div>
 
 					{/* Speed Controls */}
-					<div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5">
+					<div className="flex items-center gap-2 bg-surface-input p-1 rounded-xl border border-border-subtle">
 						{[1, 2, 4, 8, 16, 32].map((speed) => (
 							<button
 								key={speed}
@@ -237,7 +237,7 @@ export const ReviewPage: React.FC = () => {
 								className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
 									speedMultiplier === speed
 										? "bg-brand-primary text-white"
-										: "text-slate-500 hover:text-white"
+										: "text-text-muted hover:text-brand-primary hover:bg-brand-primary/10"
 								}`}
 							>
 								{speed}x

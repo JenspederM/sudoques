@@ -26,7 +26,7 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Difficulty, GameState, HighScore } from "./types";
+import type { Accent, Difficulty, GameState, HighScore, Mode } from "./types";
 
 export default function App() {
 	const [gameState, setGameState] = useState<Omit<
@@ -36,7 +36,8 @@ export default function App() {
 
 	const { user, loading: authLoading } = useAuth();
 	const [isLoading, setIsLoading] = useState(true);
-	const [theme, setTheme] = useState("default");
+	const [accent, setAccent] = useState<Accent>("default");
+	const [mode, setMode] = useState<Mode>("dark");
 	const [playedPuzzles, setPlayedPuzzles] = useState<string[]>([]);
 	const [scores, setScores] = useState<HighScore[]>([]);
 
@@ -50,7 +51,8 @@ export default function App() {
 
 			// Metadata subscription (theme, played puzzles)
 			const unsubscribeUser = subscribeToUser(user.uid, (data) => {
-				setTheme(data.settings?.theme || "default");
+				setAccent(data.settings?.accent || "default");
+				setMode(data.settings?.mode || "dark");
 				setPlayedPuzzles(data.playedPuzzles || []);
 			});
 
@@ -83,7 +85,8 @@ export default function App() {
 		if (!user && !authLoading) {
 			setGameState(null);
 			setTimer(0);
-			setTheme("default");
+			setAccent("default");
+			setMode("dark");
 			setPlayedPuzzles([]);
 			setScores([]);
 			setIsLoading(false);
@@ -92,8 +95,9 @@ export default function App() {
 
 	// Theme effect - applied to DOM
 	useEffect(() => {
-		document.documentElement.setAttribute("data-theme", theme);
-	}, [theme]);
+		document.documentElement.setAttribute("data-theme", accent);
+		document.documentElement.setAttribute("data-mode", mode);
+	}, [accent, mode]);
 
 	const [timer, setTimer] = useState(0);
 
@@ -124,7 +128,7 @@ export default function App() {
 
 	if (authLoading) {
 		return (
-			<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+			<div className="min-h-screen bg-surface-main flex items-center justify-center text-text-primary">
 				<div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
 			</div>
 		);
@@ -163,7 +167,7 @@ export default function App() {
 					path="/settings"
 					element={
 						<ProtectedRoute>
-							<SettingsPage currentTheme={theme} />
+							<SettingsPage currentAccent={accent} currentMode={mode} />
 						</ProtectedRoute>
 					}
 				/>
@@ -191,7 +195,7 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							{isLoading ? (
-								<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
+								<div className="min-h-screen bg-surface-main flex items-center justify-center text-text-primary">
 									<div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
 								</div>
 							) : gameState ? (

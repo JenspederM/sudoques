@@ -29,7 +29,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 		<Layout
 			backRedirect="/"
 			headerCenter={
-				<h2 className="text-2xl font-black tracking-tight text-white">
+				<h2 className="text-2xl font-black tracking-tight text-text-primary">
 					Statistics
 				</h2>
 			}
@@ -44,7 +44,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 						className={`py-2 rounded-xl text-sm font-bold transition-all ${
 							activeDiff === d.id
 								? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
-								: "text-slate-400 hover:text-white"
+								: "text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10"
 						}`}
 					>
 						{d.label}
@@ -74,7 +74,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 									}),
 								});
 							}}
-							className="flex items-center justify-between p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-colors cursor-pointer hover:bg-white/10"
+							className="flex items-center justify-between p-5 rounded-[1.5rem] bg-surface-input border border-border-subtle transition-colors cursor-pointer hover:bg-surface-hover"
 						>
 							<div className="flex items-center gap-4">
 								<span
@@ -85,20 +85,20 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 												? "bg-slate-300 text-slate-900 shadow-lg shadow-slate-300/20"
 												: idx === 2
 													? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
-													: "bg-white/10 text-slate-400"
+													: "bg-surface-hover text-text-secondary"
 									}`}
 								>
 									{idx + 1}
 								</span>
 								<div>
-									<p className="font-bold text-white text-lg">
+									<p className="font-bold text-text-primary text-lg">
 										{score.date.toDate().toLocaleDateString(undefined, {
 											month: "short",
 											day: "numeric",
 											year: "numeric",
 										})}
 									</p>
-									<p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
+									<p className="text-xs text-text-muted font-medium tracking-wide uppercase">
 										{score.date.toDate().toLocaleTimeString(undefined, {
 											hour: "numeric",
 											minute: "2-digit",
@@ -116,10 +116,12 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 					<MotionCard className="text-center py-16">
 						<Trophy
 							size={48}
-							className="text-slate-700 mx-auto mb-4 opacity-20"
+							className="text-text-muted mx-auto mb-4 opacity-20"
 						/>
-						<p className="text-slate-400 font-bold text-lg">No scores yet</p>
-						<p className="text-sm text-slate-500">
+						<p className="text-text-secondary font-bold text-lg">
+							No scores yet
+						</p>
+						<p className="text-sm text-text-muted">
 							Be the first to claim victory!
 						</p>
 					</MotionCard>

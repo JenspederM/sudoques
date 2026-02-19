@@ -162,7 +162,7 @@ export function subscribeToUser(
 			callback(parsedData);
 		} else {
 			callback({
-				settings: { theme: "default" },
+				settings: { accent: "default", mode: "dark" },
 				gameState: null,
 				playedPuzzles: [],
 			});

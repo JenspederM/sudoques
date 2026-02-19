@@ -26,7 +26,7 @@ export function Dialog({ open, onClose, className, children }: DialogProps) {
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
 					onClick={onClose}
-					className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6"
+					className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay backdrop-blur-md p-6"
 				>
 					<MotionCard
 						initial={{ scale: 0.9, y: 20 }}

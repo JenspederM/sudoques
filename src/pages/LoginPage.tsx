@@ -84,7 +84,7 @@ export const LoginPage: React.FC = () => {
 				<form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4">
 					<div className="relative">
 						<Mail
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
 							size={20}
 						/>
 						<input
@@ -92,13 +92,13 @@ export const LoginPage: React.FC = () => {
 							placeholder="Email Address"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
 							required
 						/>
 					</div>
 					<div className="relative">
 						<Lock
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
 							size={20}
 						/>
 						<input
@@ -106,7 +106,7 @@ export const LoginPage: React.FC = () => {
 							placeholder="Password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
 							required
 						/>
 					</div>
@@ -125,11 +125,11 @@ export const LoginPage: React.FC = () => {
 				</form>
 
 				<div className="w-full flex items-center gap-4 my-8">
-					<div className="h-[1px] flex-1 bg-white/10" />
-					<span className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+					<div className="h-[1px] flex-1 bg-border-subtle" />
+					<span className="text-text-muted text-xs font-bold uppercase tracking-widest">
 						or
 					</span>
-					<div className="h-[1px] flex-1 bg-white/10" />
+					<div className="h-[1px] flex-1 bg-border-subtle" />
 				</div>
 
 				<div className="w-full flex flex-col gap-3">
@@ -137,7 +137,7 @@ export const LoginPage: React.FC = () => {
 						type="button"
 						onClick={handleGoogleAuth}
 						disabled={loading}
-						className="w-full py-4 glass hover:bg-white/10 text-white font-bold rounded-2xl border border-white/10 transition-all flex items-center justify-center gap-3"
+						className="w-full py-4 glass hover:bg-surface-hover text-text-primary font-bold rounded-2xl border border-border-subtle transition-all flex items-center justify-center gap-3"
 					>
 						<img
 							src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -151,7 +151,7 @@ export const LoginPage: React.FC = () => {
 						type="button"
 						onClick={handleAnonymousAuth}
 						disabled={loading}
-						className="w-full py-4 text-slate-400 hover:text-white font-bold transition-all text-sm"
+						className="w-full py-4 text-text-secondary hover:text-text-primary font-bold transition-all text-sm"
 					>
 						Continue as Guest
 					</button>
@@ -160,7 +160,7 @@ export const LoginPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/signup")}
-					className="mt-2 text-sm font-medium text-slate-400 hover:text-brand-primary transition-colors"
+					className="mt-2 text-sm font-medium text-text-secondary hover:text-brand-primary transition-colors"
 				>
 					Don't have an account? Sign Up
 				</button>

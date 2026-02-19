@@ -24,7 +24,7 @@ export const VictoryDialog: React.FC<VictoryDialogProps> = ({
 			<Trophy size={64} className="text-yellow-400 mx-auto mb-4" />
 			<h2 className="text-3xl font-bold mb-2">Victory!</h2>
 			<div className="flex flex-col gap-1 mb-6">
-				<p className="text-slate-400">Solved in {formatTime(time)}</p>
+				<p className="text-text-secondary">Solved in {formatTime(time)}</p>
 				<p className="text-yellow-500/80 font-bold uppercase tracking-wider text-sm">
 					{DIFFICULTIES.find((d) => d.id === difficulty)?.label || difficulty}{" "}
 					Difficulty
@@ -34,7 +34,7 @@ export const VictoryDialog: React.FC<VictoryDialogProps> = ({
 				<button
 					type="button"
 					onClick={onReview}
-					className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10"
+					className="w-full py-4 bg-surface-hover hover:bg-surface-input rounded-xl font-bold transition-all border border-border-subtle"
 				>
 					Review Game
 				</button>

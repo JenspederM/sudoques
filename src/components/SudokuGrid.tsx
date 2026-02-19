@@ -56,7 +56,7 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		conflicts.some((conf) => conf.row === r && conf.col === c);
 
 	return (
-		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg glass aspect-square w-full shrink-0 overflow-hidden">
+		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full shrink-0 overflow-hidden bg-[var(--grid-line)]">
 			{(currentBoard as (number | null)[][]).map(
 				(row: (number | null)[], r: number) =>
 					row.map((val: number | null, c: number) => {
@@ -74,9 +74,9 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer transition-all duration-200 select-none",
-									"bg-glass",
-									r % 3 === 2 && r !== 8 && "border-b-2 border-white/30",
-									c % 3 === 2 && c !== 8 && "border-r-2 border-white/30",
+									"bg-cell-bg",
+									r % 3 === 2 && r !== 8 && "border-b-2 border-border-strong",
+									c % 3 === 2 && c !== 8 && "border-r-2 border-border-strong",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
@@ -89,15 +89,15 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 										!conflict &&
 										"bg-brand-primary/40 ring-2 ring-brand-primary z-10",
 									conflict &&
-										"text-white bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
+										"text-text-primary bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
 									!initial && !conflict && "text-brand-secondary font-semibold",
-									initial && !conflict && "text-white font-bold",
+									initial && !conflict && "text-text-primary font-bold",
 								)}
 							>
 								{val !== null ? (
 									<span>{val}</span>
 								) : (
-									<div className="grid grid-cols-3 grid-rows-3 w-full h-full p-[2px] text-[8px] sm:text-[10px] leading-tight text-slate-400">
+									<div className="grid grid-cols-3 grid-rows-3 w-full h-full p-[2px] text-[8px] sm:text-[10px] leading-tight text-text-muted">
 										{Array.from({ length: 9 }).map((_, i) => {
 											const rowNotes = notes[r];
 											const cellNotes = rowNotes ? rowNotes[c] : null;

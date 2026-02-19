@@ -30,7 +30,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					onClick={onUndo}
 					disabled={!canUndo}
 					className={cn(
-						"p-2 sm:p-3 rounded-full glass hover:bg-white/10 transition-all",
+						"p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all",
 						!canUndo && "opacity-30 cursor-not-allowed",
 					)}
 					title="Undo"
@@ -43,7 +43,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					onClick={onRedo}
 					disabled={!canRedo}
 					className={cn(
-						"p-2 sm:p-3 rounded-full glass hover:bg-white/10 transition-all",
+						"p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all",
 						!canRedo && "opacity-30 cursor-not-allowed",
 					)}
 					title="Redo"
@@ -61,7 +61,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 						"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300",
 						isNoteMode
 							? "bg-brand-primary text-white shadow-lg shadow-brand-primary/40 ring-2 ring-brand-primary/50"
-							: "glass text-slate-400 hover:text-white hover:bg-white/10",
+							: "glass text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10",
 					)}
 				>
 					<Pencil size={20} className={isNoteMode ? "animate-bounce" : ""} />
@@ -76,7 +76,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					type="button"
 					data-testid="restart-button"
 					onClick={onRestart}
-					className="p-2 sm:p-3 rounded-full glass hover:bg-red-500/10 hover:text-red-400 transition-all"
+					className="p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-red-500/10 hover:text-red-400 transition-all"
 					title="Restart"
 				>
 					<RotateCcw size={24} />

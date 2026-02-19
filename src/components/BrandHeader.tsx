@@ -14,7 +14,9 @@ export const BrandHeader: React.FC<BrandHeaderProps> = ({ subtitle }) => {
 			<span className="text-5xl font-black mb-2 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient tracking-tight">
 				Sudoques
 			</span>
-			{subtitle && <p className="text-slate-400 font-medium">{subtitle}</p>}
+			{subtitle && (
+				<p className="text-text-secondary font-medium">{subtitle}</p>
+			)}
 		</>
 	);
 };

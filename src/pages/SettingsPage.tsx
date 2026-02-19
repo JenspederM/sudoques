@@ -1,4 +1,4 @@
-import { LogOut, Palette, User as UserIcon } from "lucide-react";
+import { LogOut, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,12 +9,17 @@ import {
 import { useAuth } from "../components/AuthProvider";
 import { Layout } from "../components/Layout";
 import { updateUserSettings } from "../logic/firebase";
+import type { Accent, Mode } from "../types";
 
 interface SettingsPageProps {
-	currentTheme: string;
+	currentAccent: Accent;
+	currentMode: Mode;
 }
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({
+	currentAccent,
+	currentMode,
+}) => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
 
@@ -27,13 +32,19 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 		}
 	};
 
-	const handleChangeTheme = (theme: string) => {
+	const handleChangeAccent = (accent: Accent) => {
 		if (user) {
-			updateUserSettings(user.uid, { theme });
+			updateUserSettings(user.uid, { accent });
 		}
 	};
 
-	const themes = [
+	const handleChangeMode = (mode: Mode) => {
+		if (user) {
+			updateUserSettings(user.uid, { mode });
+		}
+	};
+
+	const accents: { id: Accent; name: string; color: string }[] = [
 		{ id: "default", name: "Indigo", color: "bg-[#6366f1]" },
 		{ id: "rose", name: "Rose", color: "bg-[#f43f5e]" },
 		{ id: "emerald", name: "Emerald", color: "bg-[#10b981]" },
@@ -57,15 +68,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 					<span className="text-xl font-bold">Profile</span>
 				</MotionCardTitle>
 				<MotionCardContent>
-					<div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+					<div className="flex items-center gap-4 p-4 rounded-2xl bg-surface-input border border-border-subtle">
 						<div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary">
 							<UserIcon size={24} />
 						</div>
 						<div className="flex-1 min-w-0">
-							<p className="font-bold text-white truncate">
+							<p className="font-bold text-text-primary truncate">
 								{user?.displayName || "Anonymous User"}
 							</p>
-							<p className="text-sm text-slate-500 truncate">
+							<p className="text-sm text-text-muted truncate">
 								{user?.email || "Guest Session"}
 							</p>
 						</div>
@@ -81,42 +92,123 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ currentTheme }) => {
 				</MotionCardContent>
 			</MotionCard>
 
-			{/* Theme Section */}
+			{/* Mode Section */}
 			<MotionCard
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.05 }}
 			>
 				<MotionCardTitle className="flex items-center gap-3">
-					<Palette size={24} className="text-brand-primary" />
-					<span className="text-xl font-bold">Theme</span>
+					{currentMode === "dark" ? (
+						<Moon size={24} className="text-brand-primary" />
+					) : (
+						<Sun size={24} className="text-brand-primary" />
+					)}
+					<span className="text-xl font-bold">Mode</span>
 				</MotionCardTitle>
 				<MotionCardContent className="grid grid-cols-2 gap-3">
-					{themes.map((theme) => (
+					<button
+						type="button"
+						onClick={() => handleChangeMode("light")}
+						className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
+							currentMode === "light"
+								? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
+								: "border-transparent glass hover:bg-surface-hover"
+						}`}
+					>
+						<div
+							className={`w-12 h-12 rounded-full bg-amber-100 shadow-inner flex items-center justify-center ${
+								currentMode === "light" ? "ring-2 ring-brand-primary" : ""
+							}`}
+						>
+							<Sun
+								size={24}
+								className={
+									currentMode === "light" ? "text-amber-500" : "text-amber-400"
+								}
+							/>
+						</div>
+						<span
+							className={`font-bold ${
+								currentMode === "light"
+									? "text-text-primary"
+									: "text-text-secondary"
+							}`}
+						>
+							Light
+						</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => handleChangeMode("dark")}
+						className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
+							currentMode === "dark"
+								? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
+								: "border-transparent glass hover:bg-surface-hover"
+						}`}
+					>
+						<div
+							className={`w-12 h-12 rounded-full bg-slate-800 shadow-inner flex items-center justify-center ${
+								currentMode === "dark" ? "ring-2 ring-brand-primary" : ""
+							}`}
+						>
+							<Moon
+								size={24}
+								className={
+									currentMode === "dark" ? "text-indigo-300" : "text-slate-400"
+								}
+							/>
+						</div>
+						<span
+							className={`font-bold ${
+								currentMode === "dark"
+									? "text-text-primary"
+									: "text-text-secondary"
+							}`}
+						>
+							Dark
+						</span>
+					</button>
+				</MotionCardContent>
+			</MotionCard>
+
+			{/* Accent Color Section */}
+			<MotionCard
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.1 }}
+			>
+				<MotionCardTitle className="flex items-center gap-3">
+					<Palette size={24} className="text-brand-primary" />
+					<span className="text-xl font-bold">Accent</span>
+				</MotionCardTitle>
+				<MotionCardContent className="grid grid-cols-2 gap-3">
+					{accents.map((a) => (
 						<button
 							type="button"
-							key={theme.id}
-							onClick={() => handleChangeTheme(theme.id)}
+							key={a.id}
+							onClick={() => handleChangeAccent(a.id)}
 							className={`group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-2 ${
-								currentTheme === theme.id ||
-								(currentTheme === "" && theme.id === "default")
+								currentAccent === a.id
 									? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-									: "border-transparent glass hover:bg-white/5"
+									: "border-transparent glass hover:bg-surface-hover"
 							}`}
 						>
 							<div
-								className={`w-12 h-12 rounded-full ${theme.color} shadow-inner flex items-center justify-center`}
+								className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
 							>
-								{currentTheme === theme.id && (
+								{currentAccent === a.id && (
 									<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
 								)}
 							</div>
 							<span
 								className={`font-bold ${
-									currentTheme === theme.id ? "text-white" : "text-slate-400"
+									currentAccent === a.id
+										? "text-text-primary"
+										: "text-text-secondary"
 								}`}
 							>
-								{theme.name}
+								{a.name}
 							</span>
 						</button>
 					))}

@@ -7,6 +7,8 @@ export type Difficulty =
 	| "hard"
 	| "expert"
 	| "master";
+export type Accent = "default" | "rose" | "emerald" | "amber";
+export type Mode = "light" | "dark";
 export type LabelledDifficulty = {
 	id: Difficulty;
 	label: string;
@@ -64,7 +66,8 @@ export type DBGameState = {
 // ─── User Document ─────────────────────────────────
 export type UserDocument = {
 	settings: {
-		theme: string;
+		accent: Accent;
+		mode: Mode;
 	};
 	gameState: Omit<GameState, "lastUpdated"> | null;
 	playedPuzzles?: string[];
@@ -72,7 +75,8 @@ export type UserDocument = {
 
 export type DBUserDocument = {
 	settings: {
-		theme: string;
+		accent: Accent;
+		mode: Mode;
 	};
 	gameState: DBGameState | null;
 	playedPuzzles?: string[];

@@ -26,7 +26,7 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
 	const navigate = useNavigate();
 	return (
-		<div className="min-h-screen w-full overflow-hidden relative bg-slate-950">
+		<div className="min-h-screen w-full overflow-hidden relative bg-surface-main">
 			{/* Animated Background Blobs */}
 			<div className="fixed inset-0 overflow-hidden pointer-events-none">
 				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 rounded-full blur-[120px] animate-pulse" />
@@ -50,7 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({
 						{backRedirect && (
 							<MotionCard
 								className={cn(
-									"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-white/10 shadow-xl",
+									"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border-subtle shadow-xl",
 									headerClassName,
 								)}
 							>
@@ -58,7 +58,7 @@ export const Layout: React.FC<LayoutProps> = ({
 									<button
 										type="button"
 										onClick={() => navigate(backRedirect, { state: backState })}
-										className="p-2 hover:bg-white/10 rounded-xl transition-all active:scale-90"
+										className="p-2 hover:bg-surface-hover rounded-xl transition-all active:scale-90"
 									>
 										<ChevronLeft size={28} />
 									</button>

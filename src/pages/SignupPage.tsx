@@ -60,7 +60,7 @@ export const SignupPage: React.FC = () => {
 				<form onSubmit={handleSignup} className="w-full flex flex-col gap-4">
 					<div className="relative">
 						<UserIcon
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
 							size={20}
 						/>
 						<input
@@ -68,13 +68,13 @@ export const SignupPage: React.FC = () => {
 							placeholder="Your Name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
 						/>
 					</div>
 
 					<div className="relative">
 						<Mail
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
 							size={20}
 						/>
 						<input
@@ -82,13 +82,13 @@ export const SignupPage: React.FC = () => {
 							placeholder="Email Address"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
 							required
 						/>
 					</div>
 					<div className="relative">
 						<Lock
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
 							size={20}
 						/>
 						<input
@@ -96,7 +96,7 @@ export const SignupPage: React.FC = () => {
 							placeholder="Password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-white/5 border border-white/10 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
 							required
 						/>
 					</div>
@@ -117,7 +117,7 @@ export const SignupPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/login")}
-					className="mt-8 text-sm font-medium text-slate-400 hover:text-brand-primary transition-colors"
+					className="mt-8 text-sm font-medium text-text-secondary hover:text-brand-primary transition-colors"
 				>
 					Already have an account? Sign In
 				</button>
