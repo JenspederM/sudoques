@@ -26,7 +26,7 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
 	const hasHeader = backRedirect && (headerCenter || headerRight);
 	return (
-		<div className="flex flex-col absolute inset-0 w-full min-h-0 max-h-screen items-center justify-center overscroll-contain">
+		<div className="flex flex-col fixed inset-0 w-full min-h-0 h-dvh overflow-hidden items-center justify-center overscroll-contain">
 			{/* Animated Background Blobs */}
 			<div className="fixed inset-0 pointer-events-none">
 				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
