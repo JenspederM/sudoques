@@ -2,6 +2,7 @@ import { Trophy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Layout } from "@/components/Layout";
 import { PageTitle } from "@/components/PageTitle";
 import {
 	StaggeredList,
@@ -10,7 +11,6 @@ import {
 import { Timer } from "@/components/Timer";
 import { buildReviewState } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
-import { Layout } from "@/components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 
 interface StatisticsPageProps {

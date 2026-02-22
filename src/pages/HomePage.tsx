@@ -2,11 +2,11 @@ import { Play, Settings as SettingsIcon, Trophy } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
+import { Layout } from "@/components/Layout";
 import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
-import { Layout } from "@/components/Layout";
 
 interface HomePageProps {
 	hasExistingGame: boolean;

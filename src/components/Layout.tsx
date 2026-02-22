@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({
 						headerRight={headerRight}
 					/>
 				)}
-					{children}
+				{children}
 			</motion.main>
 		</div>
 	);

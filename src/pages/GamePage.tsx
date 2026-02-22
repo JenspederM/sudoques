@@ -3,14 +3,18 @@ import { Timestamp } from "firebase/firestore";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { buildReviewState } from "@/lib/utils";
 import { GameControls } from "@/components/GameControls";
 import { Layout } from "@/components/Layout";
 import { Numpad } from "@/components/Numpad";
 import { PuzzleInfoDialog } from "@/components/PuzzleInfoDialog";
+import {
+	StaggeredList,
+	StaggeredListElement,
+} from "@/components/StaggeredList";
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
 import { VictoryDialog } from "@/components/VictoryDialog";
+import { buildReviewState } from "@/lib/utils";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,
@@ -313,40 +317,40 @@ export const GamePage: React.FC<GamePageProps> = ({
 				/>
 			}
 		>
-			{/* Grid */}
-			<div className="flex flex-col flex-1 sm:flex-0 w-full mb-4">
-				<SudokuGrid
-					initialBoard={puzzle.initial}
-					currentBoard={gameState.current}
-					notes={gameState.notes}
-					selectedCell={selectedCell}
-					onCellSelect={handleCellSelect}
-					conflicts={conflicts}
-				/>
-			</div>
-
-			{/* Controls & Numpad */}
-			<div className="w-full flex flex-col items-center gap-2">
-				<GameControls
-					isNoteMode={isNoteMode}
-					onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
-					onUndo={undo}
-					onRedo={redo}
-					onRestart={() => {
-						setGameState({
-							...gameState,
-							current: puzzle.initial.map((r) => [...r]),
-							notes: createEmptyNotes(),
-							actions: [],
-						});
-						setTimer(0);
-					}}
-					canUndo={canUndo}
-					canRedo={canRedo}
-				/>
+			<StaggeredList className="h-full">
+				<StaggeredListElement className="flex flex-col flex-1 justify-center">
+					<SudokuGrid
+						initialBoard={puzzle.initial}
+						currentBoard={gameState.current}
+						notes={gameState.notes}
+						selectedCell={selectedCell}
+						onCellSelect={handleCellSelect}
+						conflicts={conflicts}
+					/>
+				</StaggeredListElement>
+				<StaggeredListElement>
+					<GameControls
+						isNoteMode={isNoteMode}
+						onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
+						onUndo={undo}
+						onRedo={redo}
+						onRestart={() => {
+							setGameState({
+								...gameState,
+								current: puzzle.initial.map((r) => [...r]),
+								notes: createEmptyNotes(),
+								actions: [],
+							});
+							setTimer(0);
+						}}
+						canUndo={canUndo}
+						canRedo={canRedo}
+					/>
+				</StaggeredListElement>
 				{import.meta.env.DEV && (
-					<button
+					<StaggeredListElement
 						type="button"
+						className="flex justify-center py-1 px-4 w-full text-sm bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500"
 						onClick={() => {
 							const solveActions: GameAction[] = [];
 							for (let r = 0; r < 9; r++) {
@@ -366,40 +370,41 @@ export const GamePage: React.FC<GamePageProps> = ({
 							}
 							commitActions([...gameState.actions, ...solveActions]);
 						}}
-						className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500/50 hover:bg-red-500/30 transition-all text-xs uppercase tracking-widest"
 					>
 						Solve (Dev Only)
-					</button>
+					</StaggeredListElement>
 				)}
-				<Numpad
-					onNumberClick={handleInput}
-					disabledNumbers={disabledNumbers}
-					remainingCounts={remainingCounts}
-				/>
-				<VictoryDialog
-					open={showWin}
-					time={timer}
-					difficulty={puzzle.difficulty}
-					onReview={() => {
-						setShowWin(false);
-						navigate("/review", {
-							state: buildReviewState({
-								initial: puzzle.initial,
-								solution: puzzle.solution,
-								time: timer,
-								difficulty: puzzle.difficulty,
-								actions: gameState.actions,
-								score: puzzle.score,
-								techniques: puzzle.techniques,
-							}),
-						});
-					}}
-					onHome={() => {
-						setShowWin(false);
-						navigate("/");
-					}}
-				/>
-			</div>
+				<StaggeredListElement>
+					<Numpad
+						onNumberClick={handleInput}
+						disabledNumbers={disabledNumbers}
+						remainingCounts={remainingCounts}
+					/>
+				</StaggeredListElement>
+			</StaggeredList>
+			<VictoryDialog
+				open={showWin}
+				time={timer}
+				difficulty={puzzle.difficulty}
+				onReview={() => {
+					setShowWin(false);
+					navigate("/review", {
+						state: buildReviewState({
+							initial: puzzle.initial,
+							solution: puzzle.solution,
+							time: timer,
+							difficulty: puzzle.difficulty,
+							actions: gameState.actions,
+							score: puzzle.score,
+							techniques: puzzle.techniques,
+						}),
+					});
+				}}
+				onHome={() => {
+					setShowWin(false);
+					navigate("/");
+				}}
+			/>
 		</Layout>
 	);
 };

@@ -2,11 +2,11 @@ import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { formatTime, unflattenBoard } from "@/lib/utils";
 import { Layout } from "@/components/Layout";
 import { PuzzleInfoDialog } from "@/components/PuzzleInfoDialog";
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
+import { formatTime, unflattenBoard } from "@/lib/utils";
 import { applyActions } from "../logic/gameReducer";
 import type { DBBoard, Difficulty, GameAction } from "../types";
 

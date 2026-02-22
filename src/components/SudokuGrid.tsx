@@ -1,25 +1,27 @@
 import { motion } from "framer-motion";
 import type React from "react";
+import type { HTMLProps } from "react";
 import type { Board, CellNotes } from "@/types";
 import { cn } from "../lib/utils";
 
-interface SudokuGridProps {
+type SudokuGridProps = HTMLProps<HTMLDivElement> & {
 	initialBoard: Board;
 	currentBoard: Board;
 	notes: CellNotes;
 	selectedCell: [number, number] | null;
 	onCellSelect: (row: number, col: number) => void;
 	conflicts: { row: number; col: number }[];
-}
+};
 
-export const SudokuGrid: React.FC<SudokuGridProps> = ({
+export const SudokuGrid = ({
+	className,
 	initialBoard,
 	currentBoard,
 	notes,
 	selectedCell,
 	onCellSelect,
 	conflicts,
-}) => {
+}: SudokuGridProps) => {
 	const isSelected = (r: number, c: number) =>
 		selectedCell?.[0] === r && selectedCell?.[1] === c;
 	const isHighlighted = (r: number, c: number) => {
@@ -56,7 +58,12 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		conflicts.some((conf) => conf.row === r && conf.col === c);
 
 	return (
-		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full shrink-0 bg-[var(--grid-line)]">
+		<div
+			className={cn(
+				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-[var(--grid-line)]",
+				className,
+			)}
+		>
 			{(currentBoard as (number | null)[][]).map(
 				(row: (number | null)[], r: number) =>
 					row.map((val: number | null, c: number) => {

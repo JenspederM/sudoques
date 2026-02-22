@@ -1,11 +1,11 @@
 import { Play } from "lucide-react";
 import type React from "react";
+import { Layout } from "@/components/Layout";
 import { PageTitle } from "@/components/PageTitle";
 import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
-import { Layout } from "@/components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 import type { Difficulty } from "../types";
 
@@ -33,7 +33,7 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 					>
 						<div className="flex flex-col">
 							<h3>{d.label}</h3>
-							<p className="text-xs font-thin text-text-secondary">{d.desc}</p>
+							<p className="text-xs text-text-muted font-medium tracking-wide">{d.desc}</p>
 						</div>
 						<div className="grid place-items-center size-12 rounded-2xl bg-surface-input">
 							<Play size={20} fill="currentColor" />

@@ -8,14 +8,14 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
+import { Layout } from "@/components/Layout";
 import { PageTitle } from "@/components/PageTitle";
 import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { ThemeButton } from "@/components/ThemeButton";
-import { useAuth } from "@/components/AuthProvider";
-import { Layout } from "@/components/Layout";
 import { updateUserSettings } from "../logic/firebase";
 import type { Accent, Mode } from "../types";
 
