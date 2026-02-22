@@ -33,7 +33,9 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 					>
 						<div className="flex flex-col">
 							<h3>{d.label}</h3>
-							<p className="text-xs text-text-muted font-medium tracking-wide">{d.desc}</p>
+							<p className="text-xs text-text-muted font-medium tracking-wide">
+								{d.desc}
+							</p>
 						</div>
 						<div className="grid place-items-center size-12 rounded-2xl bg-surface-input">
 							<Play size={20} fill="currentColor" />

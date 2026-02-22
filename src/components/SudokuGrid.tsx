@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import type React from "react";
 import type { HTMLProps } from "react";
 import type { Board, CellNotes } from "@/types";
 import { cn } from "../lib/utils";
