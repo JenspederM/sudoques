@@ -20,8 +20,8 @@ export function ThemeButton({
 			className={cn(
 				"group flex flex-col items-center gap-3 p-4 rounded-2xl border-1",
 				isActive
-					? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-					: "border-transparent hover:bg-surface-hover bg-glass border-border-subtle",
+					? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+					: "border-transparent hover:bg-accent bg-glass border-border",
 			)}
 		>
 			<div
@@ -34,7 +34,7 @@ export function ThemeButton({
 			<span
 				className={cn(
 					"font-bold",
-					isActive ? "text-text-primary" : "text-text-primary",
+					isActive ? "text-foreground" : "text-foreground",
 				)}
 			>
 				{label}

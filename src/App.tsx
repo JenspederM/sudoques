@@ -137,8 +137,8 @@ export default function App() {
 
 	if (authLoading) {
 		return (
-			<div className="min-h-screen bg-surface-main flex items-center justify-center text-text-primary">
-				<div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+			<div className="min-h-screen bg-background flex items-center justify-center text-foreground">
+				<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 			</div>
 		);
 	}
@@ -159,15 +159,15 @@ export default function App() {
 				}}
 				toastOptions={{
 					style: {
-						backgroundColor: "var(--surface-card)",
+						backgroundColor: "var(--card)",
 						color: "var(--text-primary)",
-						border: "1px solid var(--border-subtle)",
+						border: "1px solid var(--border)",
 					},
 					classNames: {
-						title: "!text-text-primary !font-bold",
-						description: "!text-text-secondary",
-						actionButton: "!text-text-primary !bg-brand-primary !font-bold",
-						cancelButton: "!text-text-primary !bg-glass-dark !font-bold",
+						title: "!text-foreground !font-bold",
+						description: "!text-muted-foreground",
+						actionButton: "!text-foreground !bg-primary !font-bold",
+						cancelButton: "!text-foreground !bg-glass-dark !font-bold",
 					},
 				}}
 			/>
@@ -231,8 +231,8 @@ export default function App() {
 					element={
 						<ProtectedRoute>
 							{isLoading ? (
-								<div className="min-h-screen bg-surface-main flex items-center justify-center text-text-primary">
-									<div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+								<div className="min-h-screen bg-background flex items-center justify-center text-foreground">
+									<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 								</div>
 							) : gameState ? (
 								<GamePage

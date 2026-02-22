@@ -99,7 +99,7 @@ export const LoginPage: React.FC = () => {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg shadow-brand-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+						className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
 					>
 						{loading ? (
 							<Loader2 className="animate-spin" size={20} />
@@ -110,11 +110,11 @@ export const LoginPage: React.FC = () => {
 				</form>
 
 				<div className="w-full flex items-center gap-4 my-4">
-					<div className="h-[1px] flex-1 bg-border-subtle" />
-					<span className="text-text-muted text-xs font-bold uppercase tracking-widest">
+					<div className="h-[1px] flex-1 bg-border" />
+					<span className="text-muted-foreground text-xs font-bold uppercase tracking-widest">
 						or
 					</span>
-					<div className="h-[1px] flex-1 bg-border-subtle" />
+					<div className="h-[1px] flex-1 bg-border" />
 				</div>
 
 				<div className="w-full flex flex-col gap-2">
@@ -122,7 +122,7 @@ export const LoginPage: React.FC = () => {
 						type="button"
 						onClick={handleGoogleAuth}
 						disabled={loading}
-						className="w-full py-4 glass hover:bg-surface-hover text-text-primary font-bold rounded-2xl border border-border-subtle transition-all flex items-center justify-center gap-3"
+						className="w-full py-4 glass hover:bg-accent text-foreground font-bold rounded-2xl border border-border transition-all flex items-center justify-center gap-3"
 					>
 						<img
 							src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -136,7 +136,7 @@ export const LoginPage: React.FC = () => {
 						type="button"
 						onClick={handleAnonymousAuth}
 						disabled={loading}
-						className="w-full py-4 text-text-secondary hover:text-text-primary font-bold transition-all text-sm"
+						className="w-full py-4 text-muted-foreground hover:text-foreground font-bold transition-all text-sm"
 					>
 						Continue as Guest
 					</button>
@@ -145,7 +145,7 @@ export const LoginPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/signup")}
-					className="text-sm mt-2 font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+					className="text-sm mt-2 font-medium text-primary hover:text-primary/80 transition-colors"
 				>
 					Don't have an account? Sign Up
 				</button>
@@ -169,7 +169,7 @@ function InputField({
 }) {
 	return (
 		<div className="relative">
-			<div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
+			<div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
 				{icon}
 			</div>
 			<input
@@ -177,7 +177,7 @@ function InputField({
 				placeholder={placeholder}
 				value={value}
 				onChange={onChange}
-				className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+				className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 				required
 			/>
 		</div>

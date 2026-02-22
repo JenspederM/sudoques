@@ -60,7 +60,7 @@ export const SignupPage: React.FC = () => {
 				<form onSubmit={handleSignup} className="w-full flex flex-col gap-4">
 					<div className="relative">
 						<UserIcon
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
 							size={20}
 						/>
 						<input
@@ -68,13 +68,13 @@ export const SignupPage: React.FC = () => {
 							placeholder="Your Name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 						/>
 					</div>
 
 					<div className="relative">
 						<Mail
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
 							size={20}
 						/>
 						<input
@@ -82,13 +82,13 @@ export const SignupPage: React.FC = () => {
 							placeholder="Email Address"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 							required
 						/>
 					</div>
 					<div className="relative">
 						<Lock
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
+							className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
 							size={20}
 						/>
 						<input
@@ -96,7 +96,7 @@ export const SignupPage: React.FC = () => {
 							placeholder="Password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 							required
 						/>
 					</div>
@@ -104,7 +104,7 @@ export const SignupPage: React.FC = () => {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg shadow-brand-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+						className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
 					>
 						{loading ? (
 							<Loader2 className="animate-spin" size={20} />
@@ -117,7 +117,7 @@ export const SignupPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/login")}
-					className="mt-8 text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+					className="mt-8 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
 				>
 					Already have an account? Sign In
 				</button>

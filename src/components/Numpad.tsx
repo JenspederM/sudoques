@@ -21,7 +21,7 @@ const NumpadButton: React.FC<{
 		disabled={disabled}
 		className={cn(
 			"aspect-16/12 sm:aspect-square flex flex-col items-center justify-center rounded-xl glass transition-all active:scale-95",
-			"hover:bg-brand-primary/20 hover:border-brand-primary/50 text-text-primary",
+			"hover:bg-primary/20 hover:border-primary/50 text-foreground",
 			disabled && "opacity-30 cursor-not-allowed",
 		)}
 	>
@@ -29,7 +29,7 @@ const NumpadButton: React.FC<{
 			{num}
 		</span>
 		{remaining !== undefined && (
-			<span className="text-[10px] sm:text-xs leading-none mt-0.5 text-text-muted font-medium">
+			<span className="text-[10px] sm:text-xs leading-none mt-0.5 text-muted-foreground font-medium">
 				{remaining}
 			</span>
 		)}

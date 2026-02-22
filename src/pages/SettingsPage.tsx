@@ -64,27 +64,27 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 			<StaggeredList className="overflow-auto h-full">
 				{/* Profile Section */}
 				<StaggeredListElement className="flex items-center gap-3">
-					<UserIcon size={24} className="text-brand-primary" />
+					<UserIcon size={24} className="text-primary" />
 					<span className="text-xl font-bold">Profile</span>
 				</StaggeredListElement>
 				<StaggeredListElement type="card" className="flex items-center gap-4">
-					<div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary">
+					<div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
 						<UserIcon size={24} />
 					</div>
 					<div className="flex-1 min-w-0">
-						<p className="font-bold text-text-primary truncate">
+						<p className="font-bold text-foreground truncate">
 							{user?.displayName || "Anonymous User"}
 						</p>
-						<p className="text-sm text-text-muted truncate">
+						<p className="text-sm text-muted-foreground truncate">
 							{user?.email || "Guest Session"}
 						</p>
 					</div>
 				</StaggeredListElement>
 				<StaggeredListElement
-					initial={{ background: "var(--brand-primary)" }}
+					initial={{ background: "var(--primary)" }}
 					whileHover={{
 						scale: 1,
-						background: "var(--brand-primary-hover)",
+						background: "var(--primary/90)",
 						transition: { duration: 0.2 },
 					}}
 					type="button"
@@ -97,7 +97,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
 				{/* Mode Section */}
 				<StaggeredListElement className="flex items-center gap-3">
-					<MoonIcon size={24} className="text-brand-primary" />
+					<MoonIcon size={24} className="text-primary" />
 					<span className="text-xl font-bold">Theme</span>
 				</StaggeredListElement>
 				<StaggeredListElement className="grid grid-cols-2 gap-3">
@@ -108,7 +108,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 						icon={
 							<div
 								className={`w-12 h-12 rounded-full bg-amber-100 shadow-inner flex items-center justify-center ${
-									currentMode === "light" ? "ring-2 ring-brand-primary" : ""
+									currentMode === "light" ? "ring-2 ring-primary" : ""
 								}`}
 							>
 								<Sun
@@ -129,7 +129,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 						icon={
 							<div
 								className={`w-12 h-12 rounded-full bg-slate-800 shadow-inner flex items-center justify-center ${
-									currentMode === "dark" ? "ring-2 ring-brand-primary" : ""
+									currentMode === "dark" ? "ring-2 ring-primary" : ""
 								}`}
 							>
 								<Moon
@@ -147,7 +147,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
 				{/* Accent Color Section */}
 				<StaggeredListElement className="flex items-center gap-3">
-					<Palette size={24} className="text-brand-primary" />
+					<Palette size={24} className="text-primary" />
 					<span className="text-xl font-bold">Accent</span>
 				</StaggeredListElement>
 				<StaggeredListElement className="grid grid-cols-2 gap-3">

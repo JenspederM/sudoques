@@ -30,7 +30,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					onClick={onUndo}
 					disabled={!canUndo}
 					className={cn(
-						"p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all",
+						"p-2 sm:p-3 rounded-full glass text-muted-foreground hover:bg-accent hover:text-foreground transition-all",
 						!canUndo && "opacity-30 cursor-not-allowed",
 					)}
 					title="Undo"
@@ -43,7 +43,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					onClick={onRedo}
 					disabled={!canRedo}
 					className={cn(
-						"p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-all",
+						"p-2 sm:p-3 rounded-full glass text-muted-foreground hover:bg-accent hover:text-foreground transition-all",
 						!canRedo && "opacity-30 cursor-not-allowed",
 					)}
 					title="Redo"
@@ -60,8 +60,8 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					className={cn(
 						"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300",
 						isNoteMode
-							? "bg-brand-primary text-white shadow-lg shadow-brand-primary/40 ring-2 ring-brand-primary/50"
-							: "glass text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10",
+							? "bg-primary text-white shadow-lg shadow-primary/40 ring-2 ring-primary/50"
+							: "glass text-muted-foreground hover:text-primary hover:bg-primary/10",
 					)}
 				>
 					<Pencil size={20} className={isNoteMode ? "animate-bounce" : ""} />
@@ -76,7 +76,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					type="button"
 					data-testid="restart-button"
 					onClick={onRestart}
-					className="p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-red-500/10 hover:text-red-400 transition-all"
+					className="p-2 sm:p-3 rounded-full glass text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all"
 					title="Restart"
 				>
 					<RotateCcw size={20} />

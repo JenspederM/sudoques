@@ -125,11 +125,11 @@ export const ReviewPage: React.FC = () => {
 		return (
 			<Layout>
 				<div className="flex flex-col items-center justify-center min-h-screen">
-					<p className="text-text-primary mb-4">No game data found.</p>
+					<p className="text-foreground mb-4">No game data found.</p>
 					<button
 						type="button"
 						onClick={() => navigate("/statistics")}
-						className="px-4 py-2 bg-brand-primary rounded-lg text-white"
+						className="px-4 py-2 bg-primary rounded-lg text-white"
 					>
 						Back to Statistics
 					</button>
@@ -174,7 +174,7 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepBack}
-							className="p-3 text-text-secondary hover:text-brand-primary transition-colors"
+							className="p-3 text-muted-foreground hover:text-primary transition-colors"
 						>
 							<SkipBack size={28} />
 						</button>
@@ -187,7 +187,7 @@ export const ReviewPage: React.FC = () => {
 								}
 								setIsPlaying(!isPlaying);
 							}}
-							className="w-16 h-16 flex items-center justify-center bg-brand-primary rounded-full text-white shadow-lg shadow-brand-primary/30 hover:scale-105 active:scale-95 transition-all"
+							className="w-16 h-16 flex items-center justify-center bg-primary rounded-full text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
 						>
 							{isPlaying ? (
 								<Pause size={32} fill="currentColor" />
@@ -199,14 +199,14 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepForward}
-							className="p-3 text-text-secondary hover:text-brand-primary transition-colors"
+							className="p-3 text-muted-foreground hover:text-primary transition-colors"
 						>
 							<SkipForward size={28} />
 						</button>
 					</div>
 
 					<div className="w-full max-w-md px-4 flex flex-col gap-2">
-						<div className="flex justify-between items-center text-xs font-medium text-text-muted uppercase tracking-wider">
+						<div className="flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
 							<span className="w-16 flex justify-start">{formatTime(0)}</span>
 							<span className="flex-1 flex justify-center whitespace-nowrap px-2 tabular-nums">
 								{playbackIndex} / {actions.length} moves
@@ -223,12 +223,12 @@ export const ReviewPage: React.FC = () => {
 							onChange={(e) =>
 								setPlaybackTime(parseInt(e.target.value, 10) / 100)
 							}
-							className="w-full h-1.5 bg-surface-input rounded-lg appearance-none cursor-pointer accent-brand-primary"
+							className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
 						/>
 					</div>
 
 					{/* Speed Controls */}
-					<div className="flex items-center gap-2 bg-surface-input p-1 rounded-xl border border-border-subtle">
+					<div className="flex items-center gap-2 bg-secondary p-1 rounded-xl border border-border">
 						{[1, 2, 4, 8, 16, 32].map((speed) => (
 							<button
 								key={speed}
@@ -236,8 +236,8 @@ export const ReviewPage: React.FC = () => {
 								onClick={() => setSpeedMultiplier(speed)}
 								className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
 									speedMultiplier === speed
-										? "bg-brand-primary text-white"
-										: "text-text-muted hover:text-brand-primary hover:bg-brand-primary/10"
+										? "bg-primary text-white"
+										: "text-muted-foreground hover:text-primary hover:bg-primary/10"
 								}`}
 							>
 								{speed}x

@@ -26,18 +26,18 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 						type="button"
 						className="justify-between"
 						whileHover={{
-							borderColor: "var(--brand-primary)",
-							color: "var(--brand-primary)",
-							backgroundColor: "var(--brand-primary-light)",
+							borderColor: "var(--primary)",
+							color: "var(--primary)",
+							backgroundColor: "var(--primary/10)",
 						}}
 					>
 						<div className="flex flex-col">
 							<h3>{d.label}</h3>
-							<p className="text-xs text-text-muted font-medium tracking-wide">
+							<p className="text-xs text-muted-foreground font-medium tracking-wide">
 								{d.desc}
 							</p>
 						</div>
-						<div className="grid place-items-center size-12 rounded-2xl bg-surface-input">
+						<div className="grid place-items-center size-12 rounded-2xl bg-secondary">
 							<Play size={20} fill="currentColor" />
 						</div>
 					</StaggeredListElement>

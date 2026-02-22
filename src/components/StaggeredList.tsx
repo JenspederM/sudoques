@@ -77,12 +77,12 @@ export function StaggeredListElement({
 		},
 	};
 	const defaultPadding = "px-6 py-4";
-	const defaultShadow = "shadow-lg shadow-border-subtle/10";
-	const defaultBorder = "border border-border-subtle";
+	const defaultShadow = "shadow-lg shadow-border/10";
+	const defaultBorder = "border border-border";
 	const variantStyles = {
-		brand: `${defaultPadding} bg-brand-primary text-white ${defaultShadow} ${defaultBorder}`,
-		default: `${defaultPadding} bg-glass text-text-primary ${defaultShadow} ${defaultBorder}`,
-		transparent: "bg-transparent text-text-primary drop-shadow-none",
+		brand: `${defaultPadding} bg-primary text-white ${defaultShadow} ${defaultBorder}`,
+		default: `${defaultPadding} bg-glass text-foreground ${defaultShadow} ${defaultBorder}`,
+		transparent: "bg-transparent text-foreground drop-shadow-none",
 	};
 	if (type === "button") {
 		return (

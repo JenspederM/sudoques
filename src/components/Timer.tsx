@@ -7,7 +7,7 @@ type TimerProps = {
 
 export function Timer({ time }: TimerProps) {
 	return (
-		<div className="flex items-center gap-1.5 sm:gap-2 text-brand-primary -ml-4">
+		<div className="flex items-center gap-1.5 sm:gap-2 text-primary -ml-4">
 			<TimerIcon size={20} />
 			<span
 				data-testid="timer"

@@ -37,7 +37,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 			headerClassName="mb-4"
 		>
 			{/* Tabs */}
-			<StaggeredList className="bg-glass py-4 px-6 grid grid-cols-3 gap-2 mb-6 rounded-xl border border-border-subtle">
+			<StaggeredList className="bg-glass py-4 px-6 grid grid-cols-3 gap-2 mb-6 rounded-xl border border-border">
 				{DIFFICULTIES.map((d) => (
 					<StaggeredListElement
 						key={d.id}
@@ -84,20 +84,20 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 												? "bg-slate-300 text-slate-900 shadow-lg shadow-slate-300/20"
 												: idx === 2
 													? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
-													: "bg-surface-hover text-text-secondary"
+													: "bg-accent text-muted-foreground"
 									}`}
 								>
 									{idx + 1}
 								</span>
 								<div>
-									<p className="font-bold text-text-primary text-lg">
+									<p className="font-bold text-foreground text-lg">
 										{score.date.toDate().toLocaleDateString(undefined, {
 											month: "short",
 											day: "numeric",
 											year: "numeric",
 										})}
 									</p>
-									<p className="text-xs text-text-muted font-medium tracking-wide uppercase">
+									<p className="text-xs text-muted-foreground font-medium tracking-wide uppercase">
 										{score.date.toDate().toLocaleTimeString(undefined, {
 											hour: "numeric",
 											minute: "2-digit",
@@ -112,12 +112,12 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 					<StaggeredListElement className="text-center">
 						<Trophy
 							size={48}
-							className="text-text-muted mx-auto mb-4 opacity-20"
+							className="text-muted-foreground mx-auto mb-4 opacity-20"
 						/>
-						<p className="text-text-secondary font-bold text-lg">
+						<p className="text-muted-foreground font-bold text-lg">
 							No scores yet
 						</p>
-						<p className="text-sm text-text-muted">
+						<p className="text-sm text-muted-foreground">
 							Be the first to claim victory!
 						</p>
 					</StaggeredListElement>

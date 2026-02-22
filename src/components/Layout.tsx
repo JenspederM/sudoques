@@ -29,8 +29,8 @@ export const Layout: React.FC<LayoutProps> = ({
 		<div className="flex flex-col absolute inset-0 w-full min-h-0 max-h-screen items-center justify-center overscroll-contain">
 			{/* Animated Background Blobs */}
 			<div className="fixed inset-0 pointer-events-none">
-				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 rounded-full blur-[120px] animate-pulse" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-secondary/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
 			</div>
 			<motion.main
 				initial={{ opacity: 0 }}
@@ -77,7 +77,7 @@ function Header({
 	return (
 		<MotionCard
 			className={cn(
-				"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border-subtle shadow-xl mb-6",
+				"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border shadow-xl mb-6",
 				headerClassName,
 			)}
 		>
@@ -85,7 +85,7 @@ function Header({
 				<button
 					type="button"
 					onClick={() => navigate(backRedirect, { state: backState })}
-					className="p-2 hover:bg-surface-hover rounded-xl transition-all active:scale-90"
+					className="p-2 hover:bg-accent rounded-xl transition-all active:scale-90"
 				>
 					<ChevronLeft size={28} />
 				</button>

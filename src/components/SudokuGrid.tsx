@@ -81,30 +81,30 @@ export const SudokuGrid = ({
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
 									"bg-cell-bg",
-									r % 3 === 2 && r !== 8 && "border-b-2 border-border-strong",
-									c % 3 === 2 && c !== 8 && "border-r-2 border-border-strong",
+									r % 3 === 2 && r !== 8 && "border-b-2 border-primary/20",
+									c % 3 === 2 && c !== 8 && "border-r-2 border-primary/20",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted && !selected && !conflict && "bg-brand-primary/8",
+									highlighted && !selected && !conflict && "bg-primary/8",
 									selected &&
 										!conflict &&
-										"bg-brand-primary/16 ring-2 ring-brand-primary z-10",
+										"bg-primary/16 ring-2 ring-primary z-10",
 									conflict &&
-										"text-text-primary bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
-									!initial && !conflict && "text-brand-secondary font-semibold",
+										"text-foreground bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
+									!initial && !conflict && "text-secondary font-semibold",
 									highlighted &&
 										!initial &&
 										!conflict &&
-										"text-brand-primary font-semibold",
-									initial && !conflict && "text-text-primary font-bold",
+										"text-primary font-semibold",
+									initial && !conflict && "text-foreground font-bold",
 								)}
 							>
 								{val !== null ? (
 									<span>{val}</span>
 								) : (
-									<div className="grid grid-cols-3 grid-rows-3 w-full h-full p-[2px] text-[8px] sm:text-[10px] leading-tight text-text-muted">
+									<div className="grid grid-cols-3 grid-rows-3 w-full h-full p-[2px] text-[8px] sm:text-[10px] leading-tight text-muted-foreground">
 										{Array.from({ length: 9 }).map((_, i) => {
 											const rowNotes = notes[r];
 											const cellNotes = rowNotes ? rowNotes[c] : null;
@@ -113,8 +113,8 @@ export const SudokuGrid = ({
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
 													className={cn(
-														"flex items-center justify-center text-brand-secondary",
-														highlighted && "text-brand-primary",
+														"flex items-center justify-center text-secondary",
+														highlighted && "text-primary",
 													)}
 												>
 													{cellNotes?.has(i + 1) ? i + 1 : ""}

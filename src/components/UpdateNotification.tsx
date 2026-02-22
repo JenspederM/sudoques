@@ -23,10 +23,7 @@ export const UpdateNotification = () => {
 			toast("App Update Available", {
 				description: "Update the app to get the latest features.",
 				icon: (
-					<RefreshCw
-						size={18}
-						className="text-brand-primary animate-spin-slow"
-					/>
+					<RefreshCw size={18} className="text-primary animate-spin-slow" />
 				),
 				duration: Number.POSITIVE_INFINITY,
 				action: {
