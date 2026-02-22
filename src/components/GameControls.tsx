@@ -35,7 +35,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					)}
 					title="Undo"
 				>
-					<Undo2 size={24} />
+					<Undo2 size={20} />
 				</button>
 				<button
 					type="button"
@@ -48,7 +48,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					)}
 					title="Redo"
 				>
-					<Redo2 size={24} />
+					<Redo2 size={20} />
 				</button>
 			</div>
 
@@ -79,7 +79,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 					className="p-2 sm:p-3 rounded-full glass text-text-secondary hover:bg-red-500/10 hover:text-red-400 transition-all"
 					title="Restart"
 				>
-					<RotateCcw size={24} />
+					<RotateCcw size={20} />
 				</button>
 			</div>
 		</div>

@@ -5,6 +5,7 @@
 	--color-brand-secondary: var(--brand-secondary);
 	--color-brand-accent: var(--brand-accent);
 	--color-brand-primary-light: var(--brand-primary-light);
+	--color-brand-primary-hover: var(--brand-primary-hover);
 	--color-glass: var(--glass-bg);
 	--color-glass-dark: var(--glass-dark-bg);
 	--color-surface-main: var(--surface-main);
@@ -79,6 +80,7 @@
 	--bg-gradient-from: #1e293b;
 	--bg-gradient-to: #0f172a;
 	--brand-primary-light: rgba(99, 102, 241, 0.1);
+	--brand-primary-hover: rgba(99, 102, 241, 0.8);
 }
 
 /* ─── Light Mode ──────────────────────────────────── */
@@ -118,6 +120,7 @@
 	--brand-primary: #4338ca; /* Indigo 700 */
 	--brand-secondary: #6366f1; /* Indigo 500 */
 	--brand-primary-light: rgba(67, 56, 202, 0.08);
+	--brand-primary-hover: rgba(67, 56, 202, 0.8);
 }
 
 /* ─── Theme Accents ────────────────────────────────── */
@@ -126,12 +129,14 @@
 	--brand-secondary: #fb7185;
 	--brand-accent: #fda4af;
 	--brand-primary-light: rgba(244, 63, 94, 0.1);
+	--brand-primary-hover: rgba(244, 63, 94, 0.8);
 }
 
 [data-mode="light"][data-theme="rose"] {
 	--brand-primary: #e11d48; /* Rose 600/700 */
 	--brand-secondary: #f43f5e;
 	--brand-primary-light: rgba(225, 29, 72, 0.08);
+	--brand-primary-hover: rgba(225, 29, 72, 0.8);
 }
 
 [data-theme="emerald"] {
@@ -139,12 +144,14 @@
 	--brand-secondary: #34d399;
 	--brand-accent: #6ee7b7;
 	--brand-primary-light: rgba(16, 185, 129, 0.1);
+	--brand-primary-hover: rgba(16, 185, 129, 0.8);
 }
 
 [data-mode="light"][data-theme="emerald"] {
 	--brand-primary: #059669; /* Emerald 600/700 */
 	--brand-secondary: #10b981;
 	--brand-primary-light: rgba(5, 150, 105, 0.08);
+	--brand-primary-hover: rgba(5, 150, 105, 0.8);
 }
 
 [data-theme="amber"] {
@@ -152,12 +159,14 @@
 	--brand-secondary: #fbbf24;
 	--brand-accent: #fcd34d;
 	--brand-primary-light: rgba(245, 158, 11, 0.1);
+	--brand-primary-hover: rgba(245, 158, 11, 0.8);
 }
 
 [data-mode="light"][data-theme="amber"] {
 	--brand-primary: #d97706; /* Amber 600/700 */
 	--brand-secondary: #f59e0b;
 	--brand-primary-light: rgba(217, 119, 6, 0.08);
+	--brand-primary-hover: rgba(217, 119, 6, 0.8);
 }
 
 body {
@@ -169,7 +178,6 @@ body {
 		var(--bg-gradient-to)
 	);
 	background-attachment: fixed;
-	overflow-x: hidden;
 	user-select: none;
 	-webkit-user-select: none;
 	-moz-user-select: none;

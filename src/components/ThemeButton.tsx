@@ -18,10 +18,10 @@ export function ThemeButton({
 			type="button"
 			onClick={onChange}
 			className={cn(
-				"group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all border-1",
+				"group flex flex-col items-center gap-3 p-4 rounded-2xl border-1",
 				isActive
 					? "border-brand-primary bg-brand-primary/10 shadow-lg shadow-brand-primary/20"
-					: "border-transparent glass hover:bg-surface-hover",
+					: "border-transparent hover:bg-surface-hover bg-glass border-border-subtle",
 			)}
 		>
 			<div

@@ -65,14 +65,14 @@ export const LoginPage: React.FC = () => {
 	};
 
 	return (
-		<Layout contentClassName="justify-center">
+		<Layout centered>
 			<MotionCard
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center"
 			>
 				<MotionCardTitle className="flex flex-col items-center gap-0">
-					<BrandHeader subtitle="Welcome Back" />
+					<BrandHeader />
 				</MotionCardTitle>
 
 				{error && (
@@ -81,36 +81,21 @@ export const LoginPage: React.FC = () => {
 					</div>
 				)}
 
-				<form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4">
-					<div className="relative">
-						<Mail
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
-							size={20}
-						/>
-						<input
-							type="email"
-							placeholder="Email Address"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
-							required
-						/>
-					</div>
-					<div className="relative">
-						<Lock
-							className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
-							size={20}
-						/>
-						<input
-							type="password"
-							placeholder="Password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
-							required
-						/>
-					</div>
-
+				<form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-2">
+					<InputField
+						type="email"
+						placeholder="Email Address"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						icon={<Mail size={20} />}
+					/>
+					<InputField
+						type="password"
+						placeholder="Password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						icon={<Lock size={20} />}
+					/>
 					<button
 						type="submit"
 						disabled={loading}
@@ -124,7 +109,7 @@ export const LoginPage: React.FC = () => {
 					</button>
 				</form>
 
-				<div className="w-full flex items-center gap-4 my-8">
+				<div className="w-full flex items-center gap-4 my-4">
 					<div className="h-[1px] flex-1 bg-border-subtle" />
 					<span className="text-text-muted text-xs font-bold uppercase tracking-widest">
 						or
@@ -132,7 +117,7 @@ export const LoginPage: React.FC = () => {
 					<div className="h-[1px] flex-1 bg-border-subtle" />
 				</div>
 
-				<div className="w-full flex flex-col gap-3">
+				<div className="w-full flex flex-col gap-2">
 					<button
 						type="button"
 						onClick={handleGoogleAuth}
@@ -160,7 +145,7 @@ export const LoginPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/signup")}
-					className="mt-2 text-sm font-medium text-text-secondary hover:text-brand-primary transition-colors"
+					className="text-sm mt-2 font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
 				>
 					Don't have an account? Sign Up
 				</button>
@@ -168,3 +153,33 @@ export const LoginPage: React.FC = () => {
 		</Layout>
 	);
 };
+
+function InputField({
+	value,
+	onChange,
+	placeholder,
+	type,
+	icon,
+}: {
+	value: string;
+	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	placeholder: string;
+	type: string;
+	icon: React.ReactNode;
+}) {
+	return (
+		<div className="relative">
+			<div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
+				{icon}
+			</div>
+			<input
+				type={type}
+				placeholder={placeholder}
+				value={value}
+				onChange={onChange}
+				className="w-full py-4 pl-12 pr-4 rounded-2xl bg-surface-input border border-border-subtle focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none transition-all"
+				required
+			/>
+		</div>
+	);
+}

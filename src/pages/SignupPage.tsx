@@ -41,7 +41,7 @@ export const SignupPage: React.FC = () => {
 	};
 
 	return (
-		<Layout contentClassName="justify-center">
+		<Layout centered>
 			<MotionCard
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
@@ -117,7 +117,7 @@ export const SignupPage: React.FC = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/login")}
-					className="mt-8 text-sm font-medium text-text-secondary hover:text-brand-primary transition-colors"
+					className="mt-8 text-sm font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
 				>
 					Already have an account? Sign In
 				</button>

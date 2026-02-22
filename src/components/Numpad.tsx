@@ -20,7 +20,7 @@ const NumpadButton: React.FC<{
 		onClick={onClick}
 		disabled={disabled}
 		className={cn(
-			"aspect-square flex flex-col items-center justify-center rounded-xl glass transition-all active:scale-95",
+			"aspect-16/12 sm:aspect-square flex flex-col items-center justify-center rounded-xl glass transition-all active:scale-95",
 			"hover:bg-brand-primary/20 hover:border-brand-primary/50 text-text-primary",
 			disabled && "opacity-30 cursor-not-allowed",
 		)}
@@ -70,7 +70,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 				type="button"
 				data-testid="numpad-delete"
 				onClick={() => onNumberClick(null)}
-				className="aspect-square flex items-center justify-center text-xl sm:text-2xl font-semibold rounded-xl glass transition-all active:scale-95 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-red-400"
+				className="aspect-16/12 sm:aspect-square flex items-center justify-center text-xl sm:text-2xl font-semibold rounded-xl glass transition-all active:scale-95 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-red-400"
 			>
 				<Delete size={24} />
 			</button>

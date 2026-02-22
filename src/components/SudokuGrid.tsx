@@ -56,7 +56,7 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 		conflicts.some((conf) => conf.row === r && conf.col === c);
 
 	return (
-		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full shrink-0 overflow-hidden bg-[var(--grid-line)]">
+		<div className="grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full shrink-0 bg-[var(--grid-line)]">
 			{(currentBoard as (number | null)[][]).map(
 				(row: (number | null)[], r: number) =>
 					row.map((val: number | null, c: number) => {
@@ -81,17 +81,17 @@ export const SudokuGrid: React.FC<SudokuGridProps> = ({
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted &&
-										!selected &&
-										!conflict &&
-										"bg-brand-primary/8",
+									highlighted && !selected && !conflict && "bg-brand-primary/8",
 									selected &&
 										!conflict &&
 										"bg-brand-primary/16 ring-2 ring-brand-primary z-10",
 									conflict &&
 										"text-text-primary bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
 									!initial && !conflict && "text-brand-secondary font-semibold",
-									highlighted && !initial && !conflict && "text-brand-primary font-semibold",
+									highlighted &&
+										!initial &&
+										!conflict &&
+										"text-brand-primary font-semibold",
 									initial && !conflict && "text-text-primary font-bold",
 								)}
 							>

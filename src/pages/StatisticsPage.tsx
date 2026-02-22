@@ -1,10 +1,15 @@
-import { Timer, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MotionCard } from "@/components/MotionCard";
 import { PageTitle } from "@/components/PageTitle";
-import { buildReviewState, formatTime } from "@/lib/utils";
+import {
+	StaggeredList,
+	StaggeredListElement,
+} from "@/components/StaggeredList";
+import { Timer } from "@/components/Timer";
+import { buildReviewState, cn } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
 import { Layout } from "../components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
@@ -27,34 +32,35 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 		.sort((a, b) => a.time - b.time);
 
 	return (
-		<Layout backRedirect="/" headerCenter={<PageTitle title="Statistics" />}>
+		<Layout
+			backRedirect="/"
+			headerCenter={<PageTitle title="Statistics" />}
+			headerClassName="mb-4"
+		>
 			{/* Tabs */}
-			<MotionCard className="grid grid-cols-3 gap-2">
+			<StaggeredList className="bg-glass py-4 px-6 grid grid-cols-3 gap-2 mb-6 rounded-xl border border-border-subtle">
 				{DIFFICULTIES.map((d) => (
-					<button
+					<StaggeredListElement
 						key={d.id}
 						type="button"
+						variant={activeDiff === d.id ? "brand" : "transparent"}
+						className="border-none py-2 text-sm rounded-lg"
+						whileTap={{ scale: 0.95 }}
 						onClick={() => setActiveDiff(d.id)}
-						className={`py-2 rounded-xl text-sm font-bold transition-all ${
-							activeDiff === d.id
-								? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
-								: "text-text-secondary hover:text-brand-primary hover:bg-brand-primary/10"
-						}`}
 					>
 						{d.label}
-					</button>
+					</StaggeredListElement>
 				))}
-			</MotionCard>
+			</StaggeredList>
 
 			{/* Score List */}
-			<div className="w-full h-full overflow-y-auto space-y-3 pr-1 custom-scrollbar min-h-0">
+			<StaggeredList className="overflow-auto h-full">
 				{scores.length > 0 ? (
 					scores.map((score, idx) => (
-						<MotionCard
+						<StaggeredListElement
 							key={score.date.toMillis()}
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: idx * 0.05 }}
+							type="button"
+							whileHover={{ scale: 1 }}
 							onClick={() => {
 								navigate("/review", {
 									state: buildReviewState({
@@ -68,7 +74,7 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 									}),
 								});
 							}}
-							className="flex items-center justify-between p-5 rounded-[1.5rem] bg-surface-input border border-border-subtle transition-colors cursor-pointer hover:bg-surface-hover"
+							className="flex items-center justify-between"
 						>
 							<div className="flex items-center gap-4">
 								<span
@@ -100,14 +106,11 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 									</p>
 								</div>
 							</div>
-							<div className="flex items-center gap-2 text-brand-primary font-mono text-xl font-black">
-								<Timer size={18} className="translate-y-[1px]" />
-								<span>{formatTime(score.time)}</span>
-							</div>
-						</MotionCard>
+							<Timer time={score.time} />
+						</StaggeredListElement>
 					))
 				) : (
-					<MotionCard className="text-center py-16">
+					<StaggeredListElement className="text-center">
 						<Trophy
 							size={48}
 							className="text-text-muted mx-auto mb-4 opacity-20"
@@ -118,9 +121,9 @@ export const StatisticsPage: React.FC<StatisticsPageProps> = ({
 						<p className="text-sm text-text-muted">
 							Be the first to claim victory!
 						</p>
-					</MotionCard>
+					</StaggeredListElement>
 				)}
-			</div>
+			</StaggeredList>
 		</Layout>
 	);
 };

@@ -12,7 +12,7 @@ type LayoutProps = PropsWithChildren<{
 	headerClassName?: string;
 	headerCenter?: React.ReactNode;
 	headerRight?: React.ReactNode;
-	contentClassName?: string;
+	centered?: boolean;
 }>;
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -22,60 +22,80 @@ export const Layout: React.FC<LayoutProps> = ({
 	backState,
 	headerCenter,
 	headerRight,
-	contentClassName,
+	centered,
 }) => {
-	const navigate = useNavigate();
+	const hasHeader = backRedirect && (headerCenter || headerRight);
 	return (
-		<div className="min-h-screen w-full overflow-hidden relative bg-surface-main">
+		<div className="flex flex-col absolute inset-0 w-full min-h-0 max-h-screen items-center justify-center overscroll-contain">
 			{/* Animated Background Blobs */}
-			<div className="fixed inset-0 overflow-hidden pointer-events-none">
+			<div className="fixed inset-0 pointer-events-none">
 				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 rounded-full blur-[120px] animate-pulse" />
 				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-secondary/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
 			</div>
-
 			<motion.main
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
 				transition={{ duration: 0.3 }}
-				className="relative z-10 w-full min-h-screen"
+				className={cn(
+					"safe flex flex-col h-full w-full xs:w-5/6 sm:w-2/3 lg:w-1/3 pb-16 sm:justify-center",
+					centered && "justify-center",
+				)}
 				layout
 			>
-				<div className="safe flex flex-col items-center min-h-screen">
-					<div
-						className={cn(
-							"w-full flex flex-col sm:justify-center grow items-center gap-4 sm:gap-6 max-w-xl",
-							contentClassName,
-						)}
-					>
-						{backRedirect && (
-							<MotionCard
-								className={cn(
-									"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border-subtle shadow-xl",
-									headerClassName,
-								)}
-							>
-								<div className="flex justify-start">
-									<button
-										type="button"
-										onClick={() => navigate(backRedirect, { state: backState })}
-										className="p-2 hover:bg-surface-hover rounded-xl transition-all active:scale-90"
-									>
-										<ChevronLeft size={28} />
-									</button>
-								</div>
-
-								<div className="flex justify-center flex-1 whitespace-nowrap">
-									{headerCenter}
-								</div>
-
-								<div className="flex justify-end">{headerRight}</div>
-							</MotionCard>
-						)}
-						{children}
-					</div>
-				</div>
+				{hasHeader && (
+					<Header
+						backRedirect={backRedirect}
+						backState={backState}
+						headerClassName={headerClassName}
+						headerCenter={headerCenter}
+						headerRight={headerRight}
+					/>
+				)}
+				{children}
 			</motion.main>
 		</div>
 	);
 };
+
+type HeaderProps = {
+	backRedirect: string;
+	backState: unknown;
+	headerClassName?: string;
+	headerCenter?: React.ReactNode;
+	headerRight?: React.ReactNode;
+};
+
+function Header({
+	backRedirect,
+	backState,
+	headerClassName,
+	headerCenter,
+	headerRight,
+}: HeaderProps) {
+	const navigate = useNavigate();
+	return (
+		<MotionCard
+			className={cn(
+				"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border-subtle shadow-xl mb-6",
+				headerClassName,
+			)}
+		>
+			<div className="flex justify-start">
+				<button
+					type="button"
+					onClick={() => navigate(backRedirect, { state: backState })}
+					className="p-2 hover:bg-surface-hover rounded-xl transition-all active:scale-90"
+				>
+					<ChevronLeft size={28} />
+				</button>
+			</div>
+
+			<div className="flex justify-center flex-1 whitespace-nowrap">
+				{headerCenter}
+			</div>
+
+			<div className="flex justify-end">{headerRight}</div>
+		</MotionCard>
+	);
+}

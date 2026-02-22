@@ -1,8 +1,11 @@
-import { motion } from "framer-motion";
 import { Play, Settings as SettingsIcon, Trophy } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
+import {
+	StaggeredList,
+	StaggeredListElement,
+} from "@/components/StaggeredList";
 import { Layout } from "../components/Layout";
 
 interface HomePageProps {
@@ -13,65 +16,48 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 	const navigate = useNavigate();
 
 	return (
-		<Layout contentClassName="justify-center">
-			<motion.div
-				initial={{ opacity: 0, scale: 0.9 }}
-				animate={{ opacity: 1, scale: 1 }}
-				className="flex flex-col items-center mb-12"
-			>
-				<BrandHeader />
-			</motion.div>
-
-			{/* Actions */}
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ delay: 0.1 }}
-				className="flex flex-col gap-4 w-full"
-			>
+		<Layout centered>
+			<StaggeredList>
+				<StaggeredListElement className="flex flex-col items-center mb-8">
+					<BrandHeader />
+				</StaggeredListElement>
 				{hasExistingGame && (
-					<button
+					<StaggeredListElement
 						type="button"
 						onClick={() => navigate("/game")}
-						className="group relative flex items-center justify-center gap-3 py-5 rounded-2xl bg-surface-card text-text-primary font-bold text-lg shadow-xl active:scale-95 transition-all border border-border-subtle"
 					>
 						<Play size={24} fill="currentColor" />
 						<span>Continue Game</span>
-					</button>
+					</StaggeredListElement>
 				)}
-
-				<button
+				<StaggeredListElement
 					type="button"
 					onClick={() => navigate("/new-game")}
-					className="group relative flex items-center justify-center gap-3 py-5 rounded-2xl bg-brand-primary text-white font-bold text-lg shadow-xl shadow-brand-primary/30 active:scale-95 transition-all overflow-hidden"
+					variant="brand"
 				>
-					<div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 					<Play size={24} fill="currentColor" />
 					<span>New Game</span>
-				</button>
-
+				</StaggeredListElement>
 				<div className="grid grid-cols-2 gap-4">
-					<button
+					<StaggeredListElement
 						type="button"
 						onClick={() => navigate("/statistics")}
-						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-surface-hover text-text-primary font-bold active:scale-95 transition-all border border-border-subtle"
 					>
 						<Trophy size={20} className="text-yellow-400" />
 						<span>Statistics</span>
-					</button>
+					</StaggeredListElement>
 
-					<button
+					<StaggeredListElement
 						type="button"
 						onClick={() =>
 							navigate("/settings", { state: { activeDiff: "easy" } })
 						}
-						className="flex items-center justify-center gap-2 py-4 rounded-2xl glass hover:bg-surface-hover text-text-primary font-bold active:scale-95 transition-all border border-border-subtle"
 					>
 						<SettingsIcon size={20} />
 						<span>Settings</span>
-					</button>
+					</StaggeredListElement>
 				</div>
-			</motion.div>
+			</StaggeredList>
 		</Layout>
 	);
 };

@@ -1,5 +1,12 @@
-import type { Variants } from "framer-motion";
-import { LogOut, Moon, Palette, Sun, User as UserIcon } from "lucide-react";
+import {
+	LogOut,
+	Moon,
+	MoonIcon,
+	Palette,
+	PaletteIcon,
+	Sun,
+	User as UserIcon,
+} from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
 import { MotionCardContent, MotionCardTitle } from "@/components/MotionCard";
@@ -18,18 +25,6 @@ interface SettingsPageProps {
 	currentAccent: Accent;
 	currentMode: Mode;
 }
-
-const _sectionVariants: Variants = {
-	hidden: { opacity: 0, y: 20 },
-	visible: {
-		opacity: 1,
-		y: 0,
-		transition: {
-			duration: 0.2,
-			ease: "easeOut",
-		},
-	},
-};
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
 	currentAccent,
@@ -68,119 +63,112 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
 	return (
 		<Layout backRedirect="/" headerCenter={<PageTitle title="Settings" />}>
-			<StaggeredList>
+			<StaggeredList className="overflow-auto h-full">
 				{/* Profile Section */}
-				<StaggeredListElement>
-					<MotionCardTitle className="flex items-center gap-3">
-						<UserIcon size={24} className="text-brand-primary" />
-						<span className="text-xl font-bold">Profile</span>
-					</MotionCardTitle>
-					<MotionCardContent>
-						<div className="flex items-center gap-4 p-4 rounded-2xl bg-surface-input border border-border-subtle">
-							<div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary">
-								<UserIcon size={24} />
-							</div>
-							<div className="flex-1 min-w-0">
-								<p className="font-bold text-text-primary truncate">
-									{user?.displayName || "Anonymous User"}
-								</p>
-								<p className="text-sm text-text-muted truncate">
-									{user?.email || "Guest Session"}
-								</p>
-							</div>
-						</div>
-						<button
-							type="button"
-							onClick={handleSignOut}
-							className="w-full py-4 mt-2 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-bold transition-all border border-red-500/20 active:scale-95"
-						>
-							<LogOut size={20} />
-							<span>Sign Out</span>
-						</button>
-					</MotionCardContent>
+				<StaggeredListElement className="flex items-center gap-3">
+					<UserIcon size={24} className="text-brand-primary" />
+					<span className="text-xl font-bold">Profile</span>
+				</StaggeredListElement>
+				<StaggeredListElement
+					type="card"
+					className="flex items-center gap-4"
+				>
+					<div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary">
+						<UserIcon size={24} />
+					</div>
+					<div className="flex-1 min-w-0">
+						<p className="font-bold text-text-primary truncate">
+							{user?.displayName || "Anonymous User"}
+						</p>
+						<p className="text-sm text-text-muted truncate">
+							{user?.email || "Guest Session"}
+						</p>
+					</div>
+				</StaggeredListElement>
+				<StaggeredListElement
+				initial={{background: "var(--brand-primary)"}}
+					whileHover={{ scale: 1, background: "var(--brand-primary-hover)", transition: {duration: 0.2} }}
+					type="button"
+					onClick={handleSignOut}
+					variant="brand"
+				>
+					<LogOut size={20} />
+					<span>Sign Out</span>
 				</StaggeredListElement>
 
 				{/* Mode Section */}
-				<StaggeredListElement>
-					<MotionCardTitle className="flex items-center gap-3">
-						{currentMode === "dark" ? (
-							<Moon size={24} className="text-brand-primary" />
-						) : (
-							<Sun size={24} className="text-brand-primary" />
-						)}
-						<span className="text-xl font-bold">Mode</span>
-					</MotionCardTitle>
-					<MotionCardContent className="grid grid-cols-2 gap-3">
-						<ThemeButton
-							label={"Light"}
-							isActive={currentMode === "light"}
-							onChange={() => handleChangeMode("light")}
-							icon={
-								<div
-									className={`w-12 h-12 rounded-full bg-amber-100 shadow-inner flex items-center justify-center ${
-										currentMode === "light" ? "ring-2 ring-brand-primary" : ""
-									}`}
-								>
-									<Sun
-										size={24}
-										className={
-											currentMode === "light"
-												? "text-amber-500"
-												: "text-amber-400"
-										}
-									/>
-								</div>
-							}
-						/>
-						<ThemeButton
-							label={"Dark"}
-							isActive={currentMode === "dark"}
-							onChange={() => handleChangeMode("dark")}
-							icon={
-								<div
-									className={`w-12 h-12 rounded-full bg-slate-800 shadow-inner flex items-center justify-center ${
-										currentMode === "dark" ? "ring-2 ring-brand-primary" : ""
-									}`}
-								>
-									<Moon
-										size={24}
-										className={
-											currentMode === "dark"
-												? "text-indigo-300"
-												: "text-slate-400"
-										}
-									/>
-								</div>
-							}
-						/>
-					</MotionCardContent>
+				<StaggeredListElement className="flex items-center gap-3">
+					<MoonIcon size={24} className="text-brand-primary" />
+					<span className="text-xl font-bold">Theme</span>
+				</StaggeredListElement>
+				<StaggeredListElement className="grid grid-cols-2 gap-3">
+					<ThemeButton
+						label={"Light"}
+						isActive={currentMode === "light"}
+						onChange={() => handleChangeMode("light")}
+						icon={
+							<div
+								className={`w-12 h-12 rounded-full bg-amber-100 shadow-inner flex items-center justify-center ${
+									currentMode === "light" ? "ring-2 ring-brand-primary" : ""
+								}`}
+							>
+								<Sun
+									size={24}
+									className={
+										currentMode === "light"
+											? "text-amber-500"
+											: "text-amber-400"
+									}
+								/>
+							</div>
+						}
+					/>
+					<ThemeButton
+						label={"Dark"}
+						isActive={currentMode === "dark"}
+						onChange={() => handleChangeMode("dark")}
+						icon={
+							<div
+								className={`w-12 h-12 rounded-full bg-slate-800 shadow-inner flex items-center justify-center ${
+									currentMode === "dark" ? "ring-2 ring-brand-primary" : ""
+								}`}
+							>
+								<Moon
+									size={24}
+									className={
+										currentMode === "dark"
+											? "text-indigo-300"
+											: "text-slate-400"
+									}
+								/>
+							</div>
+						}
+					/>
 				</StaggeredListElement>
 
 				{/* Accent Color Section */}
-				<StaggeredListElement>
-					<MotionCardTitle className="flex items-center gap-3">
-						<Palette size={24} className="text-brand-primary" />
-						<span className="text-xl font-bold">Accent</span>
-					</MotionCardTitle>
-					<MotionCardContent className="grid grid-cols-2 gap-3">
-						{accents.map((a) => (
-							<ThemeButton
-								key={a.id}
-								label={a.name}
-								isActive={currentAccent === a.id}
-								onChange={() => handleChangeAccent(a.id)}
-								icon={
-									<div
-										className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
-									>
-										{currentAccent === a.id && (
-											<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
-										)}
-									</div>
-								}
-							/>
-						))}
-					</MotionCardContent>
+				<StaggeredListElement className="flex items-center gap-3">
+					<Palette size={24} className="text-brand-primary" />
+					<span className="text-xl font-bold">Accent</span>
+				</StaggeredListElement>
+				<StaggeredListElement className="grid grid-cols-2 gap-3">
+					{accents.map((a) => (
+						<ThemeButton
+							key={a.id}
+							label={a.name}
+							isActive={currentAccent === a.id}
+							onChange={() => handleChangeAccent(a.id)}
+							icon={
+								<div
+									className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
+								>
+									{currentAccent === a.id && (
+										<div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+									)}
+								</div>
+							}
+						/>
+					))}
 				</StaggeredListElement>
 			</StaggeredList>
 		</Layout>

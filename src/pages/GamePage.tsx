@@ -303,7 +303,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
-			contentClassName="mb-8"
 			headerClassName="justify-between"
 			headerCenter={<Timer time={timer} />}
 			headerRight={
@@ -315,21 +314,19 @@ export const GamePage: React.FC<GamePageProps> = ({
 			}
 		>
 			{/* Grid */}
-			<div className="flex flex-col flex-1 sm:flex-0 w-full">
-				<div className="w-full">
-					<SudokuGrid
-						initialBoard={puzzle.initial}
-						currentBoard={gameState.current}
-						notes={gameState.notes}
-						selectedCell={selectedCell}
-						onCellSelect={handleCellSelect}
-						conflicts={conflicts}
-					/>
-				</div>
+			<div className="flex flex-col flex-1 sm:flex-0 w-full mb-4">
+				<SudokuGrid
+					initialBoard={puzzle.initial}
+					currentBoard={gameState.current}
+					notes={gameState.notes}
+					selectedCell={selectedCell}
+					onCellSelect={handleCellSelect}
+					conflicts={conflicts}
+				/>
 			</div>
 
 			{/* Controls & Numpad */}
-			<div className="w-full flex flex-col items-center gap-4">
+			<div className="w-full flex flex-col items-center gap-2">
 				<GameControls
 					isNoteMode={isNoteMode}
 					onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
