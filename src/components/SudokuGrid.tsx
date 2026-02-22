@@ -59,7 +59,7 @@ export const SudokuGrid = ({
 	return (
 		<div
 			className={cn(
-				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-[var(--grid-line)]",
+				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-foreground/20",
 				className,
 			)}
 		>
@@ -80,20 +80,20 @@ export const SudokuGrid = ({
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
-									"bg-cell-bg",
-									r % 3 === 2 && r !== 8 && "border-b-2 border-primary/20",
-									c % 3 === 2 && c !== 8 && "border-r-2 border-primary/20",
+									"bg-background",
+									r % 3 === 2 && r !== 8 && "border-b-2 border-foreground/20",
+									c % 3 === 2 && c !== 8 && "border-r-2 border-foreground/20",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted && !selected && !conflict && "bg-primary/8",
+									highlighted && !selected && !conflict && "bg-background/70",
 									selected &&
 										!conflict &&
-										"bg-primary/16 ring-2 ring-primary z-10",
+										"bg-primary/10 ring ring-primary border border-primary z-10",
 									conflict &&
-										"text-foreground bg-red-500/50 ring-2 ring-red-500 z-20 animate-pulse",
-									!initial && !conflict && "text-secondary font-semibold",
+										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse",
+									!initial && !conflict && "text-primary/90 font-semibold",
 									highlighted &&
 										!initial &&
 										!conflict &&
@@ -113,7 +113,7 @@ export const SudokuGrid = ({
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
 													className={cn(
-														"flex items-center justify-center text-primary/70",
+														"flex items-center justify-center text-primary/80",
 														highlighted && "text-primary",
 													)}
 												>
