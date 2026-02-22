@@ -1,6 +1,7 @@
 import {
 	type HTMLMotionProps,
 	motion,
+	stagger,
 	type TargetAndTransition,
 	type Variants,
 } from "framer-motion";
@@ -12,7 +13,7 @@ const listVariants: Variants = {
 	visible: {
 		opacity: 1,
 		transition: {
-			staggerChildren: 0.05,
+			delayChildren: stagger(0.1),
 		},
 	},
 };
@@ -70,10 +71,6 @@ export function StaggeredListElement({
 		visible: {
 			opacity: 1,
 			y: 0,
-			transition: {
-				duration: 0.2,
-				ease: "easeOut",
-			},
 		},
 	};
 	const defaultPadding = "px-6 py-4";
@@ -88,8 +85,6 @@ export function StaggeredListElement({
 		return (
 			<motion.div
 				variants={elementVariants}
-				initial="hidden"
-				animate="visible"
 				whileHover="hovering"
 				whileTap="tap"
 				className={cn(
@@ -106,6 +101,7 @@ export function StaggeredListElement({
 	} else if (type === "card") {
 		return (
 			<motion.div
+				variants={elementVariants}
 				className={cn(
 					"rounded-2xl",
 					variantStyles[variant || "default"],
@@ -118,13 +114,7 @@ export function StaggeredListElement({
 		);
 	}
 	return (
-		<motion.div
-			variants={elementVariants}
-			className={className}
-			initial="hidden"
-			animate="visible"
-			{...props}
-		>
+		<motion.div variants={elementVariants} className={className} {...props}>
 			{children}
 		</motion.div>
 	);
