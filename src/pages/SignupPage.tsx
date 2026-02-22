@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
-import { Layout } from "../components/Layout";
+import { Layout } from "@/components/Layout";
 import { auth } from "../firebase";
 
 export const SignupPage: React.FC = () => {

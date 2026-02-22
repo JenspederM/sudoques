@@ -5,7 +5,7 @@ import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
-import { Layout } from "../components/Layout";
+import { Layout } from "@/components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 import type { Difficulty } from "../types";
 
@@ -18,7 +18,7 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 }) => {
 	return (
 		<Layout backRedirect="/" headerCenter={<PageTitle title="New Game" />}>
-			<StaggeredList className="overflow-y-auto sm:overflow-visible h-full">
+			<StaggeredList className="overflow-auto sm:overflow-visible h-full">
 				{DIFFICULTIES.map((d) => (
 					<StaggeredListElement
 						key={d.id}
@@ -31,16 +31,11 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 							backgroundColor: "var(--brand-primary-light)",
 						}}
 					>
-						<div className="flex flex-col gap-1 items-start text-left flex-1 min-w-0">
-							<h3 className="text-2xl font-black group-hover:text-brand-primary transition-colors truncate w-full">
-								{d.label}
-							</h3>
-							<p className="text-text-secondary text-sm font-medium line-clamp-2">
-								{d.desc}
-							</p>
+						<div className="flex flex-col">
+							<h3>{d.label}</h3>
+							<p className="text-xs font-thin text-text-secondary">{d.desc}</p>
 						</div>
-
-						<div className="w-12 h-12 shrink-0 rounded-2xl bg-surface-input group-hover:bg-brand-primary group-hover:text-white flex items-center justify-center transition-all shadow-lg active:scale-95">
+						<div className="grid place-items-center size-12 rounded-2xl bg-surface-input">
 							<Play size={20} fill="currentColor" />
 						</div>
 					</StaggeredListElement>

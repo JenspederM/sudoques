@@ -9,7 +9,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
-import { AuthProvider } from "./components/AuthProvider";
+import { AuthProvider } from "@/components/AuthProvider";
 
 function start() {
 	const container = document.getElementById("root");

@@ -2,16 +2,15 @@ import { Trophy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MotionCard } from "@/components/MotionCard";
 import { PageTitle } from "@/components/PageTitle";
 import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { Timer } from "@/components/Timer";
-import { buildReviewState, cn } from "@/lib/utils";
+import { buildReviewState } from "@/lib/utils";
 import type { Difficulty, HighScore } from "@/types";
-import { Layout } from "../components/Layout";
+import { Layout } from "@/components/Layout";
 import { DIFFICULTIES } from "../logic/constants";
 
 interface StatisticsPageProps {

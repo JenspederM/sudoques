@@ -13,9 +13,9 @@ import {
 	useNavigate,
 } from "react-router-dom";
 import { Toaster, toast } from "sonner";
-import { useAuth } from "./components/AuthProvider";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { UpdateNotification } from "./components/UpdateNotification";
+import { useAuth } from "@/components/AuthProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { UpdateNotification } from "@/components/UpdateNotification";
 import {
 	getRandomPuzzle,
 	loadGameState,

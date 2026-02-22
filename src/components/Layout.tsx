@@ -38,7 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({
 				exit={{ opacity: 0 }}
 				transition={{ duration: 0.3 }}
 				className={cn(
-					"safe flex flex-col h-full w-full xs:w-5/6 sm:w-2/3 lg:w-1/3 pb-16 sm:justify-center",
+					"safe flex flex-col h-full w-full xs:w-5/6 sm:w-2/3 lg:w-1/3 sm:justify-center",
 					centered && "justify-center",
 				)}
 				layout
@@ -52,7 +52,7 @@ export const Layout: React.FC<LayoutProps> = ({
 						headerRight={headerRight}
 					/>
 				)}
-				{children}
+					{children}
 			</motion.main>
 		</div>
 	);

@@ -6,7 +6,7 @@ import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
-import { Layout } from "../components/Layout";
+import { Layout } from "@/components/Layout";
 
 interface HomePageProps {
 	hasExistingGame: boolean;
@@ -22,10 +22,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					<BrandHeader />
 				</StaggeredListElement>
 				{hasExistingGame && (
-					<StaggeredListElement
-						type="button"
-						onClick={() => navigate("/game")}
-					>
+					<StaggeredListElement type="button" onClick={() => navigate("/game")}>
 						<Play size={24} fill="currentColor" />
 						<span>Continue Game</span>
 					</StaggeredListElement>

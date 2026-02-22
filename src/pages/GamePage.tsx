@@ -4,13 +4,13 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { buildReviewState } from "@/lib/utils";
-import { GameControls } from "../components/GameControls";
-import { Layout } from "../components/Layout";
-import { Numpad } from "../components/Numpad";
-import { PuzzleInfoDialog } from "../components/PuzzleInfoDialog";
-import { SudokuGrid } from "../components/SudokuGrid";
-import { Timer } from "../components/Timer";
-import { VictoryDialog } from "../components/VictoryDialog";
+import { GameControls } from "@/components/GameControls";
+import { Layout } from "@/components/Layout";
+import { Numpad } from "@/components/Numpad";
+import { PuzzleInfoDialog } from "@/components/PuzzleInfoDialog";
+import { SudokuGrid } from "@/components/SudokuGrid";
+import { Timer } from "@/components/Timer";
+import { VictoryDialog } from "@/components/VictoryDialog";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,

@@ -3,21 +3,19 @@ import {
 	Moon,
 	MoonIcon,
 	Palette,
-	PaletteIcon,
 	Sun,
 	User as UserIcon,
 } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { MotionCardContent, MotionCardTitle } from "@/components/MotionCard";
 import { PageTitle } from "@/components/PageTitle";
 import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { ThemeButton } from "@/components/ThemeButton";
-import { useAuth } from "../components/AuthProvider";
-import { Layout } from "../components/Layout";
+import { useAuth } from "@/components/AuthProvider";
+import { Layout } from "@/components/Layout";
 import { updateUserSettings } from "../logic/firebase";
 import type { Accent, Mode } from "../types";
 
@@ -69,10 +67,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 					<UserIcon size={24} className="text-brand-primary" />
 					<span className="text-xl font-bold">Profile</span>
 				</StaggeredListElement>
-				<StaggeredListElement
-					type="card"
-					className="flex items-center gap-4"
-				>
+				<StaggeredListElement type="card" className="flex items-center gap-4">
 					<div className="w-12 h-12 rounded-full bg-brand-primary/20 flex items-center justify-center text-brand-primary">
 						<UserIcon size={24} />
 					</div>
@@ -86,8 +81,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 					</div>
 				</StaggeredListElement>
 				<StaggeredListElement
-				initial={{background: "var(--brand-primary)"}}
-					whileHover={{ scale: 1, background: "var(--brand-primary-hover)", transition: {duration: 0.2} }}
+					initial={{ background: "var(--brand-primary)" }}
+					whileHover={{
+						scale: 1,
+						background: "var(--brand-primary-hover)",
+						transition: { duration: 0.2 },
+					}}
 					type="button"
 					onClick={handleSignOut}
 					variant="brand"
@@ -160,7 +159,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 							onChange={() => handleChangeAccent(a.id)}
 							icon={
 								<div
-									className={`w-12 h-12 rounded-full ${a.color} shadow-inner flex items-center justify-center`}
+									className={`w-12 h-12 rounded-full ${a.color} flex items-center justify-center`}
 								>
 									{currentAccent === a.id && (
 										<div className="w-3 h-3 bg-white rounded-full animate-pulse" />

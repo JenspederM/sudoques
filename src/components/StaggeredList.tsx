@@ -6,7 +6,6 @@ import {
 } from "framer-motion";
 import type { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
-import { MotionCard } from "./MotionCard";
 
 const listVariants: Variants = {
 	hidden: { opacity: 0 },
@@ -78,10 +77,12 @@ export function StaggeredListElement({
 		},
 	};
 	const defaultPadding = "px-6 py-4";
-	const defaultColors = {
-		brand: "bg-brand-primary text-white shadow-md shadow-brand-primary/10",
-		default: "bg-glass text-text-primary shadow-lg shadow-brand-subtle",
-		transparent: "bg-transparent text-text-primary shadow-none",
+	const defaultShadow = "shadow-lg shadow-border-subtle/10";
+	const defaultBorder = "border border-border-subtle";
+	const variantStyles = {
+		brand: `${defaultPadding} bg-brand-primary text-white ${defaultShadow} ${defaultBorder}`,
+		default: `${defaultPadding} bg-glass text-text-primary ${defaultShadow} ${defaultBorder}`,
+		transparent: "bg-transparent text-text-primary drop-shadow-none",
 	};
 	if (type === "button") {
 		return (
@@ -92,9 +93,8 @@ export function StaggeredListElement({
 				whileHover="hovering"
 				whileTap="tap"
 				className={cn(
-					"flex items-center justify-center w-full gap-4 rounded-2xl border border-border-subtle font-bold text-lg cursor-pointer",
-					defaultPadding,
-					defaultColors[variant || "default"],
+					"flex items-center justify-center w-full gap-4 rounded-2xl font-bold text-lg cursor-pointer",
+					variantStyles[variant || "default"],
 					className,
 				)}
 				role="button"
@@ -107,9 +107,8 @@ export function StaggeredListElement({
 		return (
 			<motion.div
 				className={cn(
-					"rounded-2xl border border-border-subtle",
-					defaultPadding,
-					defaultColors[variant || "default"],
+					"rounded-2xl",
+					variantStyles[variant || "default"],
 					className,
 				)}
 				{...props}
