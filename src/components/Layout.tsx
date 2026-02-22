@@ -30,7 +30,7 @@ export const Layout: React.FC<LayoutProps> = ({
 			{/* Animated Background Blobs */}
 			<div className="fixed inset-0 pointer-events-none">
 				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
 			</div>
 			<motion.main
 				initial={{ opacity: 0 }}

@@ -113,7 +113,7 @@ export const SudokuGrid = ({
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
 													className={cn(
-														"flex items-center justify-center text-secondary",
+														"flex items-center justify-center text-primary/70",
 														highlighted && "text-primary",
 													)}
 												>
