@@ -12,7 +12,8 @@
 		"allowJs": true,
 		"types": [
 			"vite/client",
-			"vite-plugin-pwa/react"
+			"vite-plugin-pwa/react",
+			"bun-types"
 		],
 		// Bundler mode
 		"moduleResolution": "bundler",
