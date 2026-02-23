@@ -1,7 +1,7 @@
 import { AnimatePresence, m } from "framer-motion";
 import type { PropsWithChildren } from "react";
 import { createPortal } from "react-dom";
-import { MotionCard } from "./MotionCard";
+import { cn } from "@/lib/utils";
 
 type DialogProps = PropsWithChildren<{
 	open: boolean;
@@ -20,17 +20,18 @@ export function Dialog({ open, onClose, className, children }: DialogProps) {
 					onClick={onClose}
 					className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay backdrop-blur-md p-6"
 				>
-					<MotionCard
+					<m.div
 						initial={{ scale: 0.9, y: 20 }}
 						animate={{ scale: 1, y: 0 }}
 						exit={{ scale: 0.9, y: 20 }}
 						onClick={(e) => e.stopPropagation()}
-						className={`glass p-8 sm:p-10 rounded-3xl w-full max-w-sm sm:max-w-md shadow-2xl ${
-							className || ""
-						}`}
+						className={cn(
+							"bg-glass p-8 sm:p-10 rounded-3xl w-full max-w-sm sm:max-w-md shadow-2xl",
+							className,
+						)}
 					>
 						{children}
-					</MotionCard>
+					</m.div>
 				</m.div>
 			)}
 		</AnimatePresence>,

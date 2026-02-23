@@ -4,7 +4,6 @@ import type React from "react";
 import type { PropsWithChildren } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { MotionCard } from "./MotionCard";
 
 type LayoutProps = PropsWithChildren<{
 	backRedirect?: string;
@@ -75,9 +74,9 @@ function Header({
 }: HeaderProps) {
 	const navigate = useNavigate();
 	return (
-		<MotionCard
+		<m.div
 			className={cn(
-				"w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border shadow-xl mb-6",
+				"bg-glass w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border shadow-xl mb-6",
 				headerClassName,
 			)}
 		>
@@ -96,6 +95,6 @@ function Header({
 			</div>
 
 			<div className="flex justify-end">{headerRight}</div>
-		</MotionCard>
+		</m.div>
 	);
 }

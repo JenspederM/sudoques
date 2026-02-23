@@ -1,11 +1,11 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { m } from "framer-motion";
 import { Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
 import type { SubmitEvent } from "react";
 import { useReducer } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
-import { MotionCard } from "@/components/MotionCard";
 import { auth } from "../firebase";
 
 interface SignupState {
@@ -73,10 +73,10 @@ export const SignupPage: React.FC = () => {
 
 	return (
 		<Layout centered>
-			<MotionCard
+			<m.div
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
-				className="flex flex-col items-center"
+				className="flex flex-col items-center bg-glass rounded-2xl border border-border px-6 py-4 w-full"
 			>
 				<div className="flex flex-col items-center mb-4">
 					<BrandHeader subtitle="Create account" />
@@ -170,7 +170,7 @@ export const SignupPage: React.FC = () => {
 				>
 					Already have an account? Sign In
 				</button>
-			</MotionCard>
+			</m.div>
 		</Layout>
 	);
 };
