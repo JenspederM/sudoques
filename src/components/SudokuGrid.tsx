@@ -59,7 +59,7 @@ export const SudokuGrid = ({
 	return (
 		<div
 			className={cn(
-				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-foreground/20",
+				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-primary/30",
 				className,
 			)}
 		>
@@ -80,25 +80,20 @@ export const SudokuGrid = ({
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
-									"bg-background",
-									r % 3 === 2 && r !== 8 && "border-b-2 border-foreground/20",
-									c % 3 === 2 && c !== 8 && "border-r-2 border-foreground/20",
+									"bg-background text-primary/90 font-semibold",
+									r % 3 === 2 && r !== 8 && "border-b-2 border-primary/20",
+									c % 3 === 2 && c !== 8 && "border-r-2 border-primary/20",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted && !selected && !conflict && "bg-background/70",
+									highlighted && !selected && "bg-background/60",
 									selected &&
-										!conflict &&
 										"bg-primary/10 ring ring-primary border border-primary z-10",
+									highlighted && "text-primary font-semibold",
+									initial && "text-foreground font-bold",
 									conflict &&
 										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse",
-									!initial && !conflict && "text-primary/90 font-semibold",
-									highlighted &&
-										!initial &&
-										!conflict &&
-										"text-primary font-semibold",
-									initial && !conflict && "text-foreground font-bold",
 								)}
 							>
 								{val !== null ? (

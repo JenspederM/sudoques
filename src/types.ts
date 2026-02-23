@@ -176,7 +176,6 @@ export interface GradedBoard {
 	actions: GameAction[];
 }
 
-
 export type Technique =
 	| "Naked Single"
 	| "Hidden Single"

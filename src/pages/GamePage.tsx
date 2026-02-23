@@ -318,7 +318,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 			}
 		>
 			<StaggeredList className="h-full">
-				<StaggeredListElement className="flex flex-col flex-1 justify-center">
+				<StaggeredListElement className="flex flex-col flex-1 sm:flex-0 ">
 					<SudokuGrid
 						initialBoard={puzzle.initial}
 						currentBoard={gameState.current}
