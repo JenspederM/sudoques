@@ -1,71 +1,4 @@
-import type { Board } from "../types";
-
-export type Technique =
-	| "Naked Single"
-	| "Hidden Single"
-	| "Naked Pair"
-	| "Naked Triple"
-	| "Hidden Pair"
-	| "Hidden Triple"
-	| "Naked Quad"
-	| "Hidden Quad"
-	| "Pointing Pairs"
-	| "Line/Box Reduction"
-	| "Gurth's Theorem"
-	| "BUG+1"
-	| "X-Wing"
-	| "Unique Rectangle Type 1"
-	| "Chute Remote Pair"
-	| "Simple Colouring"
-	| "Y-Wing"
-	| "Rectangle Elimination"
-	| "Swordfish"
-	| "XYZ-Wing"
-	| "Tridagon"
-	| "X-Cycle"
-	| "XY-Chain"
-	| "3D Medusa"
-	| "Jellyfish"
-	| "Unique Rectangle 2,3,4,5"
-	| "Avoidable Rectangle"
-	| "Twinned XY-Chain"
-	| "Fireworks"
-	| "SK Loop"
-	| "Extended Unique Rectangle"
-	| "Hidden Unique Rectangle"
-	| "WXYZ-Wing"
-	| "Aligned Pair Exclusion"
-	| "Exocet"
-	| "Grouped X-Cycle"
-	| "Finned X-Wing"
-	| "Finned Swordfish"
-	| "Franken Swordfish"
-	| "Alternating Inference Chain"
-	| "Sue-de-Coq"
-	| "Digit Forcing Chain"
-	| "Nishio Forcing Chain"
-	| "Cell Forcing Chain"
-	| "Unit Forcing Chain"
-	| "Almost Locked Set"
-	| "Death Blossom"
-	| "Pattern Overlay"
-	| "Quad Forcing Chain"
-	| "Bowman Bingo"
-	| "Backtracking";
-
-export interface SolveStep {
-	technique: Technique;
-	row: number;
-	col: number;
-	value: number;
-}
-
-export interface GradedBoard {
-	difficulty: number;
-	techniquesUsed: Set<Technique>;
-	isSolvable: boolean;
-	solution: Board | null;
-}
+import type { Board, GameAction, GradedBoard, Technique } from "../types";
 
 const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Naked Single": 1, // Will be multiplied by F
@@ -124,6 +57,8 @@ export class SudokuSolver {
 	private board: Board;
 	private candidates: Set<number>[][];
 	private techniquesUsed: Set<Technique> = new Set();
+	private actions: GameAction[] = [];
+	private startTime: number = 0;
 
 	constructor(board: Board) {
 		this.board = board.map((row) => [...row]);
@@ -175,6 +110,7 @@ export class SudokuSolver {
 	}
 
 	solve(): GradedBoard {
+		this.startTime = performance.now();
 		let totalScore = 0;
 		let changed = true;
 		while (changed) {
@@ -293,6 +229,7 @@ export class SudokuSolver {
 					techniquesUsed: this.techniquesUsed,
 					isSolvable: false,
 					solution: null,
+					actions: this.actions,
 				};
 			}
 		}
@@ -304,6 +241,7 @@ export class SudokuSolver {
 			techniquesUsed: this.techniquesUsed,
 			isSolvable: isFinished,
 			solution: isFinished ? (this.board as Board) : null,
+			actions: this.actions,
 		};
 	}
 
@@ -1361,6 +1299,12 @@ export class SudokuSolver {
 		const boardRow = this.board[r];
 		if (boardRow) boardRow[c] = val;
 		this.techniquesUsed.add(technique);
+		this.actions.push({
+			type: "addValue",
+			delta: Math.round(performance.now() - this.startTime),
+			technique,
+			payload: { row: r, col: c, value: val },
+		});
 		this.updateCandidatesAfterMove(r, c, val);
 	}
 
@@ -1389,8 +1333,20 @@ export class SudokuSolver {
 					for (const val of Array.from(candy)) {
 						if (this.isValid(r, c, val)) {
 							boardRow[c] = val;
+							this.actions.push({
+								type: "addValue",
+								delta: Math.round(performance.now() - this.startTime),
+								technique: "Backtracking",
+								payload: { row: r, col: c, value: val },
+							});
 							if (this.backtrack()) return true;
 							boardRow[c] = null;
+							this.actions.push({
+								type: "removeValue",
+								delta: Math.round(performance.now() - this.startTime),
+								technique: "Backtracking",
+								payload: { row: r, col: c },
+							});
 						}
 					}
 					return false;

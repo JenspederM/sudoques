@@ -1,5 +1,4 @@
-import type { GradedBoard } from "@/logic/solver";
-import type { DBPuzzle } from "@/types";
+import type { DBPuzzle, GradedBoard } from "@/types";
 
 type WorkerResponseSuccess = {
 	success: true;

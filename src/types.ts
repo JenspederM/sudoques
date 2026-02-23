@@ -110,6 +110,7 @@ export type DBHighScore = {
 export type AddValueAction = {
 	type: "addValue";
 	delta: number;
+	technique?: string;
 	payload: {
 		row: number;
 		col: number;
@@ -120,6 +121,7 @@ export type AddValueAction = {
 export type RemoveValueAction = {
 	type: "removeValue";
 	delta: number;
+	technique?: string;
 	payload: {
 		row: number;
 		col: number;
@@ -129,6 +131,7 @@ export type RemoveValueAction = {
 export type AddNoteAction = {
 	type: "addNote";
 	delta: number;
+	technique?: string;
 	payload: {
 		row: number;
 		col: number;
@@ -139,6 +142,7 @@ export type AddNoteAction = {
 export type RemoveNoteAction = {
 	type: "removeNote";
 	delta: number;
+	technique?: string;
 	payload: {
 		row: number;
 		col: number;
@@ -163,3 +167,65 @@ export type GameAction =
 	| RemoveNoteAction
 	| UndoAction
 	| RedoAction;
+
+export interface GradedBoard {
+	difficulty: number;
+	techniquesUsed: Set<Technique>;
+	isSolvable: boolean;
+	solution: Board | null;
+	actions: GameAction[];
+}
+
+
+export type Technique =
+	| "Naked Single"
+	| "Hidden Single"
+	| "Naked Pair"
+	| "Naked Triple"
+	| "Hidden Pair"
+	| "Hidden Triple"
+	| "Naked Quad"
+	| "Hidden Quad"
+	| "Pointing Pairs"
+	| "Line/Box Reduction"
+	| "Gurth's Theorem"
+	| "BUG+1"
+	| "X-Wing"
+	| "Unique Rectangle Type 1"
+	| "Chute Remote Pair"
+	| "Simple Colouring"
+	| "Y-Wing"
+	| "Rectangle Elimination"
+	| "Swordfish"
+	| "XYZ-Wing"
+	| "Tridagon"
+	| "X-Cycle"
+	| "XY-Chain"
+	| "3D Medusa"
+	| "Jellyfish"
+	| "Unique Rectangle 2,3,4,5"
+	| "Avoidable Rectangle"
+	| "Twinned XY-Chain"
+	| "Fireworks"
+	| "SK Loop"
+	| "Extended Unique Rectangle"
+	| "Hidden Unique Rectangle"
+	| "WXYZ-Wing"
+	| "Aligned Pair Exclusion"
+	| "Exocet"
+	| "Grouped X-Cycle"
+	| "Finned X-Wing"
+	| "Finned Swordfish"
+	| "Franken Swordfish"
+	| "Alternating Inference Chain"
+	| "Sue-de-Coq"
+	| "Digit Forcing Chain"
+	| "Nishio Forcing Chain"
+	| "Cell Forcing Chain"
+	| "Unit Forcing Chain"
+	| "Almost Locked Set"
+	| "Death Blossom"
+	| "Pattern Overlay"
+	| "Quad Forcing Chain"
+	| "Bowman Bingo"
+	| "Backtracking";
