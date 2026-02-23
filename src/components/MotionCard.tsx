@@ -1,4 +1,4 @@
-import { type HTMLMotionProps, motion } from "framer-motion";
+import { type HTMLMotionProps, m } from "framer-motion";
 import type { PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,7 @@ export function MotionCard({
 	...props
 }: MotionCardProps & HTMLMotionProps<"div">) {
 	return (
-		<motion.div
+		<m.div
 			className={cn(
 				"glass rounded-2xl border border-border px-6 py-4 w-full",
 				className,
@@ -18,7 +18,7 @@ export function MotionCard({
 			{...props}
 		>
 			{children}
-		</motion.div>
+		</m.div>
 	);
 }
 
@@ -28,12 +28,9 @@ export function MotionCardTitle({
 	...props
 }: MotionCardProps & HTMLMotionProps<"h2">) {
 	return (
-		<motion.h2
-			className={cn("flex items-center gap-3 mb-4", className)}
-			{...props}
-		>
+		<m.h2 className={cn("flex items-center gap-3 mb-4", className)} {...props}>
 			{children}
-		</motion.h2>
+		</m.h2>
 	);
 }
 
@@ -43,8 +40,8 @@ export function MotionCardContent({
 	...props
 }: MotionCardProps & HTMLMotionProps<"div">) {
 	return (
-		<motion.div className={cn("flex flex-col gap-2", className)} {...props}>
+		<m.div className={cn("flex flex-col gap-2", className)} {...props}>
 			{children}
-		</motion.div>
+		</m.div>
 	);
 }

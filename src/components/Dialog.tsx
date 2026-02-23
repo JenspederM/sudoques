@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { type PropsWithChildren, useEffect, useState } from "react";
+import { AnimatePresence, m } from "framer-motion";
+import type { PropsWithChildren } from "react";
 import { createPortal } from "react-dom";
 import { MotionCard } from "./MotionCard";
 
@@ -10,18 +10,10 @@ type DialogProps = PropsWithChildren<{
 }>;
 
 export function Dialog({ open, onClose, className, children }: DialogProps) {
-	const [mounted, setMounted] = useState(false);
-
-	useEffect(() => {
-		setMounted(true);
-	}, []);
-
-	if (!mounted) return null;
-
 	return createPortal(
 		<AnimatePresence>
 			{open && (
-				<motion.div
+				<m.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
@@ -39,7 +31,7 @@ export function Dialog({ open, onClose, className, children }: DialogProps) {
 					>
 						{children}
 					</MotionCard>
-				</motion.div>
+				</m.div>
 			)}
 		</AnimatePresence>,
 		document.body,

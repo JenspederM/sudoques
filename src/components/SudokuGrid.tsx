@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import type { HTMLProps } from "react";
 import type { Board, CellNotes } from "@/types";
 import { cn } from "../lib/utils";
@@ -72,7 +72,7 @@ export const SudokuGrid = ({
 						const conflict = hasConflict(r, c);
 
 						return (
-							<motion.div
+							<m.div
 								// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 								key={`cell-${r}-${c}`}
 								data-testid={`cell-${r}-${c}`}
@@ -118,7 +118,7 @@ export const SudokuGrid = ({
 										})}
 									</div>
 								)}
-							</motion.div>
+							</m.div>
 						);
 					}),
 			)}

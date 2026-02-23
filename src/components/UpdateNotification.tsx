@@ -1,13 +1,9 @@
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { RefreshCw } from "lucide-react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 export const UpdateNotification = () => {
-	const {
-		needRefresh: [needRefresh, setNeedRefresh],
-		updateServiceWorker,
-	} = useRegisterSW({
+	const { updateServiceWorker } = useRegisterSW({
 		onRegistered(r: ServiceWorkerRegistration | undefined) {
 			console.debug(`SW Registered: `, r);
 		},
@@ -16,10 +12,7 @@ export const UpdateNotification = () => {
 				description: error as string,
 			});
 		},
-	});
-
-	useEffect(() => {
-		if (needRefresh) {
+		onNeedRefresh() {
 			toast("App Update Available", {
 				description: "Update the app to get the latest features.",
 				icon: (
@@ -32,11 +25,11 @@ export const UpdateNotification = () => {
 				},
 				cancel: {
 					label: "Dismiss",
-					onClick: () => setNeedRefresh(false),
+					onClick: () => {},
 				},
 			});
-		}
-	}, [needRefresh, setNeedRefresh, updateServiceWorker]);
+		},
+	});
 
 	return null;
 };

@@ -1,6 +1,6 @@
 import {
 	type HTMLMotionProps,
-	motion,
+	m,
 	stagger,
 	type TargetAndTransition,
 	type Variants,
@@ -24,7 +24,7 @@ export function StaggeredList({
 	...props
 }: PropsWithChildren<HTMLMotionProps<"div">>) {
 	return (
-		<motion.div
+		<m.div
 			variants={listVariants}
 			initial="hidden"
 			animate="visible"
@@ -32,7 +32,7 @@ export function StaggeredList({
 			className={cn("w-full flex flex-col gap-4", className)}
 		>
 			{children}
-		</motion.div>
+		</m.div>
 	);
 }
 
@@ -83,7 +83,7 @@ export function StaggeredListElement({
 	};
 	if (type === "button") {
 		return (
-			<motion.div
+			<m.div
 				variants={elementVariants}
 				whileHover="hovering"
 				whileTap="tap"
@@ -96,11 +96,11 @@ export function StaggeredListElement({
 				{...props}
 			>
 				{children}
-			</motion.div>
+			</m.div>
 		);
 	} else if (type === "card") {
 		return (
-			<motion.div
+			<m.div
 				variants={elementVariants}
 				className={cn(
 					"rounded-2xl",
@@ -110,12 +110,12 @@ export function StaggeredListElement({
 				{...props}
 			>
 				{children}
-			</motion.div>
+			</m.div>
 		);
 	}
 	return (
-		<motion.div variants={elementVariants} className={className} {...props}>
+		<m.div variants={elementVariants} className={className} {...props}>
 			{children}
-		</motion.div>
+		</m.div>
 	);
 }

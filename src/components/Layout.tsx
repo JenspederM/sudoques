@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import type React from "react";
 import type { PropsWithChildren } from "react";
@@ -32,7 +32,7 @@ export const Layout: React.FC<LayoutProps> = ({
 				<div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse" />
 				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
 			</div>
-			<motion.main
+			<m.main
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export const Layout: React.FC<LayoutProps> = ({
 					/>
 				)}
 				{children}
-			</motion.main>
+			</m.main>
 		</div>
 	);
 };

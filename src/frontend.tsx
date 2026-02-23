@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
+import { domAnimation, LazyMotion } from "framer-motion";
 import { AuthProvider } from "@/components/AuthProvider";
 
 function start() {
@@ -16,11 +17,13 @@ function start() {
 	if (container) {
 		const root = createRoot(container);
 		root.render(
-			<BrowserRouter>
-				<AuthProvider>
-					<App />
-				</AuthProvider>
-			</BrowserRouter>,
+			<LazyMotion features={domAnimation}>
+				<BrowserRouter>
+					<AuthProvider>
+						<App />
+					</AuthProvider>
+				</BrowserRouter>
+			</LazyMotion>,
 		);
 	}
 }

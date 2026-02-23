@@ -36,9 +36,11 @@ const NumpadButton: React.FC<{
 	</button>
 );
 
+const EMPTY_NUMBERS: number[] = [];
+
 export const Numpad: React.FC<NumpadProps> = ({
 	onNumberClick,
-	disabledNumbers = [],
+	disabledNumbers = EMPTY_NUMBERS,
 	remainingCounts,
 }) => {
 	const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];

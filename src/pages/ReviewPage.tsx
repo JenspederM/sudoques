@@ -87,13 +87,11 @@ export const ReviewPage: React.FC = () => {
 		[state?.solution],
 	);
 
-	const currentDerivedState = useMemo(() => {
-		return applyActions(
-			initialBoard,
-			solutionBoard,
-			actions.slice(0, playbackIndex),
-		).state;
-	}, [initialBoard, solutionBoard, actions, playbackIndex]);
+	const currentDerivedState = applyActions(
+		initialBoard,
+		solutionBoard,
+		actions.slice(0, playbackIndex),
+	).state;
 
 	const stepForward = useCallback(() => {
 		const nextAction = actions[playbackIndex];
