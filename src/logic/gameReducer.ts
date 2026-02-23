@@ -8,6 +8,7 @@ type ReducerGameState = {
 	solution: Board;
 };
 
+/** @public */
 export function gameReducer(
 	state: ReducerGameState,
 	action: GameAction,
@@ -112,7 +113,7 @@ export function gameReducer(
 	}
 }
 
-export type ApplyActionsResult = {
+type ApplyActionsResult = {
 	state: ReducerGameState;
 	pointer: number;
 	historyLength: number;

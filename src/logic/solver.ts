@@ -1357,6 +1357,7 @@ export class SudokuSolver {
 	}
 }
 
+/** @public */
 export function gradePuzzle(board: Board): GradedBoard {
 	const solver = new SudokuSolver(board);
 	return solver.solve();

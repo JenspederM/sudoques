@@ -1,19 +1,50 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
 import type { SubmitEvent } from "react";
-import { useState } from "react";
+import { useReducer } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
-import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
+import { MotionCard } from "@/components/MotionCard";
 import { auth } from "../firebase";
 
+interface SignupState {
+	email: string;
+	password: string;
+	name: string;
+	error: string | null;
+	loading: boolean;
+}
+
+const initialState: SignupState = {
+	email: "",
+	password: "",
+	name: "",
+	error: null,
+	loading: false,
+};
+
+type SignupAction =
+	| { type: "SET_FIELD"; field: keyof SignupState; value: string }
+	| { type: "SUBMIT_START" }
+	| { type: "SUBMIT_ERROR"; error: string };
+
+function signupReducer(state: SignupState, action: SignupAction): SignupState {
+	switch (action.type) {
+		case "SET_FIELD":
+			return { ...state, [action.field]: action.value };
+		case "SUBMIT_START":
+			return { ...state, error: null, loading: true };
+		case "SUBMIT_ERROR":
+			return { ...state, error: action.error, loading: false };
+		default:
+			return state;
+	}
+}
+
 export const SignupPage: React.FC = () => {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [name, setName] = useState("");
-	const [error, setError] = useState<string | null>(null);
-	const [loading, setLoading] = useState(false);
+	const [state, dispatch] = useReducer(signupReducer, initialState);
+	const { email, password, name, error, loading } = state;
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -21,8 +52,7 @@ export const SignupPage: React.FC = () => {
 
 	const handleSignup = async (e: SubmitEvent) => {
 		e.preventDefault();
-		setError(null);
-		setLoading(true);
+		dispatch({ type: "SUBMIT_START" });
 		try {
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
@@ -34,9 +64,10 @@ export const SignupPage: React.FC = () => {
 			}
 			navigate(from, { replace: true });
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : "An error occurred");
-		} finally {
-			setLoading(false);
+			dispatch({
+				type: "SUBMIT_ERROR",
+				error: err instanceof Error ? err.message : "An error occurred",
+			});
 		}
 	};
 
@@ -47,9 +78,9 @@ export const SignupPage: React.FC = () => {
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center"
 			>
-				<MotionCardTitle className="flex flex-col items-center gap-0">
+				<div className="flex flex-col items-center mb-4">
 					<BrandHeader subtitle="Create account" />
-				</MotionCardTitle>
+				</div>
 
 				{error && (
 					<div className="w-full p-4 mb-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
@@ -67,7 +98,13 @@ export const SignupPage: React.FC = () => {
 							type="text"
 							placeholder="Your Name"
 							value={name}
-							onChange={(e) => setName(e.target.value)}
+							onChange={(e) =>
+								dispatch({
+									type: "SET_FIELD",
+									field: "name",
+									value: e.target.value,
+								})
+							}
 							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 						/>
 					</div>
@@ -81,7 +118,13 @@ export const SignupPage: React.FC = () => {
 							type="email"
 							placeholder="Email Address"
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							onChange={(e) =>
+								dispatch({
+									type: "SET_FIELD",
+									field: "email",
+									value: e.target.value,
+								})
+							}
 							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 							required
 						/>
@@ -95,7 +138,13 @@ export const SignupPage: React.FC = () => {
 							type="password"
 							placeholder="Password"
 							value={password}
-							onChange={(e) => setPassword(e.target.value)}
+							onChange={(e) =>
+								dispatch({
+									type: "SET_FIELD",
+									field: "password",
+									value: e.target.value,
+								})
+							}
 							className="w-full py-4 pl-12 pr-4 rounded-2xl bg-secondary border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
 							required
 						/>

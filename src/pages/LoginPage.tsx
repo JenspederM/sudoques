@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
-import { MotionCard, MotionCardTitle } from "@/components/MotionCard";
+import { MotionCard } from "@/components/MotionCard";
 import { auth } from "../firebase";
 
 export const LoginPage: React.FC = () => {
@@ -71,9 +71,9 @@ export const LoginPage: React.FC = () => {
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center"
 			>
-				<MotionCardTitle className="flex flex-col items-center gap-0">
+				<div className="flex flex-col items-center mb-4">
 					<BrandHeader />
-				</MotionCardTitle>
+				</div>
 
 				{error && (
 					<div className="w-full p-4 mb-6 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium">
