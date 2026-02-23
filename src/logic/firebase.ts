@@ -38,7 +38,7 @@ const PUZZLES_COLLECTION = "puzzles";
 /**
  * Converts a DBPuzzle (Firestore) to a Puzzle (runtime)
  */
-export function toPuzzle(dbPuzzle: DBPuzzle): Puzzle {
+function toPuzzle(dbPuzzle: DBPuzzle): Puzzle {
 	return {
 		id: dbPuzzle.id,
 		initial: parsePuzzle(dbPuzzle.puzzle),

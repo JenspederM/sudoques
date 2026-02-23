@@ -4,7 +4,7 @@ import {
 	InfoIcon,
 	MessageCircleWarningIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import {
 	Navigate,
 	Route,
@@ -35,49 +35,117 @@ import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import type { Accent, Difficulty, GameState, HighScore, Mode } from "./types";
 
+interface AppState {
+	gameState: Omit<GameState, "lastUpdated" | "timer"> | null;
+	isLoading: boolean;
+	accent: Accent;
+	mode: Mode;
+	playedPuzzles: string[];
+	scores: HighScore[];
+	timer: number;
+}
+
+type AppAction =
+	| { type: "SET_LOADING"; payload: boolean }
+	| {
+			type: "SET_USER_DATA";
+			payload: { accent: Accent; mode: Mode; playedPuzzles: string[] };
+	  }
+	| { type: "SET_SCORES"; payload: HighScore[] }
+	| {
+			type: "SET_GAME_STATE";
+			payload: { gameState: AppState["gameState"]; timer: number };
+	  }
+	| { type: "UPDATE_GAME_STATE"; payload: AppState["gameState"] }
+	| { type: "SET_TIMER"; payload: number | ((prev: number) => number) }
+	| { type: "RESET_STATE" };
+
+const initialAppState: AppState = {
+	gameState: null,
+	isLoading: true,
+	accent: "default",
+	mode: "dark",
+	playedPuzzles: [],
+	scores: [],
+	timer: 0,
+};
+
+function appReducer(state: AppState, action: AppAction): AppState {
+	switch (action.type) {
+		case "SET_LOADING":
+			return { ...state, isLoading: action.payload };
+		case "SET_USER_DATA":
+			return { ...state, ...action.payload };
+		case "SET_SCORES":
+			return { ...state, scores: action.payload };
+		case "SET_GAME_STATE":
+			return {
+				...state,
+				gameState: action.payload.gameState,
+				timer: action.payload.timer,
+			};
+		case "UPDATE_GAME_STATE":
+			return { ...state, gameState: action.payload };
+		case "SET_TIMER":
+			return {
+				...state,
+				timer:
+					typeof action.payload === "function"
+						? action.payload(state.timer)
+						: action.payload,
+			};
+		case "RESET_STATE":
+			return { ...initialAppState, isLoading: false };
+		default:
+			return state;
+	}
+}
+
 export default function App() {
-	const [gameState, setGameState] = useState<Omit<
-		GameState,
-		"lastUpdated" | "timer"
-	> | null>(null);
+	const [state, dispatch] = useReducer(appReducer, initialAppState);
+	const { gameState, isLoading, accent, mode, playedPuzzles, scores, timer } =
+		state;
 
 	const { user, loading: authLoading } = useAuth();
-	const [isLoading, setIsLoading] = useState(true);
-	const [accent, setAccent] = useState<Accent>("default");
-	const [mode, setMode] = useState<Mode>("dark");
-	const [playedPuzzles, setPlayedPuzzles] = useState<string[]>([]);
-	const [scores, setScores] = useState<HighScore[]>([]);
-
 	const navigate = useNavigate();
 	const location = useLocation();
 
 	// Persistence effect: Subscribe to user data & scores
 	useEffect(() => {
 		if (user) {
-			setIsLoading(true);
+			dispatch({ type: "SET_LOADING", payload: true });
 
 			// Metadata subscription (theme, played puzzles)
 			const unsubscribeUser = subscribeToUser(user.uid, (data) => {
-				setAccent(data.settings?.accent || "default");
-				setMode(data.settings?.mode || "dark");
-				setPlayedPuzzles(data.playedPuzzles || []);
+				dispatch({
+					type: "SET_USER_DATA",
+					payload: {
+						accent: data.settings?.accent || "default",
+						mode: data.settings?.mode || "dark",
+						playedPuzzles: data.playedPuzzles || [],
+					},
+				});
 			});
 
 			// Scores subscription (pre-load for StatisticsPage)
 			const unsubscribeScores = subscribeToUserScores(user.uid, (newScores) => {
-				setScores(newScores);
+				dispatch({ type: "SET_SCORES", payload: newScores });
 			});
 
 			// One-time Game State load (decoupled from subscription)
 			loadGameState(user.uid).then((savedState) => {
 				if (savedState) {
-					setGameState(savedState);
-					setTimer(savedState.timer);
+					dispatch({
+						type: "SET_GAME_STATE",
+						payload: { gameState: savedState, timer: savedState.timer },
+					});
 				} else {
-					setGameState(null);
-					setTimer(0);
+					dispatch({
+						type: "SET_GAME_STATE",
+						payload: { gameState: null, timer: 0 },
+					});
 				}
-				setIsLoading(false);
+				dispatch({ type: "SET_LOADING", payload: false });
 			});
 
 			// Prefetch puzzles for offline use
@@ -90,13 +158,7 @@ export default function App() {
 		}
 
 		if (!user && !authLoading) {
-			setGameState(null);
-			setTimer(0);
-			setAccent("default");
-			setMode("dark");
-			setPlayedPuzzles([]);
-			setScores([]);
-			setIsLoading(false);
+			dispatch({ type: "RESET_STATE" });
 		}
 	}, [user, authLoading]);
 
@@ -106,22 +168,33 @@ export default function App() {
 		document.documentElement.setAttribute("data-mode", mode);
 	}, [accent, mode]);
 
-	const [timer, setTimer] = useState(0);
+	const setGameState = useCallback((newState: AppState["gameState"]) => {
+		dispatch({ type: "UPDATE_GAME_STATE", payload: newState });
+	}, []);
+
+	const setTimer = useCallback((t: number | ((prev: number) => number)) => {
+		dispatch({ type: "SET_TIMER", payload: t });
+	}, []);
 
 	// Initialize a new game
 	const startNewGame = useCallback(
 		async (diff: Difficulty) => {
 			try {
-				setIsLoading(true);
+				dispatch({ type: "SET_LOADING", payload: true });
 				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
 
-				setGameState({
-					puzzle,
-					current: puzzle.initial.map((r) => [...r]),
-					notes: createEmptyNotes(),
-					actions: [],
+				dispatch({
+					type: "SET_GAME_STATE",
+					payload: {
+						gameState: {
+							puzzle,
+							current: puzzle.initial.map((r) => [...r]),
+							notes: createEmptyNotes(),
+							actions: [],
+						},
+						timer: 0,
+					},
 				});
-				setTimer(0);
 				navigate("/game");
 			} catch (e) {
 				console.error("Failed to load puzzles from Firestore", e);
@@ -129,7 +202,7 @@ export default function App() {
 					description: (e as Error).message,
 				});
 			} finally {
-				setIsLoading(false);
+				dispatch({ type: "SET_LOADING", payload: false });
 			}
 		},
 		[navigate, playedPuzzles],

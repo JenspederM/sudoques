@@ -21,27 +21,3 @@ export function MotionCard({
 		</m.div>
 	);
 }
-
-export function MotionCardTitle({
-	children,
-	className,
-	...props
-}: MotionCardProps & HTMLMotionProps<"h2">) {
-	return (
-		<m.h2 className={cn("flex items-center gap-3 mb-4", className)} {...props}>
-			{children}
-		</m.h2>
-	);
-}
-
-export function MotionCardContent({
-	children,
-	className,
-	...props
-}: MotionCardProps & HTMLMotionProps<"div">) {
-	return (
-		<m.div className={cn("flex flex-col gap-2", className)} {...props}>
-			{children}
-		</m.div>
-	);
-}

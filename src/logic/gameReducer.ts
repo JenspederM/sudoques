@@ -1,7 +1,7 @@
 import type { Board, CellNotes, GameAction } from "../types";
 import { createEmptyNotes } from "./sudoku";
 
-export type ReducerGameState = {
+type ReducerGameState = {
 	initial: Board;
 	current: Board;
 	notes: CellNotes;

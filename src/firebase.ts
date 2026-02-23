@@ -33,5 +33,4 @@ if (import.meta.env.DEV) {
 	connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
 }
 
-export const analytics =
-	typeof window !== "undefined" ? getAnalytics(app) : null;
+const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
