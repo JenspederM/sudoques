@@ -38,7 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({
 				exit={{ opacity: 0 }}
 				transition={{ duration: 0.3 }}
 				className={cn(
-					"safe flex flex-col h-full w-full xs:w-5/6 sm:w-2/3 lg:w-1/3 sm:justify-center",
+					"safe flex flex-col h-full w-full max-w-xl sm:justify-center",
 					centered && "justify-center",
 				)}
 				layout
@@ -85,7 +85,7 @@ function Header({
 				<button
 					type="button"
 					onClick={() => navigate(backRedirect, { state: backState })}
-					className="p-2 hover:bg-accent rounded-xl transition-all active:scale-90"
+					className="p-2 hover:bg-accent rounded-xl active:scale-90"
 				>
 					<ChevronLeft size={28} />
 				</button>

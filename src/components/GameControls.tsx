@@ -1,4 +1,4 @@
-import { Pencil, Redo2, RotateCcw, Undo2 } from "lucide-react";
+import { Pencil, Redo2, Undo2 } from "lucide-react";
 import type React from "react";
 import { cn } from "../lib/utils";
 
@@ -7,7 +7,6 @@ interface GameControlsProps {
 	onToggleNoteMode: () => void;
 	onUndo: () => void;
 	onRedo: () => void;
-	onRestart: () => void;
 	canUndo: boolean;
 	canRedo: boolean;
 }
@@ -17,7 +16,6 @@ export const GameControls: React.FC<GameControlsProps> = ({
 	onToggleNoteMode,
 	onUndo,
 	onRedo,
-	onRestart,
 	canUndo,
 	canRedo,
 }) => {
@@ -71,17 +69,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
 				</button>
 			</div>
 
-			<div className="flex justify-end">
-				<button
-					type="button"
-					data-testid="restart-button"
-					onClick={onRestart}
-					className="p-2 sm:p-3 rounded-full glass text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all"
-					title="Restart"
-				>
-					<RotateCcw size={20} />
-				</button>
-			</div>
+			<div className="flex justify-end" />
 		</div>
 	);
 };

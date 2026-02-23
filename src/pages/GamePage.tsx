@@ -4,9 +4,9 @@ import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameControls } from "@/components/GameControls";
+import { GameMenu } from "@/components/GameMenu";
 import { Layout } from "@/components/Layout";
 import { Numpad } from "@/components/Numpad";
-import { PuzzleInfoDialog } from "@/components/PuzzleInfoDialog";
 import {
 	StaggeredList,
 	StaggeredListElement,
@@ -21,6 +21,7 @@ import {
 	saveHighScore,
 } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
+import { SudokuSolver } from "../logic/solver";
 import {
 	checkBoard,
 	countValues,
@@ -101,12 +102,14 @@ export const GamePage: React.FC<GamePageProps> = ({
 	};
 
 	const commitActions = useCallback(
-		async (newActions: GameAction[]) => {
+		async (newActions: GameAction[], overrideTimer?: number) => {
 			const { state: newState } = applyActions(
 				puzzle.initial,
 				puzzle.solution,
 				newActions,
 			);
+
+			const currentTimer = overrideTimer ?? timer;
 
 			setGameState({
 				...gameState,
@@ -121,7 +124,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 					await Promise.all([
 						saveHighScore({
 							puzzle,
-							time: timer,
+							time: currentTimer,
 							date: Timestamp.now(),
 							userId: user.uid,
 							userName: user.displayName || "Anonymous",
@@ -131,7 +134,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 							puzzle,
 							current: newState.current,
 							notes: newState.notes,
-							timer: timer,
+							timer: currentTimer,
 							actions: newActions,
 						}),
 						markPuzzleAsPlayed(user.uid, puzzle.id),
@@ -228,6 +231,76 @@ export const GamePage: React.FC<GamePageProps> = ({
 		if (canRedo) appendAction("redo");
 	}, [canRedo, appendAction]);
 
+	const handleSolve = useCallback(() => {
+		const solver = new SudokuSolver(currentDerivedState.current);
+		const result = solver.solve();
+		if (!result.isSolvable) return; // Should not happen for valid generated puzzles
+
+		// Offset the solver's delta by adding a fixed duration (0.5s) per action
+		const solveActions: GameAction[] = result.actions.map((a, index) => ({
+			...a,
+			delta: timer + (index + 1),
+		}));
+
+		const endTime = timer + solveActions.length;
+		setTimer(endTime);
+		commitActions([...gameState.actions, ...solveActions], endTime);
+	}, [
+		currentDerivedState.current,
+		timer,
+		gameState.actions,
+		commitActions,
+		setTimer,
+	]);
+
+	const handleHint = useCallback(() => {
+		const candidates: { r: number; c: number; v: number }[] = [];
+		for (let r = 0; r < 9; r++) {
+			const currentRow = currentDerivedState.current[r];
+			const solutionRow = puzzle.solution[r];
+			const initialRow = puzzle.initial[r];
+			if (!currentRow || !solutionRow || !initialRow) continue;
+			for (let c = 0; c < 9; c++) {
+				if (initialRow[c] !== null) continue;
+				const targetValue = solutionRow[c];
+				if (
+					currentRow[c] !== targetValue &&
+					targetValue !== null &&
+					targetValue !== undefined
+				) {
+					candidates.push({ r, c, v: targetValue });
+				}
+			}
+		}
+		if (candidates.length > 0) {
+			const item = candidates[Math.floor(Math.random() * candidates.length)];
+			if (item) {
+				const action: GameAction = {
+					type: "addValue",
+					delta: timer,
+					payload: { row: item.r, col: item.c, value: item.v },
+				};
+				commitActions([...gameState.actions, action]);
+			}
+		}
+	}, [
+		currentDerivedState.current,
+		puzzle,
+		timer,
+		gameState.actions,
+		commitActions,
+	]);
+
+	const handleReset = useCallback(() => {
+		setGameState({
+			...gameState,
+			current: puzzle.initial.map((r) => [...r]),
+			notes: createEmptyNotes(),
+			actions: [],
+		});
+		setTimer(0);
+	}, [gameState, puzzle.initial, setGameState, setTimer]);
+
 	// Keyboard support
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -307,13 +380,16 @@ export const GamePage: React.FC<GamePageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
-			headerClassName="justify-between"
+			headerClassName="justify-between relative z-50"
 			headerCenter={<Timer time={timer} />}
 			headerRight={
-				<PuzzleInfoDialog
+				<GameMenu
 					difficulty={puzzle.difficulty}
 					score={puzzle.score}
 					techniques={puzzle.techniques}
+					onHint={handleHint}
+					onSolve={handleSolve}
+					onReset={handleReset}
 				/>
 			}
 		>
@@ -334,46 +410,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 						onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
 						onUndo={undo}
 						onRedo={redo}
-						onRestart={() => {
-							setGameState({
-								...gameState,
-								current: puzzle.initial.map((r) => [...r]),
-								notes: createEmptyNotes(),
-								actions: [],
-							});
-							setTimer(0);
-						}}
 						canUndo={canUndo}
 						canRedo={canRedo}
 					/>
 				</StaggeredListElement>
-				{import.meta.env.DEV && (
-					<StaggeredListElement
-						type="button"
-						className="flex justify-center py-1 px-4 w-full text-sm bg-red-500/20 text-red-500 rounded-lg font-bold border border-red-500"
-						onClick={() => {
-							const solveActions: GameAction[] = [];
-							for (let r = 0; r < 9; r++) {
-								const initialRow = puzzle.initial[r];
-								const solutionRow = puzzle.solution[r];
-								if (!initialRow || !solutionRow) continue;
-								for (let c = 0; c < 9; c++) {
-									const value = solutionRow[c];
-									if (initialRow[c] === null && value != null) {
-										solveActions.push({
-											type: "addValue",
-											delta: timer,
-											payload: { row: r, col: c, value },
-										});
-									}
-								}
-							}
-							commitActions([...gameState.actions, ...solveActions]);
-						}}
-					>
-						Solve (Dev Only)
-					</StaggeredListElement>
-				)}
 				<StaggeredListElement>
 					<Numpad
 						onNumberClick={handleInput}

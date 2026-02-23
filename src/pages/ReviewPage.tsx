@@ -2,8 +2,8 @@ import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { GameMenu } from "@/components/GameMenu";
 import { Layout } from "@/components/Layout";
-import { PuzzleInfoDialog } from "@/components/PuzzleInfoDialog";
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
 import { formatTime, unflattenBoard } from "@/lib/utils";
@@ -145,10 +145,10 @@ export const ReviewPage: React.FC = () => {
 		<Layout
 			backRedirect="/statistics"
 			backState={{ activeDiff: state.difficulty }}
-			headerClassName="justify-between"
+			headerClassName="justify-between relative z-50"
 			headerCenter={<Timer time={playbackTime} />}
 			headerRight={
-				<PuzzleInfoDialog
+				<GameMenu
 					difficulty={state.difficulty}
 					score={state.score}
 					techniques={state.techniques}
