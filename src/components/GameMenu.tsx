@@ -59,6 +59,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 						? "text-primary"
 						: "hover:bg-accent rounded-xl active:scale-90",
 				)}
+				data-testid="menu-button"
 			>
 				<EllipsisVerticalIcon />
 			</button>
@@ -95,6 +96,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 								"flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-foreground transition-colors text-left",
 								onHint ? "hover:bg-accent" : "opacity-50 cursor-not-allowed",
 							)}
+							data-testid="hint-btn"
 						>
 							<Lightbulb size={16} className="text-muted-foreground" />
 							<span className="font-medium">Hint</span>
@@ -111,6 +113,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 								"flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-foreground transition-colors text-left",
 								onSolve ? "hover:bg-accent" : "opacity-50 cursor-not-allowed",
 							)}
+							data-testid="solve-btn"
 						>
 							<Wand2 size={16} className="text-muted-foreground" />
 							<span className="font-medium">Solve</span>
@@ -130,6 +133,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 									? "hover:bg-red-500/10 text-red-500"
 									: "text-muted-foreground opacity-50 cursor-not-allowed",
 							)}
+							data-testid="restart-button"
 						>
 							<RotateCcw size={16} />
 							<span className="font-medium">Reset</span>

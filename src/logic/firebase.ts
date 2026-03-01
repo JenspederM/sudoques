@@ -3,7 +3,6 @@ import {
 	collection,
 	deleteDoc,
 	doc,
-	getDoc,
 	getDocs,
 	limit,
 	onSnapshot,

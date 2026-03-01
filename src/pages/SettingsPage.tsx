@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/components/AuthProvider";
 import { Layout } from "@/components/Layout";
 import { PageTitle } from "@/components/PageTitle";
 import {
@@ -16,20 +15,15 @@ import {
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { ThemeButton } from "@/components/ThemeButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
 import { updateUserSettings } from "../logic/firebase";
 import type { Accent, Mode } from "../types";
 
-interface SettingsPageProps {
-	currentAccent: Accent;
-	currentMode: Mode;
-}
-
-export const SettingsPage: React.FC<SettingsPageProps> = ({
-	currentAccent,
-	currentMode,
-}) => {
+export const SettingsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
+	const { accent: currentAccent, mode: currentMode } = useUser();
 
 	const handleSignOut = async () => {
 		try {

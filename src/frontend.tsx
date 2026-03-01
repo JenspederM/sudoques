@@ -10,7 +10,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 import { domAnimation, LazyMotion } from "framer-motion";
-import { AuthProvider } from "@/components/AuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 function start() {
 	const container = document.getElementById("root");

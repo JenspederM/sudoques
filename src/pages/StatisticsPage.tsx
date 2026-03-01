@@ -9,18 +9,14 @@ import {
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { Timer } from "@/components/Timer";
+import { useScores } from "@/contexts/ScoresContext";
 import { buildReviewState } from "@/lib/utils";
-import type { Difficulty, HighScore } from "@/types";
+import type { Difficulty } from "@/types";
 import { DIFFICULTIES } from "../logic/constants";
 
-interface StatisticsPageProps {
-	scores: HighScore[];
-}
-
-export const StatisticsPage: React.FC<StatisticsPageProps> = ({
-	scores: allScores,
-}) => {
+export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
+	const { scores: allScores } = useScores();
 	const location = useLocation();
 	const initialDiff =
 		(location.state as { activeDiff?: Difficulty })?.activeDiff || "easy";

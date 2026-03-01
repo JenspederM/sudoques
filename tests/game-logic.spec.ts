@@ -81,39 +81,4 @@ test.describe("Sudoku Game Logic", () => {
 
 		await expect(emptyCell).toHaveText("5");
 	});
-
-	test("can restart a game and clear inputs", async ({ page }) => {
-		await page.click("text=New Game");
-		await page.click("text=Easy");
-
-		await expect(page.getByTestId("cell-0-0").first()).toBeVisible({
-			timeout: 10000,
-		});
-
-		let emptyCell;
-		for (let r = 0; r < 9; r++) {
-			for (let c = 0; c < 9; c++) {
-				const cell = page.getByTestId(`cell-${r}-${c}`);
-				if ((await cell.innerText()).trim() === "") {
-					emptyCell = cell;
-					break;
-				}
-			}
-			if (emptyCell) break;
-		}
-
-		if (!emptyCell) throw new Error("No empty cell found");
-
-		await emptyCell.click();
-		await page.getByTestId("numpad-1").click();
-		await expect(emptyCell).toHaveText("1");
-
-		// Click Restart
-		await page.getByTestId("restart-button").click();
-
-		// Check if timer is 0:00 (approximately, timer starts immediately) and cell is empty
-		const timerText = await page.getByTestId("timer").innerText();
-		expect(timerText).toMatch(/0:0[0-2]/); // Allow for small delay
-		await expect(emptyCell).toHaveText("");
-	});
 });

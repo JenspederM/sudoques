@@ -35,6 +35,7 @@ export const VictoryDialog: React.FC<VictoryDialogProps> = ({
 					type="button"
 					onClick={onReview}
 					className="w-full py-4 bg-accent hover:bg-secondary rounded-xl font-bold transition-all border border-border"
+					data-testid="review-game-btn"
 				>
 					Review Game
 				</button>
@@ -42,6 +43,7 @@ export const VictoryDialog: React.FC<VictoryDialogProps> = ({
 					type="button"
 					onClick={onHome}
 					className="w-full py-4 bg-primary rounded-xl font-bold shadow-lg shadow-primary/40 active:scale-95 transition-all text-white"
+					data-testid="back-to-menu-btn"
 				>
 					Back to Menu
 				</button>

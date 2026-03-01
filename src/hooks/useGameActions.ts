@@ -8,7 +8,11 @@ import {
 } from "../logic/firebase";
 import { applyActions } from "../logic/gameReducer";
 import { SudokuSolver } from "../logic/solver";
-import { createEmptyNotes, isBoardComplete } from "../logic/sudoku";
+import {
+	createEmptyNotes,
+	getRandomHint,
+	isBoardComplete,
+} from "../logic/sudoku";
 import type { GameAction, GameState } from "../types";
 
 interface UseGameActionsProps {
@@ -146,25 +150,25 @@ export function useGameActions({
 		],
 	);
 
-	const appendAction = useCallback(
-		(type: "undo" | "redo") => {
+	const undo = useCallback(() => {
+		if (canUndo) {
 			const newActions: GameAction[] = [
 				...gameState.actions,
-				{ type, delta: timer },
+				{ type: "undo", delta: timer },
 			];
-			// Using commitActions directly to save to DB and keep optimistic updates
 			commitActions(newActions);
-		},
-		[gameState.actions, timer, commitActions],
-	);
-
-	const undo = useCallback(() => {
-		if (canUndo) appendAction("undo");
-	}, [canUndo, appendAction]);
+		}
+	}, [canUndo, gameState.actions, timer, commitActions]);
 
 	const redo = useCallback(() => {
-		if (canRedo) appendAction("redo");
-	}, [canRedo, appendAction]);
+		if (canRedo) {
+			const newActions: GameAction[] = [
+				...gameState.actions,
+				{ type: "redo", delta: timer },
+			];
+			commitActions(newActions);
+		}
+	}, [canRedo, gameState.actions, timer, commitActions]);
 
 	const handleSolve = useCallback(() => {
 		const solver = new SudokuSolver(currentDerivedState.current);
@@ -189,34 +193,18 @@ export function useGameActions({
 	]);
 
 	const handleHint = useCallback(() => {
-		const candidates: { r: number; c: number; v: number }[] = [];
-		for (let r = 0; r < 9; r++) {
-			const currentRow = currentDerivedState.current[r];
-			const solutionRow = puzzle.solution[r];
-			const initialRow = puzzle.initial[r];
-			if (!currentRow || !solutionRow || !initialRow) continue;
-			for (let c = 0; c < 9; c++) {
-				if (initialRow[c] !== null) continue;
-				const targetValue = solutionRow[c];
-				if (
-					currentRow[c] !== targetValue &&
-					targetValue !== null &&
-					targetValue !== undefined
-				) {
-					candidates.push({ r, c, v: targetValue });
-				}
-			}
-		}
-		if (candidates.length > 0) {
-			const item = candidates[Math.floor(Math.random() * candidates.length)];
-			if (item) {
-				const action: GameAction = {
-					type: "addValue",
-					delta: timer,
-					payload: { row: item.r, col: item.c, value: item.v },
-				};
-				commitActions([...gameState.actions, action]);
-			}
+		const hint = getRandomHint(
+			currentDerivedState.current,
+			puzzle.solution,
+			puzzle.initial,
+		);
+		if (hint) {
+			const action: GameAction = {
+				type: "addValue",
+				delta: timer,
+				payload: { row: hint.r, col: hint.c, value: hint.v },
+			};
+			commitActions([...gameState.actions, action]);
 		}
 	}, [
 		currentDerivedState.current,

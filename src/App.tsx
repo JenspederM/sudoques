@@ -4,7 +4,7 @@ import {
 	InfoIcon,
 	MessageCircleWarningIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Navigate,
 	Route,
@@ -13,15 +13,15 @@ import {
 	useNavigate,
 } from "react-router-dom";
 import { Toaster, toast } from "sonner";
-import { useAuth } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { UpdateNotification } from "@/components/UpdateNotification";
+import { useAuth } from "@/contexts/AuthContext";
+import { ScoresProvider } from "@/contexts/ScoresContext";
+import { UserProvider, useUser } from "@/contexts/UserContext";
 import {
 	getRandomPuzzle,
 	prefetchPuzzles,
 	subscribeToGameState,
-	subscribeToUser,
-	subscribeToUserScores,
 } from "./logic/firebase";
 import { createEmptyNotes, isBoardComplete } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
@@ -33,121 +33,34 @@ import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import type { Accent, Difficulty, GameState, HighScore, Mode } from "./types";
+import type { Difficulty, GameState } from "./types";
 
-interface AppState {
-	gameState: Omit<GameState, "lastUpdated" | "timer"> | null;
-	isLoading: boolean;
-	accent: Accent;
-	mode: Mode;
-	playedPuzzles: string[];
-	scores: HighScore[];
-	timer: number;
-}
-
-type AppAction =
-	| { type: "SET_LOADING"; payload: boolean }
-	| {
-			type: "SET_USER_DATA";
-			payload: { accent: Accent; mode: Mode; playedPuzzles: string[] };
-	  }
-	| { type: "SET_SCORES"; payload: HighScore[] }
-	| {
-			type: "SET_GAME_STATE";
-			payload: { gameState: AppState["gameState"]; timer: number };
-	  }
-	| { type: "UPDATE_GAME_STATE"; payload: AppState["gameState"] }
-	| { type: "SET_TIMER"; payload: number | ((prev: number) => number) }
-	| { type: "RESET_STATE" };
-
-const initialAppState: AppState = {
-	gameState: null,
-	isLoading: true,
-	accent: "default",
-	mode: "dark",
-	playedPuzzles: [],
-	scores: [],
-	timer: 0,
-};
-
-function appReducer(state: AppState, action: AppAction): AppState {
-	switch (action.type) {
-		case "SET_LOADING":
-			return { ...state, isLoading: action.payload };
-		case "SET_USER_DATA":
-			return { ...state, ...action.payload };
-		case "SET_SCORES":
-			return { ...state, scores: action.payload };
-		case "SET_GAME_STATE":
-			return {
-				...state,
-				gameState: action.payload.gameState,
-				timer: action.payload.timer,
-			};
-		case "UPDATE_GAME_STATE":
-			return { ...state, gameState: action.payload };
-		case "SET_TIMER":
-			return {
-				...state,
-				timer:
-					typeof action.payload === "function"
-						? action.payload(state.timer)
-						: action.payload,
-			};
-		case "RESET_STATE":
-			return { ...initialAppState, isLoading: false };
-		default:
-			return state;
-	}
-}
-
-export default function App() {
-	const [state, dispatch] = useReducer(appReducer, initialAppState);
-	const { gameState, isLoading, accent, mode, playedPuzzles, scores, timer } =
-		state;
-
+function AppRoutes() {
 	const { user, loading: authLoading } = useAuth();
+	const [{ gameState, isLoading }, setGameSession] = useState<{
+		gameState: Omit<GameState, "lastUpdated"> | null;
+		isLoading: boolean;
+	}>({
+		gameState: null,
+		isLoading: true,
+	});
+
+	const { accent, mode, playedPuzzles } = useUser();
+
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	// Persistence effect: Subscribe to user data & scores
+	// Persistence effect: Subscribe to Game State
 	useEffect(() => {
 		if (user) {
-			dispatch({ type: "SET_LOADING", payload: true });
-
-			// Metadata subscription (theme, played puzzles)
-			const unsubscribeUser = subscribeToUser(user.uid, (data) => {
-				dispatch({
-					type: "SET_USER_DATA",
-					payload: {
-						accent: data.settings?.accent || "default",
-						mode: data.settings?.mode || "dark",
-						playedPuzzles: data.playedPuzzles || [],
-					},
-				});
-			});
-
-			// Scores subscription (pre-load for StatisticsPage)
-			const unsubscribeScores = subscribeToUserScores(user.uid, (newScores) => {
-				dispatch({ type: "SET_SCORES", payload: newScores });
-			});
-
 			// Realtime Game State subscription
 			const unsubscribeGameState = subscribeToGameState(
 				user.uid,
 				(savedState) => {
-					if (savedState) {
-						dispatch({
-							type: "SET_GAME_STATE",
-							payload: { gameState: savedState, timer: savedState.timer },
-						});
-					} else {
-						dispatch({
-							type: "SET_GAME_STATE",
-							payload: { gameState: null, timer: 0 },
-						});
-					}
-					dispatch({ type: "SET_LOADING", payload: false });
+					setGameSession({
+						gameState: savedState || null,
+						isLoading: false,
+					});
 				},
 			);
 
@@ -155,14 +68,12 @@ export default function App() {
 			prefetchPuzzles();
 
 			return () => {
-				unsubscribeUser();
-				unsubscribeScores();
 				unsubscribeGameState();
 			};
 		}
 
 		if (!user && !authLoading) {
-			dispatch({ type: "RESET_STATE" });
+			setGameSession({ gameState: null, isLoading: false });
 		}
 	}, [user, authLoading]);
 
@@ -172,28 +83,22 @@ export default function App() {
 		document.documentElement.setAttribute("data-mode", mode);
 	}, [accent, mode]);
 
-	const setTimer = useCallback((t: number | ((prev: number) => number)) => {
-		dispatch({ type: "SET_TIMER", payload: t });
-	}, []);
-
 	// Initialize a new game
 	const startNewGame = useCallback(
 		async (diff: Difficulty) => {
 			try {
-				dispatch({ type: "SET_LOADING", payload: true });
+				setGameSession((prev) => ({ ...prev, isLoading: true }));
 				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
 
-				dispatch({
-					type: "SET_GAME_STATE",
-					payload: {
-						gameState: {
-							puzzle,
-							current: puzzle.initial.map((r) => [...r]),
-							notes: createEmptyNotes(),
-							actions: [],
-						},
+				setGameSession({
+					gameState: {
+						puzzle,
+						current: puzzle.initial.map((r) => [...r]),
+						notes: createEmptyNotes(),
+						actions: [],
 						timer: 0,
 					},
+					isLoading: false,
 				});
 				navigate(`/game`);
 			} catch (e) {
@@ -201,8 +106,7 @@ export default function App() {
 				toast.error("Failed to fetch puzzle", {
 					description: (e as Error).message,
 				});
-			} finally {
-				dispatch({ type: "SET_LOADING", payload: false });
+				setGameSession((prev) => ({ ...prev, isLoading: false }));
 			}
 		},
 		[navigate, playedPuzzles],
@@ -266,15 +170,9 @@ export default function App() {
 						element={<NewGamePage onSelectDifficulty={startNewGame} />}
 					/>
 
-					<Route
-						path="/settings"
-						element={<SettingsPage currentAccent={accent} currentMode={mode} />}
-					/>
+					<Route path="/settings" element={<SettingsPage />} />
 
-					<Route
-						path="/statistics"
-						element={<StatisticsPage scores={scores} />}
-					/>
+					<Route path="/statistics" element={<StatisticsPage />} />
 
 					<Route path="/review" element={<ReviewPage />} />
 
@@ -289,8 +187,7 @@ export default function App() {
 								<GamePage
 									user={user}
 									gameState={gameState}
-									timer={timer}
-									setTimer={setTimer}
+									timer={gameState.timer ?? 0}
 								/>
 							) : (
 								<Navigate to="/new-game" replace />
@@ -302,5 +199,15 @@ export default function App() {
 				</Route>
 			</Routes>
 		</>
+	);
+}
+
+export default function App() {
+	return (
+		<UserProvider>
+			<ScoresProvider>
+				<AppRoutes />
+			</ScoresProvider>
+		</UserProvider>
 	);
 }

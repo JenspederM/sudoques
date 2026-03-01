@@ -22,7 +22,11 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					<BrandHeader />
 				</StaggeredListElement>
 				{hasExistingGame && (
-					<StaggeredListElement type="button" onClick={() => navigate("/game")}>
+					<StaggeredListElement
+						type="button"
+						onClick={() => navigate("/game")}
+						data-testid="continue-game-btn"
+					>
 						<Play size={24} fill="currentColor" />
 						<span>Continue Game</span>
 					</StaggeredListElement>
@@ -31,6 +35,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					type="button"
 					onClick={() => navigate("/new-game")}
 					variant="brand"
+					data-testid="new-game-btn"
 				>
 					<Play size={24} fill="currentColor" />
 					<span>New Game</span>
@@ -39,6 +44,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 					<StaggeredListElement
 						type="button"
 						onClick={() => navigate("/statistics")}
+						data-testid="statistics-btn"
 					>
 						<Trophy size={20} className="text-yellow-400" />
 						<span>Statistics</span>
@@ -49,6 +55,7 @@ export const HomePage: React.FC<HomePageProps> = ({ hasExistingGame }) => {
 						onClick={() =>
 							navigate("/settings", { state: { activeDiff: "easy" } })
 						}
+						data-testid="settings-btn"
 					>
 						<SettingsIcon size={20} />
 						<span>Settings</span>

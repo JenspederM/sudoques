@@ -15,23 +15,28 @@ import { Timer } from "@/components/Timer";
 import { VictoryDialog } from "@/components/VictoryDialog";
 import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
+import { useGameTimer } from "@/hooks/useGameTimer";
 import { buildReviewState } from "@/lib/utils";
 import { clearGameState } from "../logic/firebase";
-import { checkBoard, countValues, isBoardComplete } from "../logic/sudoku";
+import {
+	checkBoard,
+	countValues,
+	getDisabledNumbers,
+	getRemainingCounts,
+	isBoardComplete,
+} from "../logic/sudoku";
 import type { GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
 	gameState: Omit<GameState, "lastUpdated" | "timer">;
 	timer: number;
-	setTimer: (t: number | ((prev: number) => number)) => void;
 }
 
 export const GamePage: React.FC<GamePageProps> = ({
 	user,
 	gameState,
-	timer,
-	setTimer,
+	timer: initialTime,
 }) => {
 	const navigate = useNavigate();
 	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
@@ -39,6 +44,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [showWin, setShowWin] = useState(false);
+
+	const { time: timer, setTime: setTimer } = useGameTimer(initialTime, showWin);
 
 	const { puzzle } = gameState;
 
@@ -85,13 +92,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 		}
 	}, [gameState, showWin, puzzle.solution]);
 
-	// Timer logic
-	useEffect(() => {
-		if (showWin) return;
-		const interval = setInterval(() => setTimer((t) => t + 1), 1000);
-		return () => clearInterval(interval);
-	}, [showWin, setTimer]);
-
 	const handleCellSelect = (r: number, c: number) => {
 		if (selectedCell !== null && selectedCell[0] === r && selectedCell[1] === c)
 			setSelectedCell(null);
@@ -110,14 +110,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
 
 	// Calculate disabled numbers (completed 9 instances)
+	// Calculate disabled numbers (completed 9 instances)
 	const valueCounts = countValues(currentDerivedState.current);
-	const disabledNumbers = Array.from(valueCounts.entries())
-		.filter(([_, count]) => count >= 9)
-		.map(([num]) => num);
+	const disabledNumbers = getDisabledNumbers(valueCounts);
 
-	const remainingCounts = new Map<number, number>(
-		[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [n, 9 - (valueCounts.get(n) || 0)]),
-	);
+	const remainingCounts = getRemainingCounts(valueCounts);
 
 	return (
 		<Layout

@@ -25,6 +25,7 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 						onClick={() => onSelectDifficulty(d.id)}
 						type="button"
 						className="justify-between"
+						data-testid={`diff-${d.id}`}
 						whileHover={{
 							borderColor: "var(--primary)",
 							color: "var(--primary)",

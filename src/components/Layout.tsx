@@ -85,6 +85,7 @@ function Header({
 					type="button"
 					onClick={() => navigate(backRedirect, { state: backState })}
 					className="p-2 hover:bg-accent rounded-xl active:scale-90"
+					data-testid="back-button"
 				>
 					<ChevronLeft size={28} />
 				</button>
