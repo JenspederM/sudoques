@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePageVisibility } from "./usePageVisibility";
 
 export function useGameTimer(initialTime: number, isPaused: boolean) {
 	const [time, setTime] = useState(initialTime);
@@ -8,15 +9,17 @@ export function useGameTimer(initialTime: number, isPaused: boolean) {
 		setTime(initialTime);
 	}, [initialTime]);
 
+	const isVisible = usePageVisibility();
+
 	useEffect(() => {
-		if (isPaused) return;
+		if (isPaused || !isVisible) return;
 
 		const interval = setInterval(() => {
 			setTime((t) => t + 1);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [isPaused]);
+	}, [isPaused, isVisible]);
 
 	return { time, setTime };
 }
