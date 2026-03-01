@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { usePageVisibility } from "./usePageVisibility";
+import { usePageVisibility } from "@/hooks/usePageVisibility";
 
 export function useGameTimer(initialTime: number, isPaused: boolean) {
 	const [time, setTime] = useState(initialTime);
