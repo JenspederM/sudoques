@@ -1,6 +1,7 @@
 import {
 	arrayUnion,
 	collection,
+	deleteDoc,
 	doc,
 	getDoc,
 	getDocs,
@@ -142,6 +143,32 @@ export async function loadGameState(
 		return toGameState(data);
 	}
 	return null;
+}
+
+/**
+ * Clears the saved game state (e.g., when a game is finished)
+ */
+export async function clearGameState(userId: string) {
+	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
+	await deleteDoc(stateRef);
+}
+
+/**
+ * Subscribes to changes in the current game state
+ */
+export function subscribeToGameState(
+	userId: string,
+	callback: (state: Omit<GameState, "lastUpdated"> | null) => void,
+) {
+	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
+	return onSnapshot(stateRef, (docSnap) => {
+		if (docSnap.exists()) {
+			const data = docSnap.data() as DBGameState;
+			callback(toGameState(data));
+		} else {
+			callback(null);
+		}
+	});
 }
 
 /**

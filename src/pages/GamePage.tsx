@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameControls } from "@/components/GameControls";
 import { GameMenu } from "@/components/GameMenu";
@@ -16,14 +16,13 @@ import { VictoryDialog } from "@/components/VictoryDialog";
 import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { buildReviewState } from "@/lib/utils";
-import { saveGameState } from "../logic/firebase";
+import { clearGameState } from "../logic/firebase";
 import { checkBoard, countValues, isBoardComplete } from "../logic/sudoku";
 import type { GameState } from "../types";
 
 interface GamePageProps {
 	user: User | null;
 	gameState: Omit<GameState, "lastUpdated" | "timer">;
-	setGameState: (state: GamePageProps["gameState"]) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
 }
@@ -31,7 +30,6 @@ interface GamePageProps {
 export const GamePage: React.FC<GamePageProps> = ({
 	user,
 	gameState,
-	setGameState,
 	timer,
 	setTimer,
 }) => {
@@ -57,7 +55,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 	} = useGameActions({
 		user,
 		gameState,
-		setGameState,
 		timer,
 		setTimer,
 		setShowWin,
@@ -65,21 +62,20 @@ export const GamePage: React.FC<GamePageProps> = ({
 		isNoteMode,
 	});
 
-	// Persistence effect: Save game
+	// Keep track of completion status for cleanup
+	const isWonRef = useRef(false);
 	useEffect(() => {
-		if (user && gameState) {
-			const timeout = setTimeout(() => {
-				saveGameState(user.uid, {
-					puzzle: gameState.puzzle,
-					current: gameState.current,
-					notes: gameState.notes,
-					timer: timer,
-					actions: gameState.actions,
-				});
-			}, 1000); // Debounce save
-			return () => clearTimeout(timeout);
-		}
-	}, [user, gameState, timer]);
+		isWonRef.current = isBoardComplete(gameState.current, puzzle.solution);
+	}, [gameState.current, puzzle.solution]);
+
+	// Clear game state on unmount if won
+	useEffect(() => {
+		return () => {
+			if (user && isWonRef.current) {
+				clearGameState(user.uid).catch(console.error);
+			}
+		};
+	}, [user]);
 
 	// Check for win on load
 	useEffect(() => {

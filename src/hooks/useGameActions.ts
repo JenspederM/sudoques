@@ -14,7 +14,6 @@ import type { GameAction, GameState } from "../types";
 interface UseGameActionsProps {
 	user: User | null;
 	gameState: Omit<GameState, "lastUpdated" | "timer">;
-	setGameState: (state: Omit<GameState, "lastUpdated" | "timer">) => void;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
 	setShowWin: (val: boolean) => void;
@@ -25,7 +24,6 @@ interface UseGameActionsProps {
 export function useGameActions({
 	user,
 	gameState,
-	setGameState,
 	timer,
 	setTimer,
 	setShowWin,
@@ -54,38 +52,41 @@ export function useGameActions({
 
 			const currentTimer = overrideTimer ?? timer;
 
-			setGameState({
-				...gameState,
+			if (!user) return;
+
+			// Directly write to Firebase on every action
+			const isWon = isBoardComplete(newState.current, puzzle.solution);
+
+			const savePromise = saveGameState(user.uid, {
+				puzzle,
 				current: newState.current,
 				notes: newState.notes,
+				timer: currentTimer,
 				actions: newActions,
 			});
 
-			if (isBoardComplete(newState.current, puzzle.solution)) {
+			if (isWon) {
 				setShowWin(true);
-				if (user) {
-					await Promise.all([
-						saveHighScore({
-							puzzle,
-							time: currentTimer,
-							date: Timestamp.now(),
-							userId: user.uid,
-							userName: user.displayName || "Anonymous",
-							actions: newActions,
-						}),
-						saveGameState(user.uid, {
-							puzzle,
-							current: newState.current,
-							notes: newState.notes,
-							timer: currentTimer,
-							actions: newActions,
-						}),
-						markPuzzleAsPlayed(user.uid, puzzle.id),
-					]);
-				}
+				await Promise.all([
+					saveHighScore({
+						puzzle,
+						time: currentTimer,
+						date: Timestamp.now(),
+						userId: user.uid,
+						userName: user.displayName || "Anonymous",
+						actions: newActions,
+					}),
+					markPuzzleAsPlayed(user.uid, puzzle.id),
+					savePromise,
+				]);
+			} else {
+				// Background save to firebase for optimistic updates
+				savePromise.catch((err) => {
+					console.error("Failed to save game state to Firebase", err);
+				});
 			}
 		},
-		[puzzle, setGameState, gameState, user, timer, setShowWin],
+		[puzzle, user, timer, setShowWin],
 	);
 
 	const handleInput = useCallback(
@@ -134,14 +135,14 @@ export function useGameActions({
 			commitActions([...gameState.actions, action]);
 		},
 		[
-			selectedCell,
-			puzzle,
-			isNoteMode,
-			currentDerivedState.notes,
-			currentDerivedState.current,
+			gameState,
 			timer,
-			gameState.actions,
+			puzzle,
 			commitActions,
+			currentDerivedState.current,
+			currentDerivedState.notes,
+			isNoteMode,
+			selectedCell,
 		],
 	);
 
@@ -151,19 +152,10 @@ export function useGameActions({
 				...gameState.actions,
 				{ type, delta: timer },
 			];
-			const { state: newState } = applyActions(
-				puzzle.initial,
-				puzzle.solution,
-				newActions,
-			);
-			setGameState({
-				...gameState,
-				current: newState.current,
-				notes: newState.notes,
-				actions: newActions,
-			});
+			// Using commitActions directly to save to DB and keep optimistic updates
+			commitActions(newActions);
 		},
-		[gameState, timer, puzzle, setGameState],
+		[gameState.actions, timer, commitActions],
 	);
 
 	const undo = useCallback(() => {
@@ -235,14 +227,22 @@ export function useGameActions({
 	]);
 
 	const handleReset = useCallback(() => {
-		setGameState({
+		if (!user) return;
+
+		const newState = {
 			...gameState,
 			current: puzzle.initial.map((r) => [...r]),
 			notes: createEmptyNotes(),
 			actions: [],
-		});
-		setTimer(0);
-	}, [gameState, puzzle.initial, setGameState, setTimer]);
+		};
+
+		saveGameState(user.uid, {
+			...newState,
+			timer: 0,
+		}).catch((err) =>
+			console.error("Failed to reset game state on Firebase", err),
+		);
+	}, [gameState, puzzle.initial, user]);
 
 	return {
 		currentDerivedState,

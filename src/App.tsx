@@ -18,8 +18,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import {
 	getRandomPuzzle,
-	loadGameState,
 	prefetchPuzzles,
+	subscribeToGameState,
 	subscribeToUser,
 	subscribeToUserScores,
 } from "./logic/firebase";
@@ -132,21 +132,24 @@ export default function App() {
 				dispatch({ type: "SET_SCORES", payload: newScores });
 			});
 
-			// One-time Game State load (decoupled from subscription)
-			loadGameState(user.uid).then((savedState) => {
-				if (savedState) {
-					dispatch({
-						type: "SET_GAME_STATE",
-						payload: { gameState: savedState, timer: savedState.timer },
-					});
-				} else {
-					dispatch({
-						type: "SET_GAME_STATE",
-						payload: { gameState: null, timer: 0 },
-					});
-				}
-				dispatch({ type: "SET_LOADING", payload: false });
-			});
+			// Realtime Game State subscription
+			const unsubscribeGameState = subscribeToGameState(
+				user.uid,
+				(savedState) => {
+					if (savedState) {
+						dispatch({
+							type: "SET_GAME_STATE",
+							payload: { gameState: savedState, timer: savedState.timer },
+						});
+					} else {
+						dispatch({
+							type: "SET_GAME_STATE",
+							payload: { gameState: null, timer: 0 },
+						});
+					}
+					dispatch({ type: "SET_LOADING", payload: false });
+				},
+			);
 
 			// Prefetch puzzles for offline use
 			prefetchPuzzles();
@@ -154,6 +157,7 @@ export default function App() {
 			return () => {
 				unsubscribeUser();
 				unsubscribeScores();
+				unsubscribeGameState();
 			};
 		}
 
@@ -167,10 +171,6 @@ export default function App() {
 		document.documentElement.setAttribute("data-theme", accent);
 		document.documentElement.setAttribute("data-mode", mode);
 	}, [accent, mode]);
-
-	const setGameState = useCallback((newState: AppState["gameState"]) => {
-		dispatch({ type: "UPDATE_GAME_STATE", payload: newState });
-	}, []);
 
 	const setTimer = useCallback((t: number | ((prev: number) => number)) => {
 		dispatch({ type: "SET_TIMER", payload: t });
@@ -289,7 +289,6 @@ export default function App() {
 								<GamePage
 									user={user}
 									gameState={gameState}
-									setGameState={setGameState}
 									timer={timer}
 									setTimer={setTimer}
 								/>
