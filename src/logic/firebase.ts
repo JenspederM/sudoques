@@ -130,22 +130,6 @@ export async function saveGameState(
 }
 
 /**
- * Loads a saved game state
- */
-export async function loadGameState(
-	userId: string,
-): Promise<Omit<GameState, "lastUpdated"> | null> {
-	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
-	const stateSnap = await getDoc(stateRef);
-
-	if (stateSnap.exists()) {
-		const data = stateSnap.data() as DBGameState;
-		return toGameState(data);
-	}
-	return null;
-}
-
-/**
  * Clears the saved game state (e.g., when a game is finished)
  */
 export async function clearGameState(userId: string) {
