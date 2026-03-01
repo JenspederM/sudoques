@@ -1,6 +1,6 @@
 import { Pencil, Redo2, Undo2 } from "lucide-react";
 import type React from "react";
-import { cn } from "../lib/utils";
+import { cn } from "@/lib/utils";
 
 interface GameControlsProps {
 	isNoteMode: boolean;

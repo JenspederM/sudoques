@@ -13,7 +13,9 @@ import {
 	Timestamp,
 	where,
 } from "firebase/firestore";
+import { db } from "@/firebase";
 import { unflattenBoard, unflattenCellNotes } from "@/lib/utils";
+import { DIFFICULTIES } from "@/logic/constants";
 import { parsePuzzle } from "@/logic/sudoku";
 import type {
 	DBGameState,
@@ -26,8 +28,6 @@ import type {
 	Puzzle,
 	UserDocument,
 } from "@/types";
-import { db } from "../firebase";
-import { DIFFICULTIES } from "./constants";
 
 const USERS_COLLECTION = "users";
 const HIGHSCORES_COLLECTION = "highscores";

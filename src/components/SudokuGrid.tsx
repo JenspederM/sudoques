@@ -1,7 +1,7 @@
 import { m } from "framer-motion";
 import type { HTMLProps } from "react";
+import { cn } from "@/lib/utils";
 import type { Board, CellNotes } from "@/types";
-import { cn } from "../lib/utils";
 
 type SudokuGridProps = HTMLProps<HTMLDivElement> & {
 	initialBoard: Board;
@@ -87,7 +87,7 @@ export const SudokuGrid = ({
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted && !selected && "bg-background/60",
+									highlighted && !selected && "bg-background/50",
 									selected &&
 										"bg-primary/10 ring ring-primary border border-primary z-10",
 									highlighted && "text-primary font-semibold",

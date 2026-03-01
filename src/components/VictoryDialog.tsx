@@ -1,8 +1,8 @@
 import { Trophy } from "lucide-react";
 import type React from "react";
+import { Dialog } from "@/components/Dialog";
 import { formatTime } from "@/lib/utils";
-import { DIFFICULTIES } from "../logic/constants";
-import { Dialog } from "./Dialog";
+import { DIFFICULTIES } from "@/logic/constants";
 
 interface VictoryDialogProps {
 	open: boolean;

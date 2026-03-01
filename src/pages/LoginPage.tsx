@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 
 export const LoginPage: React.FC = () => {
 	const [email, setEmail] = useState("");

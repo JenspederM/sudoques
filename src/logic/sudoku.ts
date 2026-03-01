@@ -1,4 +1,4 @@
-import type { Board, CellNotes } from "../types";
+import type { Board, CellNotes } from "@/types";
 
 /**
  * Creates a fresh 9×9 grid of empty note Sets.

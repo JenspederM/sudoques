@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Board, CellNotes, DBBoard, DBCellNotes } from "../types";
+import type { Board, CellNotes, DBBoard, DBCellNotes } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));

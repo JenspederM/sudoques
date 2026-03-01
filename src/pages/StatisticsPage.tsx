@@ -11,8 +11,8 @@ import {
 import { Timer } from "@/components/Timer";
 import { useScores } from "@/contexts/ScoresContext";
 import { buildReviewState } from "@/lib/utils";
+import { DIFFICULTIES } from "@/logic/constants";
 import type { Difficulty } from "@/types";
-import { DIFFICULTIES } from "../logic/constants";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();

@@ -1,5 +1,5 @@
-import type { Board, CellNotes, GameAction } from "../types";
-import { createEmptyNotes } from "./sudoku";
+import { createEmptyNotes } from "@/logic/sudoku";
+import type { Board, CellNotes, GameAction } from "@/types";
 
 type ReducerGameState = {
 	initial: Board;

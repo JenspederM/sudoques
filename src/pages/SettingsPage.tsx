@@ -17,8 +17,8 @@ import {
 import { ThemeButton } from "@/components/ThemeButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
-import { updateUserSettings } from "../logic/firebase";
-import type { Accent, Mode } from "../types";
+import { updateUserSettings } from "@/logic/firebase";
+import type { Accent, Mode } from "@/types";
 
 export const SettingsPage: React.FC = () => {
 	const navigate = useNavigate();

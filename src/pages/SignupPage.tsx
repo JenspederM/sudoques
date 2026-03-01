@@ -6,7 +6,7 @@ import { useReducer } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 
 interface SignupState {
 	email: string;

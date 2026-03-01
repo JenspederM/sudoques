@@ -1,4 +1,4 @@
-import type { Board, GameAction, GradedBoard, Technique } from "../types";
+import type { Board, GameAction, GradedBoard, Technique } from "@/types";
 
 const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Naked Single": 1, // Will be multiplied by F

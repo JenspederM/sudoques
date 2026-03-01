@@ -7,8 +7,8 @@ import { Layout } from "@/components/Layout";
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
 import { formatTime, unflattenBoard } from "@/lib/utils";
-import { applyActions } from "../logic/gameReducer";
-import type { DBBoard, Difficulty, GameAction } from "../types";
+import { applyActions } from "@/logic/gameReducer";
+import type { DBBoard, Difficulty, GameAction } from "@/types";
 
 interface ReviewPageState {
 	initial: DBBoard;

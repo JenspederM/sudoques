@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "../lib/utils";
-import { DIFFICULTIES } from "../logic/constants";
-import type { Difficulty } from "../types";
+import { cn } from "@/lib/utils";
+import { DIFFICULTIES } from "@/logic/constants";
+import type { Difficulty } from "@/types";
 import { Dialog } from "./Dialog";
 
 interface GameMenuProps {

@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Spinner } from "@/components/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function ProtectedRoute() {
@@ -6,11 +7,7 @@ export function ProtectedRoute() {
 	const location = useLocation();
 
 	if (loading) {
-		return (
-			<div className="min-h-screen bg-background flex items-center justify-center text-foreground">
-				<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-			</div>
-		);
+		return <Spinner />;
 	}
 
 	if (!user) {

@@ -17,15 +17,15 @@ import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { buildReviewState } from "@/lib/utils";
-import { clearGameState } from "../logic/firebase";
+import { clearGameState } from "@/logic/firebase";
 import {
 	checkBoard,
 	countValues,
 	getDisabledNumbers,
 	getRemainingCounts,
 	isBoardComplete,
-} from "../logic/sudoku";
-import type { GameState } from "../types";
+} from "@/logic/sudoku";
+import type { GameState } from "@/types";
 
 interface GamePageProps {
 	user: User | null;

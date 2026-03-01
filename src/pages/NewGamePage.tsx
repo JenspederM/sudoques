@@ -6,8 +6,8 @@ import {
 	StaggeredList,
 	StaggeredListElement,
 } from "@/components/StaggeredList";
-import { DIFFICULTIES } from "../logic/constants";
-import type { Difficulty } from "../types";
+import { DIFFICULTIES } from "@/logic/constants";
+import type { Difficulty } from "@/types";
 
 interface NewGamePageProps {
 	onSelectDifficulty: (difficulty: Difficulty) => void;

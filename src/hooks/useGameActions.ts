@@ -5,15 +5,15 @@ import {
 	markPuzzleAsPlayed,
 	saveGameState,
 	saveHighScore,
-} from "../logic/firebase";
-import { applyActions } from "../logic/gameReducer";
-import { SudokuSolver } from "../logic/solver";
+} from "@/logic/firebase";
+import { applyActions } from "@/logic/gameReducer";
+import { SudokuSolver } from "@/logic/solver";
 import {
 	createEmptyNotes,
 	getRandomHint,
 	isBoardComplete,
-} from "../logic/sudoku";
-import type { GameAction, GameState } from "../types";
+} from "@/logic/sudoku";
+import type { GameAction, GameState } from "@/types";
 
 interface UseGameActionsProps {
 	user: User | null;
