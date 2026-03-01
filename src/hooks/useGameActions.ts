@@ -93,6 +93,22 @@ export function useGameActions({
 		[puzzle, user, timer, setShowWin],
 	);
 
+	const saveCurrentState = useCallback(
+		(currentTimer: number) => {
+			if (!user) return;
+			saveGameState(user.uid, {
+				puzzle,
+				current: currentDerivedState.current,
+				notes: currentDerivedState.notes,
+				timer: currentTimer,
+				actions: gameState.actions,
+			}).catch((err) => {
+				console.error("Failed to save background game state to Firebase", err);
+			});
+		},
+		[user, puzzle, currentDerivedState, gameState.actions],
+	);
+
 	const handleInput = useCallback(
 		(num: number | null) => {
 			if (!selectedCell) return;
@@ -242,5 +258,6 @@ export function useGameActions({
 		handleSolve,
 		handleHint,
 		handleReset,
+		saveCurrentState,
 	};
 }

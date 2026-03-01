@@ -59,6 +59,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		handleSolve,
 		handleHint,
 		handleReset,
+		saveCurrentState,
 	} = useGameActions({
 		user,
 		gameState,
@@ -69,20 +70,45 @@ export const GamePage: React.FC<GamePageProps> = ({
 		isNoteMode,
 	});
 
-	// Keep track of completion status for cleanup
 	const isWonRef = useRef(false);
 	useEffect(() => {
 		isWonRef.current = isBoardComplete(gameState.current, puzzle.solution);
 	}, [gameState.current, puzzle.solution]);
 
-	// Clear game state on unmount if won
+	const saveCurrentStateRef = useRef(saveCurrentState);
+	const timerRef = useRef(timer);
+
 	useEffect(() => {
-		return () => {
-			if (user && isWonRef.current) {
-				clearGameState(user.uid).catch(console.error);
+		saveCurrentStateRef.current = saveCurrentState;
+		timerRef.current = timer;
+	}, [saveCurrentState, timer]);
+
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden" && user && !isWonRef.current) {
+				saveCurrentStateRef.current(timerRef.current);
 			}
 		};
-	}, [user]);
+
+		const handlePageHide = () => {
+			if (user && !isWonRef.current) {
+				saveCurrentStateRef.current(timerRef.current);
+			}
+		};
+
+		window.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("pagehide", handlePageHide);
+
+		return () => {
+			window.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("pagehide", handlePageHide);
+			if (user && isWonRef.current) {
+				clearGameState(user.uid).catch(console.error);
+			} else if (user && !isWonRef.current && !showWin) {
+				saveCurrentStateRef.current(timerRef.current);
+			}
+		};
+	}, [user, showWin]);
 
 	// Check for win on load
 	useEffect(() => {
@@ -108,12 +134,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 	});
 
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
-
-	// Calculate disabled numbers (completed 9 instances)
-	// Calculate disabled numbers (completed 9 instances)
 	const valueCounts = countValues(currentDerivedState.current);
 	const disabledNumbers = getDisabledNumbers(valueCounts);
-
 	const remainingCounts = getRemainingCounts(valueCounts);
 
 	return (
