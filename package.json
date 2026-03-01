@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "vite",
+		"dev": "concurrently \"vite\" \"bun run firebase:emulate\"  \"bun run upload-puzzles\"",
 		"build": "vite build",
 		"preview": "vite build && vite preview",
 		"deploy": "bun run build && bun firebase:deploy",
@@ -43,6 +43,7 @@
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"@vitejs/plugin-react": "^5.1.4",
+		"concurrently": "^9.2.1",
 		"firebase-admin": "^13.6.1",
 		"firebase-tools": "^15.6.0",
 		"react-doctor": "^0.0.29",

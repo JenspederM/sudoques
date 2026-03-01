@@ -195,7 +195,7 @@ export default function App() {
 						timer: 0,
 					},
 				});
-				navigate("/game");
+				navigate(`/game`);
 			} catch (e) {
 				console.error("Failed to load puzzles from Firestore", e);
 				toast.error("Failed to fetch puzzle", {
@@ -248,62 +248,40 @@ export default function App() {
 			<Routes location={location} key={location.pathname}>
 				<Route path="/login" element={<LoginPage />} />
 				<Route path="/signup" element={<SignupPage />} />
-
-				<Route
-					path="/"
-					element={
-						<ProtectedRoute>
+				<Route element={<ProtectedRoute />}>
+					<Route
+						path="/"
+						element={
 							<HomePage
 								hasExistingGame={
 									!!gameState &&
 									!isBoardComplete(gameState.current, gameState.puzzle.solution)
 								}
 							/>
-						</ProtectedRoute>
-					}
-				/>
+						}
+					/>
 
-				<Route
-					path="/new-game"
-					element={
-						<ProtectedRoute>
-							<NewGamePage onSelectDifficulty={startNewGame} />
-						</ProtectedRoute>
-					}
-				/>
+					<Route
+						path="/new-game"
+						element={<NewGamePage onSelectDifficulty={startNewGame} />}
+					/>
 
-				<Route
-					path="/settings"
-					element={
-						<ProtectedRoute>
-							<SettingsPage currentAccent={accent} currentMode={mode} />
-						</ProtectedRoute>
-					}
-				/>
+					<Route
+						path="/settings"
+						element={<SettingsPage currentAccent={accent} currentMode={mode} />}
+					/>
 
-				<Route
-					path="/statistics"
-					element={
-						<ProtectedRoute>
-							<StatisticsPage scores={scores} />
-						</ProtectedRoute>
-					}
-				/>
+					<Route
+						path="/statistics"
+						element={<StatisticsPage scores={scores} />}
+					/>
 
-				<Route
-					path="/review"
-					element={
-						<ProtectedRoute>
-							<ReviewPage />
-						</ProtectedRoute>
-					}
-				/>
+					<Route path="/review" element={<ReviewPage />} />
 
-				<Route
-					path="/game"
-					element={
-						<ProtectedRoute>
-							{isLoading ? (
+					<Route
+						path="/game"
+						element={
+							isLoading ? (
 								<div className="min-h-screen bg-background flex items-center justify-center text-foreground">
 									<div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 								</div>
@@ -317,11 +295,12 @@ export default function App() {
 								/>
 							) : (
 								<Navigate to="/new-game" replace />
-							)}
-						</ProtectedRoute>
-					}
-				/>
-				<Route path="*" element={<NotFoundPage />} />
+							)
+						}
+					/>
+
+					<Route path="*" element={<NotFoundPage />} />
+				</Route>
 			</Routes>
 		</>
 	);
