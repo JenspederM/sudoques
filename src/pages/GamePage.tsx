@@ -17,7 +17,6 @@ import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { buildReviewState } from "@/lib/utils";
-import { clearGameState } from "@/logic/firebase";
 import {
 	checkBoard,
 	countValues,
@@ -25,7 +24,7 @@ import {
 	getRemainingCounts,
 	isBoardComplete,
 } from "@/logic/sudoku";
-import type { GameState } from "@/types";
+import type { GameAction, GameState } from "@/types";
 
 interface GamePageProps {
 	user: User | null;
@@ -43,9 +42,15 @@ export const GamePage: React.FC<GamePageProps> = ({
 		null,
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
-	const [showWin, setShowWin] = useState(false);
+	const [winState, setWinState] = useState<{
+		actions: GameAction[];
+		timer: number;
+	} | null>(null);
 
-	const { time: timer, setTime: setTimer } = useGameTimer(initialTime, showWin);
+	const { time: timer, setTime: setTimer } = useGameTimer(
+		initialTime,
+		!!winState,
+	);
 
 	const { puzzle } = gameState;
 
@@ -65,15 +70,17 @@ export const GamePage: React.FC<GamePageProps> = ({
 		gameState,
 		timer,
 		setTimer,
-		setShowWin,
+		setWinState,
 		selectedCell,
 		isNoteMode,
 	});
 
-	const isWonRef = useRef(false);
+	// Check for win on load
 	useEffect(() => {
-		isWonRef.current = isBoardComplete(gameState.current, puzzle.solution);
-	}, [gameState.current, puzzle.solution]);
+		if (!winState && isBoardComplete(gameState.current, puzzle.solution)) {
+			setWinState({ actions: gameState.actions, timer });
+		}
+	}, [gameState.current, gameState.actions, puzzle.solution, timer, winState]);
 
 	const saveCurrentStateRef = useRef(saveCurrentState);
 	const timerRef = useRef(timer);
@@ -85,15 +92,13 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	useEffect(() => {
 		const handleVisibilityChange = () => {
-			if (document.visibilityState === "hidden" && user && !isWonRef.current) {
+			if (document.visibilityState === "hidden") {
 				saveCurrentStateRef.current(timerRef.current);
 			}
 		};
 
 		const handlePageHide = () => {
-			if (user && !isWonRef.current) {
-				saveCurrentStateRef.current(timerRef.current);
-			}
+			saveCurrentStateRef.current(timerRef.current);
 		};
 
 		window.addEventListener("visibilitychange", handleVisibilityChange);
@@ -102,21 +107,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 		return () => {
 			window.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("pagehide", handlePageHide);
-			if (user && isWonRef.current) {
-				clearGameState(user.uid).catch(console.error);
-			} else if (user && !isWonRef.current && !showWin) {
-				saveCurrentStateRef.current(timerRef.current);
-			}
+			saveCurrentStateRef.current(timerRef.current);
 		};
-	}, [user, showWin]);
-
-	// Check for win on load
-	useEffect(() => {
-		if (showWin) return;
-		if (isBoardComplete(gameState.current, puzzle.solution)) {
-			setShowWin(true);
-		}
-	}, [gameState, showWin, puzzle.solution]);
+	}, []);
 
 	const handleCellSelect = (r: number, c: number) => {
 		if (selectedCell !== null && selectedCell[0] === r && selectedCell[1] === c)
@@ -125,7 +118,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	};
 
 	useGameKeyboard({
-		showWin,
+		showWin: !!winState,
 		setSelectedCell,
 		handleInput,
 		setIsNoteMode,
@@ -184,21 +177,21 @@ export const GamePage: React.FC<GamePageProps> = ({
 				</StaggeredListElement>
 			</StaggeredList>
 			<VictoryDialog
-				open={showWin}
-				time={timer}
+				open={!!winState}
+				time={winState?.timer ?? timer}
 				difficulty={puzzle.difficulty}
 				onReview={() => {
-					setShowWin(false);
+					setWinState(null);
 					navigate("/review", {
 						state: buildReviewState({
 							puzzle,
-							time: timer,
-							actions: gameState.actions,
+							time: winState?.timer ?? timer,
+							actions: winState?.actions ?? gameState.actions,
 						}),
 					});
 				}}
 				onHome={() => {
-					setShowWin(false);
+					setWinState(null);
 					navigate("/");
 				}}
 			/>

@@ -46,7 +46,7 @@ export const formatTime = (s: number) => {
  * Builds the state object passed via react-router when navigating to the review page.
  */
 export function buildReviewState(opts: {
-	puzzle: Puzzle
+	puzzle: Puzzle;
 	time: number;
 	actions: unknown[];
 }) {

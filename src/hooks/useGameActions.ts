@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,
@@ -20,7 +20,7 @@ interface UseGameActionsProps {
 	gameState: Omit<GameState, "lastUpdated" | "timer">;
 	timer: number;
 	setTimer: (t: number | ((prev: number) => number)) => void;
-	setShowWin: (val: boolean) => void;
+	setWinState: (val: { actions: GameAction[]; timer: number } | null) => void;
 	selectedCell: [number, number] | null;
 	isNoteMode: boolean;
 }
@@ -30,11 +30,12 @@ export function useGameActions({
 	gameState,
 	timer,
 	setTimer,
-	setShowWin,
+	setWinState,
 	selectedCell,
 	isNoteMode,
 }: UseGameActionsProps) {
 	const { puzzle } = gameState;
+	const hasWonLocallyRef = useRef(false);
 
 	// Compute current state and undo/redo info from actions
 	const {
@@ -61,6 +62,11 @@ export function useGameActions({
 			// Directly write to Firebase on every action
 			const isWon = isBoardComplete(newState.current, puzzle.solution);
 
+			if (isWon) {
+				hasWonLocallyRef.current = true;
+				setWinState({ actions: newActions, timer: currentTimer });
+			}
+
 			const savePromise = saveGameState(user.uid, {
 				puzzle,
 				current: newState.current,
@@ -70,7 +76,6 @@ export function useGameActions({
 			});
 
 			if (isWon) {
-				setShowWin(true);
 				await Promise.all([
 					saveHighScore({
 						puzzle,
@@ -90,12 +95,17 @@ export function useGameActions({
 				});
 			}
 		},
-		[puzzle, user, timer, setShowWin],
+		[puzzle, user, timer, setWinState],
 	);
 
 	const saveCurrentState = useCallback(
 		(currentTimer: number) => {
-			if (!user) return;
+			if (
+				!user ||
+				hasWonLocallyRef.current ||
+				isBoardComplete(currentDerivedState.current, puzzle.solution)
+			)
+				return;
 			saveGameState(user.uid, {
 				puzzle,
 				current: currentDerivedState.current,
@@ -233,6 +243,9 @@ export function useGameActions({
 	const handleReset = useCallback(() => {
 		if (!user) return;
 
+		hasWonLocallyRef.current = false;
+		setWinState(null);
+
 		const newState = {
 			...gameState,
 			current: puzzle.initial.map((r) => [...r]),
@@ -246,7 +259,7 @@ export function useGameActions({
 		}).catch((err) =>
 			console.error("Failed to reset game state on Firebase", err),
 		);
-	}, [gameState, puzzle.initial, user]);
+	}, [gameState, puzzle.initial, user, setWinState]);
 
 	return {
 		currentDerivedState,
