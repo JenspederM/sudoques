@@ -191,13 +191,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 					setShowWin(false);
 					navigate("/review", {
 						state: buildReviewState({
-							initial: puzzle.initial,
-							solution: puzzle.solution,
+							puzzle,
 							time: timer,
-							difficulty: puzzle.difficulty,
 							actions: gameState.actions,
-							score: puzzle.score,
-							techniques: puzzle.techniques,
 						}),
 					});
 				}}

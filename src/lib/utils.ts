@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { Board, CellNotes, DBBoard, DBCellNotes } from "@/types";
+import type { Board, CellNotes, DBBoard, DBCellNotes, Puzzle } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -46,21 +46,17 @@ export const formatTime = (s: number) => {
  * Builds the state object passed via react-router when navigating to the review page.
  */
 export function buildReviewState(opts: {
-	initial: (number | null)[][];
-	solution: (number | null)[][];
+	puzzle: Puzzle
 	time: number;
-	difficulty: string;
 	actions: unknown[];
-	score?: number;
-	techniques?: string[];
 }) {
 	return {
-		initial: opts.initial.flat(),
-		solution: opts.solution.flat(),
+		initial: opts.puzzle.initial.flat(),
+		solution: opts.puzzle.solution.flat(),
 		time: opts.time,
-		difficulty: opts.difficulty,
+		difficulty: opts.puzzle.difficulty,
 		actions: opts.actions,
-		score: opts.score,
-		techniques: opts.techniques,
+		score: opts.puzzle.score,
+		techniques: opts.puzzle.techniques,
 	};
 }

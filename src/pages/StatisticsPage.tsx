@@ -59,13 +59,9 @@ export const StatisticsPage: React.FC = () => {
 							onClick={() => {
 								navigate("/review", {
 									state: buildReviewState({
-										initial: score.puzzle.initial,
-										solution: score.puzzle.solution,
+										puzzle: score.puzzle,
 										time: score.time,
-										difficulty: score.puzzle.difficulty,
 										actions: score.actions ?? [],
-										score: score.puzzle.score,
-										techniques: score.puzzle.techniques,
 									}),
 								});
 							}}
