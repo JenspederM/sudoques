@@ -1,5 +1,10 @@
 import type { Timestamp } from "firebase/firestore";
 
+// ─── Settings ──────────────────────────────────────
+export type Accent = "default" | "rose" | "emerald" | "amber";
+export type Mode = "light" | "dark";
+
+// ─── Difficulty ────────────────────────────────────
 export type Difficulty =
 	| "easy"
 	| "normal"
@@ -7,13 +12,14 @@ export type Difficulty =
 	| "hard"
 	| "expert"
 	| "master";
-export type Accent = "default" | "rose" | "emerald" | "amber";
-export type Mode = "light" | "dark";
+
 export type LabelledDifficulty = {
 	id: Difficulty;
 	label: string;
 	desc: string;
 };
+
+// ─── Board ─────────────────────────────────────────
 export type Board = (number | null)[][];
 export type CellNotes = Set<number>[][];
 export type DBCellNotes = Record<string, number[]>;
@@ -168,6 +174,7 @@ export type GameAction =
 	| UndoAction
 	| RedoAction;
 
+// ─── Grading ───────────────────────────────────────
 export interface GradedBoard {
 	difficulty: number;
 	techniquesUsed: Set<Technique>;
