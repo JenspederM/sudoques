@@ -53,10 +53,10 @@ export function buildReviewState(opts: {
 	return {
 		initial: opts.puzzle.initial.flat(),
 		solution: opts.puzzle.solution.flat(),
-		time: opts.time,
 		difficulty: opts.puzzle.difficulty,
-		actions: opts.actions,
 		score: opts.puzzle.score,
 		techniques: opts.puzzle.techniques,
+		actions: opts.actions,
+		time: opts.time,
 	};
 }
