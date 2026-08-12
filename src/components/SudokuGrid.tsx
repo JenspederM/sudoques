@@ -1,6 +1,7 @@
 import { m } from "framer-motion";
 import type { HTMLProps } from "react";
 import { cn } from "@/lib/utils";
+import { getCellHighlightState } from "@/logic/highlighting";
 import type { Board, CellNotes } from "@/types";
 
 type SudokuGridProps = HTMLProps<HTMLDivElement> & {
@@ -21,34 +22,6 @@ export const SudokuGrid = ({
 	onCellSelect,
 	conflicts,
 }: SudokuGridProps) => {
-	const isSelected = (r: number, c: number) =>
-		selectedCell?.[0] === r && selectedCell?.[1] === c;
-	const isHighlighted = (r: number, c: number) => {
-		if (selectedCell === null) return false;
-		const [sr, sc] = selectedCell;
-		const selectedRow = currentBoard[sr];
-		const currentRow = currentBoard[r];
-
-		const selectedValue = selectedRow ? selectedRow[sc] : null;
-		const currentValue = currentRow ? currentRow[c] : null;
-
-		// Highlight if it's the same number
-		// We explicitly check selectedValue !== null because we don't want to highlight all empty cells when an empty cell is selected
-		if (
-			selectedValue !== null &&
-			selectedValue !== undefined &&
-			currentValue === selectedValue
-		) {
-			return true;
-		}
-
-		return (
-			sr === r ||
-			sc === c ||
-			(Math.floor(r / 3) === Math.floor(sr / 3) &&
-				Math.floor(c / 3) === Math.floor(sc / 3))
-		);
-	};
 	const isInitial = (r: number, c: number) => {
 		const row = initialBoard[r];
 		return row ? row[c] !== null : false;
@@ -66,8 +39,15 @@ export const SudokuGrid = ({
 			{(currentBoard as (number | null)[][]).map(
 				(row: (number | null)[], r: number) =>
 					row.map((val: number | null, c: number) => {
-						const selected = isSelected(r, c);
-						const highlighted = isHighlighted(r, c);
+						const highlightState = getCellHighlightState(
+							currentBoard,
+							selectedCell,
+							r,
+							c,
+						);
+						const selected = highlightState === "selected";
+						const matching = highlightState === "matching";
+						const peer = highlightState === "peer";
 						const initial = isInitial(r, c);
 						const conflict = hasConflict(r, c);
 
@@ -76,6 +56,7 @@ export const SudokuGrid = ({
 								// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 								key={`cell-${r}-${c}`}
 								data-testid={`cell-${r}-${c}`}
+								data-highlight={highlightState}
 								whileTap={{ scale: 0.95 }}
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
@@ -87,10 +68,11 @@ export const SudokuGrid = ({
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									highlighted && !selected && "bg-background/50",
+									peer && "bg-primary/10",
+									matching &&
+										"bg-primary/30 text-foreground font-bold ring-1 ring-inset ring-primary/60",
 									selected &&
-										"bg-primary/10 ring ring-primary border border-primary z-10",
-									highlighted && "text-primary font-semibold",
+										"bg-primary/50 text-foreground font-bold ring-2 ring-inset ring-primary z-10",
 									initial && "text-foreground font-bold",
 									conflict &&
 										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse",
@@ -109,7 +91,7 @@ export const SudokuGrid = ({
 													key={`note-${i}`}
 													className={cn(
 														"flex items-center justify-center text-primary/80",
-														highlighted && "text-primary",
+														selected && "text-foreground",
 													)}
 												>
 													{cellNotes?.has(i + 1) ? i + 1 : ""}
