@@ -52,6 +52,25 @@ test.describe("Sudoku Game Logic", () => {
 		expect(time).not.toBe("0:00");
 	});
 
+	test("hint explains the next step without changing the board", async ({
+		page,
+	}) => {
+		await page.getByText("New Game").click();
+		await page.getByText("Easy").click();
+		await expect(page.getByTestId("cell-0-0")).toBeVisible({ timeout: 15000 });
+
+		const undoButton = page.getByTestId("undo-button");
+		await expect(undoButton).toBeDisabled();
+		await page.getByTestId("menu-button").click();
+		await page.getByTestId("hint-btn").click();
+
+		await expect(page.getByTestId("hint-panel")).toBeVisible();
+		await expect(
+			page.locator('[data-hint-candidate="placement"]'),
+		).toHaveCount(1);
+		await expect(undoButton).toBeDisabled();
+	});
+
 	test("can enter a number into an empty cell", async ({ page }) => {
 		await page.click("text=New Game");
 		await page.click("text=Easy");
