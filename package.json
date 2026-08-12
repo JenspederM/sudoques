@@ -15,6 +15,7 @@
 		"prepare-puzzles:analysis": "INCLUDE_LOGICAL_ANALYSIS=true bun scripts/prepare-puzzles.ts",
 		"migrate-techniques": "bun scripts/migrate-technique-analysis.ts",
 		"migrate-techniques:prod": "NODE_ENV=production bun scripts/migrate-technique-analysis.ts",
+		"reclassify-puzzles": "bun scripts/reclassify-puzzles.ts",
 		"upload-puzzles": "NODE_ENV=development bun scripts/upload-puzzles.ts",
 		"upload-puzzles:prod": "NODE_ENV=production bun scripts/upload-puzzles.ts",
 		"format": "biome format --fix",
