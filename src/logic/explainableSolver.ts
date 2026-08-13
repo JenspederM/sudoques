@@ -1,4 +1,4 @@
-import type { Board, Technique } from "@/types";
+import type { Board, Difficulty, Technique } from "@/types";
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -56,6 +56,11 @@ export type ExplainableHint = {
 	status: "hint" | "complete" | "invalid" | "stuck";
 	message: string;
 	steps: HintStep[];
+};
+
+export type HintTechniqueProfile = {
+	difficulty?: Difficulty;
+	techniques?: readonly string[];
 };
 
 type House = HouseRef & {
@@ -1120,6 +1125,15 @@ const HUMAN_TECHNIQUE_COST: Partial<Record<HintTechnique, number>> = {
 	"Cell Forcing Chain": 24,
 };
 
+const DIFFICULTY_TECHNIQUE_CEILING: Record<Difficulty, number> = {
+	easy: 1,
+	normal: 3.2,
+	medium: 5.2,
+	hard: 7.6,
+	expert: 10.5,
+	master: 24,
+};
+
 const MAX_HINT_SEARCH_DEPTH = 20;
 const HINT_SEARCH_BEAM_WIDTH = 8;
 const MAX_FORCING_FALLBACKS = 8;
@@ -1178,8 +1192,12 @@ function referencedCells(step: HintStep) {
 	);
 }
 
+function humanTechniqueCost(technique: HintTechnique) {
+	return HUMAN_TECHNIQUE_COST[technique] ?? 18;
+}
+
 function humanStepCost(step: HintStep, previous?: HintStep) {
-	const base = HUMAN_TECHNIQUE_COST[step.technique] ?? 18;
+	const base = humanTechniqueCost(step.technique);
 	const patternCells = new Set(step.pattern.map(cellKey)).size;
 	const visualLoad = Math.max(0, patternCells - 2) * 0.12;
 	const houseLoad = Math.max(0, (step.houses?.length ?? 0) - 1) * 0.08;
@@ -1230,18 +1248,48 @@ function compareSearchNodes(first: HintSearchNode, second: HintSearchNode) {
 	);
 }
 
-function findPlacement(candidates: CandidateGrid) {
-	return (
-		findNakedSingle(candidates) ??
-		findHiddenSingle(candidates) ??
-		findBUGPlusOne(candidates)
-	);
+function techniqueCeiling(profile?: HintTechniqueProfile) {
+	if (!profile) return Number.POSITIVE_INFINITY;
+	const difficultyLimit = profile.difficulty
+		? DIFFICULTY_TECHNIQUE_CEILING[profile.difficulty]
+		: Number.POSITIVE_INFINITY;
+	const advertised = profile.techniques ?? [];
+	if (advertised.length === 0) return difficultyLimit;
+
+	const rankedCosts: number[] = [];
+	let hasUnrankedTechnique = false;
+	for (const technique of advertised) {
+		if (technique === "Backtracking") {
+			hasUnrankedTechnique = true;
+			continue;
+		}
+		const cost = HUMAN_TECHNIQUE_COST[technique as HintTechnique];
+		if (cost === undefined) hasUnrankedTechnique = true;
+		else rankedCosts.push(cost);
+	}
+	const advertisedLimit = hasUnrankedTechnique
+		? difficultyLimit
+		: Math.max(HUMAN_TECHNIQUE_COST["Hidden Single"] ?? 1, ...rankedCosts);
+	return Math.min(difficultyLimit, advertisedLimit);
 }
 
-function findEliminationAlternatives(candidates: CandidateGrid) {
+function techniqueAllowed(technique: HintTechnique, ceiling: number) {
+	return humanTechniqueCost(technique) <= ceiling;
+}
+
+function findPlacement(candidates: CandidateGrid, ceiling: number) {
+	const single = findNakedSingle(candidates) ?? findHiddenSingle(candidates);
+	if (single) return single;
+	return techniqueAllowed("BUG+1", ceiling) ? findBUGPlusOne(candidates) : null;
+}
+
+function findEliminationAlternatives(
+	candidates: CandidateGrid,
+	ceiling: number,
+) {
 	const alternatives = ELIMINATION_FINDERS.flatMap((find) => {
 		const step = find(candidates);
-		return step ? [step] : [];
+		return step && techniqueAllowed(step.technique, ceiling) ? [step] : [];
 	});
 	const unique = new Map<string, HintStep>();
 	for (const step of alternatives) {
@@ -1280,7 +1328,12 @@ function hasEmptyUnsolvedCell(board: Board, candidates: CandidateGrid) {
 	return false;
 }
 
-function findHumanHintPath(board: Board, initialCandidates: CandidateGrid) {
+function findHumanHintPath(
+	board: Board,
+	initialCandidates: CandidateGrid,
+	profile?: HintTechniqueProfile,
+) {
+	const ceiling = techniqueCeiling(profile);
 	const start: HintSearchNode = {
 		candidates: cloneCandidates(initialCandidates),
 		steps: [],
@@ -1292,14 +1345,17 @@ function findHumanHintPath(board: Board, initialCandidates: CandidateGrid) {
 	const forcingFallbacks: HintSearchNode[] = [];
 	let bestSolution: HintSearchNode | null = null;
 
-	const initialPlacement = findPlacement(start.candidates);
+	const initialPlacement = findPlacement(start.candidates, ceiling);
 	if (initialPlacement) return [initialPlacement];
 
 	for (let depth = 0; depth < MAX_HINT_SEARCH_DEPTH; depth++) {
 		const nextByState = new Map<string, HintSearchNode>();
 		for (const node of frontier) {
 			if (bestSolution && node.cost >= bestSolution.cost) continue;
-			const alternatives = findEliminationAlternatives(node.candidates);
+			const alternatives = findEliminationAlternatives(
+				node.candidates,
+				ceiling,
+			);
 			if (alternatives.length === 0) forcingFallbacks.push(node);
 			for (const step of alternatives) {
 				const nextCandidates = cloneCandidates(node.candidates);
@@ -1308,7 +1364,7 @@ function findHumanHintPath(board: Board, initialCandidates: CandidateGrid) {
 				const cost = node.cost + humanStepCost(step, node.steps.at(-1));
 				const steps = [...node.steps, step];
 				const pathKey = `${node.pathKey}>${stepKey(step)}`;
-				const placement = findPlacement(nextCandidates);
+				const placement = findPlacement(nextCandidates, ceiling);
 				if (placement) {
 					const solution: HintSearchNode = {
 						candidates: nextCandidates,
@@ -1347,6 +1403,10 @@ function findHumanHintPath(board: Board, initialCandidates: CandidateGrid) {
 	}
 
 	if (bestSolution) return bestSolution.steps;
+
+	if (!techniqueAllowed("Cell Forcing Chain", ceiling)) {
+		return forcingFallbacks.sort(compareSearchNodes)[0]?.steps ?? [];
+	}
 
 	const fallbackPool = [...forcingFallbacks, ...frontier]
 		.sort(compareSearchNodes)
@@ -1403,12 +1463,14 @@ function findWrongEntry(
 /**
  * Builds a human-readable path to the next placement without changing the board.
  * The solution is used only to flag an incorrect player entry; all deductions are
- * derived from Sudoku constraints and candidate logic.
+ * derived from Sudoku constraints and candidate logic. When supplied, the profile
+ * prevents hints from exceeding the puzzle's advertised technique level.
  */
 export function findExplainableHint(
 	current: Board,
 	initial: Board,
 	solution?: Board,
+	profile?: HintTechniqueProfile,
 ): ExplainableHint {
 	const wrongEntry = findWrongEntry(current, initial, solution);
 	if (wrongEntry) {
@@ -1457,7 +1519,7 @@ export function findExplainableHint(
 		}
 	}
 
-	const steps = findHumanHintPath(current, candidates);
+	const steps = findHumanHintPath(current, candidates, profile);
 	if (steps.at(-1)?.placement) {
 		return {
 			status: "hint",
@@ -1472,16 +1534,18 @@ export function findExplainableHint(
 	if (steps.length > 0) {
 		return {
 			status: "hint",
-			message:
-				"These eliminations advance the puzzle, but do not yet force a value.",
+			message: profile
+				? "These level-appropriate eliminations advance the puzzle, but do not yet force a value."
+				: "These eliminations advance the puzzle, but do not yet force a value.",
 			steps,
 		};
 	}
 
 	return {
 		status: "stuck",
-		message:
-			"No supported logical deduction was found from the current position.",
+		message: profile
+			? "No logical deduction was found within this puzzle's technique level."
+			: "No supported logical deduction was found from the current position.",
 		steps: [],
 	};
 }

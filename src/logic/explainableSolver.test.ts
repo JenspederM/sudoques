@@ -44,6 +44,28 @@ describe("findExplainableHint", () => {
 		expect(findExplainableHint(board, board)).toEqual(hint);
 	});
 
+	test("never crosses the puzzle's advertised technique ceiling", () => {
+		const puzzle =
+			"030000040071000230080903060004207300007106800100000005040000080006302900000000000";
+		const board = parsePuzzle(puzzle);
+
+		const easyHint = findExplainableHint(board, board, undefined, {
+			difficulty: "easy",
+			techniques: ["Naked Single", "Hidden Single"],
+		});
+		const xWingHint = findExplainableHint(board, board, undefined, {
+			difficulty: "master",
+			techniques: ["Naked Single", "Hidden Single", "X-Wing"],
+		});
+
+		expect(easyHint.status).toBe("stuck");
+		expect(easyHint.steps).toEqual([]);
+		expect(xWingHint.steps.map((step) => step.technique)).toEqual([
+			"X-Wing",
+			"Hidden Single",
+		]);
+	});
+
 	test("can explain wings, chains, and a forcing-chain conclusion", () => {
 		const puzzle =
 			"900600007060070030007000200600508002004000800200301009001000500040050010800009004";

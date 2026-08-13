@@ -92,6 +92,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 				currentDerivedState.current,
 				puzzle.initial,
 				puzzle.solution,
+				{
+					difficulty: puzzle.difficulty,
+					techniques: puzzle.techniques,
+				},
 			),
 		);
 	};
