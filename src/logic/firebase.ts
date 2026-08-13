@@ -73,7 +73,7 @@ function toHighScore(dbScore: DBHighScore): HighScore {
 /**
  * Converts a DBGameState (Firestore) to a GameState (runtime)
  */
-function toGameState(gameData: DBGameState): Omit<GameState, "lastUpdated"> {
+function toGameState(gameData: DBGameState): GameState {
 	return {
 		puzzle: {
 			id: gameData.puzzleId,
@@ -87,6 +87,7 @@ function toGameState(gameData: DBGameState): Omit<GameState, "lastUpdated"> {
 		notes: unflattenCellNotes(gameData.notes),
 		timer: gameData.timer,
 		actions: gameData.actions || [],
+		lastUpdated: gameData.lastUpdated,
 	};
 }
 
@@ -141,15 +142,15 @@ export async function clearGameState(userId: string) {
  */
 export function subscribeToGameState(
 	userId: string,
-	callback: (state: Omit<GameState, "lastUpdated"> | null) => void,
+	callback: (state: GameState | null, metadata: { fromCache: boolean }) => void,
 ) {
 	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
-	return onSnapshot(stateRef, (docSnap) => {
+	return onSnapshot(stateRef, { includeMetadataChanges: true }, (docSnap) => {
 		if (docSnap.exists()) {
 			const data = docSnap.data() as DBGameState;
-			callback(toGameState(data));
+			callback(toGameState(data), { fromCache: docSnap.metadata.fromCache });
 		} else {
-			callback(null);
+			callback(null, { fromCache: docSnap.metadata.fromCache });
 		}
 	});
 }

@@ -7,6 +7,10 @@ import {
 	saveHighScore,
 } from "@/logic/firebase";
 import { applyActions } from "@/logic/gameReducer";
+import {
+	clearGuestGameState,
+	saveGuestGameState,
+} from "@/logic/guestGameStorage";
 import { SudokuSolver } from "@/logic/solver";
 import {
 	createEmptyNotes,
@@ -56,24 +60,30 @@ export function useGameActions({
 			);
 
 			const currentTimer = overrideTimer ?? timer;
+			const isWon = isBoardComplete(newState.current, puzzle.solution);
+			const nextGameState = {
+				puzzle,
+				current: newState.current,
+				notes: newState.notes,
+				timer: currentTimer,
+				actions: newActions,
+			};
+
+			// Keep a synchronous, UID-independent safety copy for guest sessions.
+			if (user?.isAnonymous) {
+				if (isWon) clearGuestGameState();
+				else saveGuestGameState(user.uid, nextGameState);
+			}
 
 			if (!user) return;
-
-			// Directly write to Firebase on every action
-			const isWon = isBoardComplete(newState.current, puzzle.solution);
 
 			if (isWon) {
 				hasWonLocallyRef.current = true;
 				setWinState({ actions: newActions, timer: currentTimer });
 			}
 
-			const savePromise = saveGameState(user.uid, {
-				puzzle,
-				current: newState.current,
-				notes: newState.notes,
-				timer: currentTimer,
-				actions: newActions,
-			});
+			// Directly write to Firebase on every action.
+			const savePromise = saveGameState(user.uid, nextGameState);
 
 			if (isWon) {
 				await Promise.all([
@@ -101,18 +111,26 @@ export function useGameActions({
 	const saveCurrentState = useCallback(
 		(currentTimer: number) => {
 			if (
-				!user ||
 				hasWonLocallyRef.current ||
 				isBoardComplete(currentDerivedState.current, puzzle.solution)
 			)
 				return;
-			saveGameState(user.uid, {
+
+			const stateToSave = {
 				puzzle,
 				current: currentDerivedState.current,
 				notes: currentDerivedState.notes,
 				timer: currentTimer,
 				actions: gameState.actions,
-			}).catch((err) => {
+			};
+
+			if (user?.isAnonymous) {
+				saveGuestGameState(user.uid, stateToSave);
+			}
+
+			if (!user) return;
+
+			saveGameState(user.uid, stateToSave).catch((err) => {
 				console.error("Failed to save background game state to Firebase", err);
 			});
 		},
@@ -252,11 +270,13 @@ export function useGameActions({
 			notes: createEmptyNotes(),
 			actions: [],
 		};
+		const stateToSave = { ...newState, timer: 0 };
 
-		saveGameState(user.uid, {
-			...newState,
-			timer: 0,
-		}).catch((err) =>
+		if (user.isAnonymous) {
+			saveGuestGameState(user.uid, stateToSave);
+		}
+
+		saveGameState(user.uid, stateToSave).catch((err) =>
 			console.error("Failed to reset game state on Firebase", err),
 		);
 	}, [gameState, puzzle.initial, user, setWinState]);
