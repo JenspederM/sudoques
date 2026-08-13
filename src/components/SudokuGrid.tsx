@@ -32,7 +32,7 @@ export const SudokuGrid = ({
 	return (
 		<div
 			className={cn(
-				"grid grid-cols-9 gap-[1px] p-[1px] rounded-lg aspect-square w-full bg-primary/30",
+				"relative grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-primary/30",
 				className,
 			)}
 		>
@@ -62,8 +62,6 @@ export const SudokuGrid = ({
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
 									"bg-background text-primary/90 font-semibold",
-									r % 3 === 2 && r !== 8 && "border-b-2 border-primary/20",
-									c % 3 === 2 && c !== 8 && "border-r-2 border-primary/20",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
@@ -104,6 +102,16 @@ export const SudokuGrid = ({
 						);
 					}),
 			)}
+			<div
+				aria-hidden="true"
+				data-testid="box-dividers"
+				className="pointer-events-none absolute inset-0 z-20"
+			>
+				<div className="absolute inset-y-0 left-[33.333333%] w-[2px] -translate-x-1/2 bg-[var(--grid-line)]" />
+				<div className="absolute inset-y-0 left-[66.666667%] w-[2px] -translate-x-1/2 bg-[var(--grid-line)]" />
+				<div className="absolute inset-x-0 top-[33.333333%] h-[2px] -translate-y-1/2 bg-[var(--grid-line)]" />
+				<div className="absolute inset-x-0 top-[66.666667%] h-[2px] -translate-y-1/2 bg-[var(--grid-line)]" />
+			</div>
 		</div>
 	);
 };

@@ -82,7 +82,7 @@
 	--input: #e2e8f0;
 	--ring: #4338ca;
 
-	--grid-line: rgba(0, 0, 0, 0.2);
+	--grid-line: color-mix(in srgb, var(--primary) 35%, var(--background));
 	--cell-bg: rgba(255, 255, 255, 0.95);
 	--overlay-bg: rgba(248, 250, 252, 0.9);
 
@@ -124,7 +124,7 @@
 	--input: #334155;
 	--ring: rgba(99, 102, 241, 0.5);
 
-	--grid-line: rgba(255, 255, 255, 0.15);
+	--grid-line: color-mix(in srgb, var(--primary) 45%, var(--background));
 	--cell-bg: rgba(30, 41, 59, 0.8);
 	--overlay-bg: rgba(15, 23, 42, 0.8);
 
