@@ -4,6 +4,13 @@ const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
 type CandidateGrid = Set<number>[][];
 
+type HintSearchNode = {
+	candidates: CandidateGrid;
+	steps: HintStep[];
+	cost: number;
+	pathKey: string;
+};
+
 export type HintTechnique =
 	| Exclude<Technique, "Backtracking">
 	| "Check for mistakes";
@@ -1087,24 +1094,167 @@ function findCellForcingChain(
 	return null;
 }
 
-function findElimination(candidates: CandidateGrid): HintStep | null {
+// These weights model cognitive load, not raw step count or puzzle difficulty.
+// The bounded look-ahead below minimizes the cost of the complete explanation
+// leading to a placement, with stable tie-breakers for deterministic hints.
+const HUMAN_TECHNIQUE_COST: Partial<Record<HintTechnique, number>> = {
+	"Naked Single": 0.5,
+	"Hidden Single": 1,
+	"Pointing Pairs": 2.2,
+	"Line/Box Reduction": 2.4,
+	"Naked Pair": 2.8,
+	"Hidden Pair": 3.2,
+	"Naked Triple": 4.6,
+	"Hidden Triple": 5,
+	"X-Wing": 5.2,
+	"Naked Quad": 6.2,
+	"Hidden Quad": 6.8,
+	"Y-Wing": 6.4,
+	"Unique Rectangle Type 1": 6.6,
+	"XYZ-Wing": 7.2,
+	Swordfish: 7.6,
+	"Simple Colouring": 8.2,
+	"XY-Chain": 9,
+	"BUG+1": 9.5,
+	Jellyfish: 10.5,
+	"Cell Forcing Chain": 24,
+};
+
+const MAX_HINT_SEARCH_DEPTH = 20;
+const HINT_SEARCH_BEAM_WIDTH = 8;
+const MAX_FORCING_FALLBACKS = 8;
+
+const ELIMINATION_FINDERS: Array<
+	(candidates: CandidateGrid) => HintStep | null
+> = [
+	findPointing,
+	findClaiming,
+	(candidates) => findNakedSubset(candidates, 2),
+	(candidates) => findHiddenSubset(candidates, 2),
+	(candidates) => findNakedSubset(candidates, 3),
+	(candidates) => findHiddenSubset(candidates, 3),
+	(candidates) => findNakedSubset(candidates, 4),
+	(candidates) => findHiddenSubset(candidates, 4),
+	(candidates) => findFish(candidates, 2),
+	findYWing,
+	(candidates) => findFish(candidates, 3),
+	findXYZWing,
+	findUniqueRectangle,
+	findSimpleColoring,
+	findXYChain,
+	(candidates) => findFish(candidates, 4),
+];
+
+function techniqueFamily(technique: HintTechnique) {
+	if (technique.includes("Single") || technique === "BUG+1") return "placement";
+	if (technique === "Pointing Pairs" || technique === "Line/Box Reduction")
+		return "locked";
+	if (
+		technique.includes("Pair") ||
+		technique.includes("Triple") ||
+		technique.includes("Quad")
+	)
+		return "subset";
+	if (
+		technique === "X-Wing" ||
+		technique === "Swordfish" ||
+		technique === "Jellyfish"
+	)
+		return "fish";
+	if (technique.includes("Wing")) return "wing";
+	if (technique.includes("Chain") || technique === "Simple Colouring")
+		return "chain";
+	if (technique.includes("Rectangle")) return "uniqueness";
+	return technique;
+}
+
+function referencedCells(step: HintStep) {
+	return new Set(
+		[
+			...step.pattern,
+			...step.eliminations,
+			...(step.placement ? [step.placement] : []),
+		].map(cellKey),
+	);
+}
+
+function humanStepCost(step: HintStep, previous?: HintStep) {
+	const base = HUMAN_TECHNIQUE_COST[step.technique] ?? 18;
+	const patternCells = new Set(step.pattern.map(cellKey)).size;
+	const visualLoad = Math.max(0, patternCells - 2) * 0.12;
+	const houseLoad = Math.max(0, (step.houses?.length ?? 0) - 1) * 0.08;
+	const eliminationLoad = Math.max(0, step.eliminations.length - 4) * 0.025;
+	if (!previous) return base + visualLoad + houseLoad + eliminationLoad;
+
+	const familySwitch =
+		techniqueFamily(previous.technique) === techniqueFamily(step.technique)
+			? 0
+			: 0.35;
+	const previousCells = referencedCells(previous);
+	const sharesContext = [...referencedCells(step)].some((cell) =>
+		previousCells.has(cell),
+	);
+	const continuityBonus = sharesContext ? 0.2 : 0;
 	return (
-		findPointing(candidates) ??
-		findClaiming(candidates) ??
-		findNakedSubset(candidates, 2) ??
-		findHiddenSubset(candidates, 2) ??
-		findNakedSubset(candidates, 3) ??
-		findHiddenSubset(candidates, 3) ??
-		findNakedSubset(candidates, 4) ??
-		findHiddenSubset(candidates, 4) ??
-		findFish(candidates, 2) ??
-		findYWing(candidates) ??
-		findFish(candidates, 3) ??
-		findXYZWing(candidates) ??
-		findUniqueRectangle(candidates) ??
-		findSimpleColoring(candidates) ??
-		findXYChain(candidates) ??
-		findFish(candidates, 4)
+		base +
+		visualLoad +
+		houseLoad +
+		eliminationLoad +
+		familySwitch -
+		continuityBonus
+	);
+}
+
+function cloneCandidates(candidates: CandidateGrid): CandidateGrid {
+	return candidates.map((row) => row.map((cell) => new Set(cell)));
+}
+
+function candidateGridKey(candidates: CandidateGrid) {
+	return candidates
+		.flatMap((row) => row.map((cell) => [...cell].sort().join("")))
+		.join("|");
+}
+
+function stepKey(step: HintStep) {
+	return `${step.technique}:${step.eliminations
+		.map(candidateKey)
+		.sort()
+		.join("|")}:${step.placement ? candidateKey(step.placement) : ""}`;
+}
+
+function compareSearchNodes(first: HintSearchNode, second: HintSearchNode) {
+	return (
+		first.cost - second.cost ||
+		first.steps.length - second.steps.length ||
+		first.pathKey.localeCompare(second.pathKey)
+	);
+}
+
+function findPlacement(candidates: CandidateGrid) {
+	return (
+		findNakedSingle(candidates) ??
+		findHiddenSingle(candidates) ??
+		findBUGPlusOne(candidates)
+	);
+}
+
+function findEliminationAlternatives(candidates: CandidateGrid) {
+	const alternatives = ELIMINATION_FINDERS.flatMap((find) => {
+		const step = find(candidates);
+		return step ? [step] : [];
+	});
+	const unique = new Map<string, HintStep>();
+	for (const step of alternatives) {
+		const signature = step.eliminations.map(candidateKey).sort().join("|");
+		const existing = unique.get(signature);
+		if (!existing || humanStepCost(step) < humanStepCost(existing)) {
+			unique.set(signature, step);
+		}
+	}
+	return [...unique.values()].sort(
+		(first, second) =>
+			humanStepCost(first) - humanStepCost(second) ||
+			stepKey(first).localeCompare(stepKey(second)),
 	);
 }
 
@@ -1115,6 +1265,109 @@ function applyEliminations(candidates: CandidateGrid, step: HintStep) {
 		if (cell?.delete(elimination.value)) changed = true;
 	}
 	return changed;
+}
+
+function hasEmptyUnsolvedCell(board: Board, candidates: CandidateGrid) {
+	for (let row = 0; row < 9; row++) {
+		for (let col = 0; col < 9; col++) {
+			if (
+				board[row]?.[col] === null &&
+				(candidates[row]?.[col]?.size ?? 0) === 0
+			)
+				return true;
+		}
+	}
+	return false;
+}
+
+function findHumanHintPath(board: Board, initialCandidates: CandidateGrid) {
+	const start: HintSearchNode = {
+		candidates: cloneCandidates(initialCandidates),
+		steps: [],
+		cost: 0,
+		pathKey: "",
+	};
+	let frontier = [start];
+	const bestCostByState = new Map([[candidateGridKey(start.candidates), 0]]);
+	const forcingFallbacks: HintSearchNode[] = [];
+	let bestSolution: HintSearchNode | null = null;
+
+	const initialPlacement = findPlacement(start.candidates);
+	if (initialPlacement) return [initialPlacement];
+
+	for (let depth = 0; depth < MAX_HINT_SEARCH_DEPTH; depth++) {
+		const nextByState = new Map<string, HintSearchNode>();
+		for (const node of frontier) {
+			if (bestSolution && node.cost >= bestSolution.cost) continue;
+			const alternatives = findEliminationAlternatives(node.candidates);
+			if (alternatives.length === 0) forcingFallbacks.push(node);
+			for (const step of alternatives) {
+				const nextCandidates = cloneCandidates(node.candidates);
+				if (!applyEliminations(nextCandidates, step)) continue;
+				if (hasEmptyUnsolvedCell(board, nextCandidates)) continue;
+				const cost = node.cost + humanStepCost(step, node.steps.at(-1));
+				const steps = [...node.steps, step];
+				const pathKey = `${node.pathKey}>${stepKey(step)}`;
+				const placement = findPlacement(nextCandidates);
+				if (placement) {
+					const solution: HintSearchNode = {
+						candidates: nextCandidates,
+						steps: [...steps, placement],
+						cost: cost + humanStepCost(placement, step),
+						pathKey: `${pathKey}>${stepKey(placement)}`,
+					};
+					if (!bestSolution || compareSearchNodes(solution, bestSolution) < 0) {
+						bestSolution = solution;
+					}
+					continue;
+				}
+
+				const stateKey = candidateGridKey(nextCandidates);
+				const knownCost = bestCostByState.get(stateKey);
+				if (knownCost !== undefined && knownCost <= cost) continue;
+				bestCostByState.set(stateKey, cost);
+				const candidate = {
+					candidates: nextCandidates,
+					steps,
+					cost,
+					pathKey,
+				};
+				const existing = nextByState.get(stateKey);
+				if (!existing || compareSearchNodes(candidate, existing) < 0) {
+					nextByState.set(stateKey, candidate);
+				}
+			}
+		}
+
+		frontier = [...nextByState.values()]
+			.filter((node) => !bestSolution || node.cost < bestSolution.cost)
+			.sort(compareSearchNodes)
+			.slice(0, HINT_SEARCH_BEAM_WIDTH);
+		if (frontier.length === 0) break;
+	}
+
+	if (bestSolution) return bestSolution.steps;
+
+	const fallbackPool = [...forcingFallbacks, ...frontier]
+		.sort(compareSearchNodes)
+		.slice(0, MAX_FORCING_FALLBACKS);
+	let bestForcing: HintSearchNode | null = null;
+	for (const node of fallbackPool) {
+		const forcing = findCellForcingChain(board, node.candidates);
+		if (!forcing) continue;
+		const candidate: HintSearchNode = {
+			...node,
+			steps: [...node.steps, forcing],
+			cost: node.cost + humanStepCost(forcing, node.steps.at(-1)),
+			pathKey: `${node.pathKey}>${stepKey(forcing)}`,
+		};
+		if (!bestForcing || compareSearchNodes(candidate, bestForcing) < 0) {
+			bestForcing = candidate;
+		}
+	}
+	if (bestForcing) return bestForcing.steps;
+
+	return forcingFallbacks.sort(compareSearchNodes)[0]?.steps ?? [];
 }
 
 function findWrongEntry(
@@ -1204,52 +1457,16 @@ export function findExplainableHint(
 		}
 	}
 
-	const steps: HintStep[] = [];
-	const seenEliminations = new Set<string>();
-	for (let iteration = 0; iteration < 40; iteration++) {
-		const placement =
-			findNakedSingle(candidates) ??
-			findHiddenSingle(candidates) ??
-			findBUGPlusOne(candidates);
-		if (placement) {
-			steps.push(placement);
-			return {
-				status: "hint",
-				message:
-					steps.length === 1
-						? "One logical step finds the next value."
-						: `${steps.length} logical steps lead to the next value.`,
-				steps,
-			};
-		}
-
-		const elimination = findElimination(candidates);
-		if (elimination) {
-			const signature = elimination.eliminations
-				.map(candidateKey)
-				.sort()
-				.join("|");
-			if (seenEliminations.has(signature)) break;
-			seenEliminations.add(signature);
-			steps.push(elimination);
-			if (!applyEliminations(candidates, elimination)) break;
-			continue;
-		}
-
-		const forcing = findCellForcingChain(current, candidates);
-		if (!forcing) break;
-		steps.push(forcing);
-		if (forcing.placement) {
-			return {
-				status: "hint",
-				message:
-					steps.length === 1
-						? "One logical step finds the next value."
-						: `${steps.length} logical steps lead to the next value.`,
-				steps,
-			};
-		}
-		if (!applyEliminations(candidates, forcing)) break;
+	const steps = findHumanHintPath(current, candidates);
+	if (steps.at(-1)?.placement) {
+		return {
+			status: "hint",
+			message:
+				steps.length === 1
+					? "One logical step finds the next value."
+					: `${steps.length} human-readable steps lead to the next value.`,
+			steps,
+		};
 	}
 
 	if (steps.length > 0) {

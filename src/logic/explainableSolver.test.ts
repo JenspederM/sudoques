@@ -26,7 +26,7 @@ describe("findExplainableHint", () => {
 		expect(JSON.stringify(current)).toBe(before);
 	});
 
-	test("builds an elimination path through an X-Wing to the next value", () => {
+	test("prefers a concise X-Wing path over a longer greedy sequence", () => {
 		const puzzle =
 			"030000040071000230080903060004207300007106800100000005040000080006302900000000000";
 		const board = parsePuzzle(puzzle);
@@ -36,11 +36,12 @@ describe("findExplainableHint", () => {
 		const xWing = hint.steps.find((step) => step.technique === "X-Wing");
 
 		expect(hint.status).toBe("hint");
-		expect(techniques).toContain("X-Wing");
+		expect(techniques).toEqual(["X-Wing", "Hidden Single"]);
 		expect(xWing?.eliminations.length).toBeGreaterThan(0);
 		expect(xWing?.pattern.length).toBeGreaterThanOrEqual(4);
 		expect(hint.steps.at(-1)?.technique).toBe("Hidden Single");
 		expect(hint.steps.at(-1)?.placement).toEqual({ row: 2, col: 0, value: 4 });
+		expect(findExplainableHint(board, board)).toEqual(hint);
 	});
 
 	test("can explain wings, chains, and a forcing-chain conclusion", () => {
