@@ -32,7 +32,7 @@ export const SudokuGrid = ({
 	return (
 		<div
 			className={cn(
-				"relative grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-primary/30",
+				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-primary/30",
 				className,
 			)}
 		>
@@ -68,12 +68,12 @@ export const SudokuGrid = ({
 									r === 0 && c === 0 && "rounded-tl-md",
 									peer && "bg-primary/10",
 									matching &&
-										"bg-primary/30 text-foreground font-bold ring-1 ring-inset ring-primary/60",
+										"bg-primary/30 text-foreground font-bold ring-1 ring-inset ring-primary/60 z-30",
 									selected &&
-										"bg-primary/50 text-foreground font-bold ring-2 ring-inset ring-primary z-10",
+										"bg-primary/50 text-foreground font-bold ring-2 ring-inset ring-primary z-30",
 									initial && "text-foreground font-bold",
 									conflict &&
-										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse",
+										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse z-30",
 								)}
 							>
 								{val !== null ? (
