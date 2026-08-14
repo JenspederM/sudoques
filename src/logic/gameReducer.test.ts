@@ -140,22 +140,44 @@ describe("applyActions", () => {
 		expect(finalState.current[0]?.[1]).toBe(3);
 	});
 
-	test("auto-remove notes when a number is completed", () => {
-		const actions: GameAction[] = [];
-		for (let i = 0; i < 9; i++) {
-			actions.push({
-				type: "addValue",
-				delta: 0,
-				payload: { row: i, col: 0, value: 1 },
-			});
-		}
+	test("placing a value removes matching notes from all peer cells", () => {
+		const actions: GameAction[] = [
+			{ type: "addNote", delta: 0, payload: { row: 4, col: 8, value: 5 } },
+			{ type: "addNote", delta: 0, payload: { row: 8, col: 4, value: 5 } },
+			{ type: "addNote", delta: 0, payload: { row: 3, col: 3, value: 5 } },
+			{ type: "addNote", delta: 0, payload: { row: 0, col: 0, value: 5 } },
+			{ type: "addNote", delta: 0, payload: { row: 4, col: 8, value: 6 } },
+			{ type: "addNote", delta: 0, payload: { row: 4, col: 4, value: 2 } },
+			{ type: "addValue", delta: 0, payload: { row: 4, col: 4, value: 5 } },
+		];
 
-		const initialWithNotes: Board = emptyBoard.map((r) => [...r]);
-		const { state: finalState } = applyActions(initialWithNotes, solution, [
-			{ type: "addNote", delta: 0, payload: { row: 0, col: 1, value: 1 } },
-			...actions,
+		const { state: finalState } = applyActions(emptyBoard, solution, actions);
+
+		expect(finalState.notes[4]?.[8]?.has(5)).toBe(false); // same row
+		expect(finalState.notes[8]?.[4]?.has(5)).toBe(false); // same column
+		expect(finalState.notes[3]?.[3]?.has(5)).toBe(false); // same box
+		expect(finalState.notes[0]?.[0]?.has(5)).toBe(true); // unrelated cell
+		expect(finalState.notes[4]?.[8]?.has(6)).toBe(true); // other candidate
+		expect(finalState.notes[4]?.[4]?.size).toBe(0); // filled cell
+	});
+
+	test("undo restores notes removed by a placement and redo removes them again", () => {
+		const baseActions: GameAction[] = [
+			{ type: "addNote", delta: 0, payload: { row: 4, col: 8, value: 5 } },
+			{ type: "addValue", delta: 0, payload: { row: 4, col: 4, value: 5 } },
+		];
+
+		const undone = applyActions(emptyBoard, solution, [
+			...baseActions,
+			{ type: "undo", delta: 0 },
 		]);
+		expect(undone.state.notes[4]?.[8]?.has(5)).toBe(true);
 
-		expect(finalState.notes[0]?.[1]?.has(1)).toBe(false);
+		const redone = applyActions(emptyBoard, solution, [
+			...baseActions,
+			{ type: "undo", delta: 0 },
+			{ type: "redo", delta: 0 },
+		]);
+		expect(redone.state.notes[4]?.[8]?.has(5)).toBe(false);
 	});
 });
