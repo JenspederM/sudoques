@@ -1,9 +1,11 @@
 import type { User } from "firebase/auth";
+import { AnimatePresence } from "framer-motion";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameControls } from "@/components/GameControls";
 import { GameMenu } from "@/components/GameMenu";
+import { HintPanel } from "@/components/HintPanel";
 import { Layout } from "@/components/Layout";
 import { Numpad } from "@/components/Numpad";
 import {
@@ -17,6 +19,10 @@ import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { buildReviewState } from "@/lib/utils";
+import {
+	type ExplainableHint,
+	findExplainableHint,
+} from "@/logic/explainableSolver";
 import {
 	checkBoard,
 	countValues,
@@ -42,6 +48,10 @@ export const GamePage: React.FC<GamePageProps> = ({
 		null,
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
+	const [hint, setHint] = useState<ExplainableHint | null>(null);
+	const [hintStepIndex, setHintStepIndex] = useState(0);
+	const actionCount = gameState.actions.length;
+	const previousActionCount = useRef(actionCount);
 	const [winState, setWinState] = useState<{
 		actions: GameAction[];
 		timer: number;
@@ -62,7 +72,6 @@ export const GamePage: React.FC<GamePageProps> = ({
 		undo,
 		redo,
 		handleSolve,
-		handleHint,
 		handleReset,
 		saveCurrentState,
 	} = useGameActions({
@@ -74,6 +83,30 @@ export const GamePage: React.FC<GamePageProps> = ({
 		selectedCell,
 		isNoteMode,
 	});
+
+	const handleHint = () => {
+		setSelectedCell(null);
+		setHintStepIndex(0);
+		setHint(
+			findExplainableHint(
+				currentDerivedState.current,
+				puzzle.initial,
+				puzzle.solution,
+				{
+					difficulty: puzzle.difficulty,
+					techniques: puzzle.techniques,
+				},
+			),
+		);
+	};
+
+	useEffect(() => {
+		if (previousActionCount.current !== actionCount) {
+			setHint(null);
+			setHintStepIndex(0);
+		}
+		previousActionCount.current = actionCount;
+	}, [actionCount]);
 
 	// Check for win on load
 	useEffect(() => {
@@ -151,11 +184,12 @@ export const GamePage: React.FC<GamePageProps> = ({
 				<StaggeredListElement className="flex flex-col flex-1 sm:flex-0 ">
 					<SudokuGrid
 						initialBoard={puzzle.initial}
-						currentBoard={gameState.current}
-						notes={gameState.notes}
+						currentBoard={currentDerivedState.current}
+						notes={currentDerivedState.notes}
 						selectedCell={selectedCell}
 						onCellSelect={handleCellSelect}
 						conflicts={conflicts}
+						hintStep={hint?.steps[hintStepIndex] ?? null}
 					/>
 				</StaggeredListElement>
 				<StaggeredListElement>
@@ -195,6 +229,16 @@ export const GamePage: React.FC<GamePageProps> = ({
 					navigate("/");
 				}}
 			/>
+			<AnimatePresence>
+				{hint && (
+					<HintPanel
+						hint={hint}
+						stepIndex={hintStepIndex}
+						onStepChange={setHintStepIndex}
+						onClose={() => setHint(null)}
+					/>
+				)}
+			</AnimatePresence>
 		</Layout>
 	);
 };

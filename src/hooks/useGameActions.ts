@@ -8,11 +8,7 @@ import {
 } from "@/logic/firebase";
 import { applyActions } from "@/logic/gameReducer";
 import { SudokuSolver } from "@/logic/solver";
-import {
-	createEmptyNotes,
-	getRandomHint,
-	isBoardComplete,
-} from "@/logic/sudoku";
+import { createEmptyNotes, isBoardComplete } from "@/logic/sudoku";
 import type { GameAction, GameState } from "@/types";
 
 interface UseGameActionsProps {
@@ -218,28 +214,6 @@ export function useGameActions({
 		setTimer,
 	]);
 
-	const handleHint = useCallback(() => {
-		const hint = getRandomHint(
-			currentDerivedState.current,
-			puzzle.solution,
-			puzzle.initial,
-		);
-		if (hint) {
-			const action: GameAction = {
-				type: "addValue",
-				delta: timer,
-				payload: { row: hint.r, col: hint.c, value: hint.v },
-			};
-			commitActions([...gameState.actions, action]);
-		}
-	}, [
-		currentDerivedState.current,
-		puzzle,
-		timer,
-		gameState.actions,
-		commitActions,
-	]);
-
 	const handleReset = useCallback(() => {
 		if (!user) return;
 
@@ -269,7 +243,6 @@ export function useGameActions({
 		undo,
 		redo,
 		handleSolve,
-		handleHint,
 		handleReset,
 		saveCurrentState,
 	};

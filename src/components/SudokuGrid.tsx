@@ -1,6 +1,7 @@
 import { m } from "framer-motion";
 import type { HTMLProps } from "react";
 import { cn } from "@/lib/utils";
+import type { HintStep } from "@/logic/explainableSolver";
 import { getCellHighlightState } from "@/logic/highlighting";
 import type { Board, CellNotes } from "@/types";
 
@@ -11,6 +12,7 @@ type SudokuGridProps = HTMLProps<HTMLDivElement> & {
 	selectedCell: [number, number] | null;
 	onCellSelect: (row: number, col: number) => void;
 	conflicts: { row: number; col: number }[];
+	hintStep?: HintStep | null;
 };
 
 export const SudokuGrid = ({
@@ -21,6 +23,7 @@ export const SudokuGrid = ({
 	selectedCell,
 	onCellSelect,
 	conflicts,
+	hintStep,
 }: SudokuGridProps) => {
 	const isInitial = (r: number, c: number) => {
 		const row = initialBoard[r];
@@ -28,6 +31,40 @@ export const SudokuGrid = ({
 	};
 	const hasConflict = (r: number, c: number) =>
 		conflicts.some((conf) => conf.row === r && conf.col === c);
+	const isHintHouse = (row: number, col: number) =>
+		hintStep?.houses?.some((house) => {
+			if (house.type === "row") return row === house.index;
+			if (house.type === "column") return col === house.index;
+			return Math.floor(row / 3) * 3 + Math.floor(col / 3) === house.index;
+		}) ?? false;
+	const hintCandidateRole = (row: number, col: number, value: number) => {
+		if (
+			hintStep?.placement?.row === row &&
+			hintStep.placement.col === col &&
+			hintStep.placement.value === value
+		)
+			return "placement" as const;
+		if (
+			hintStep?.eliminations.some(
+				(candidate) =>
+					candidate.row === row &&
+					candidate.col === col &&
+					candidate.value === value,
+			)
+		)
+			return "elimination" as const;
+		const pattern = hintStep?.pattern.find(
+			(candidate) =>
+				candidate.row === row &&
+				candidate.col === col &&
+				candidate.value === value,
+		);
+		if (pattern)
+			return pattern.group === "b"
+				? ("pattern-b" as const)
+				: ("pattern-a" as const);
+		return null;
+	};
 
 	return (
 		<div
@@ -50,6 +87,18 @@ export const SudokuGrid = ({
 						const peer = highlightState === "peer";
 						const initial = isInitial(r, c);
 						const conflict = hasConflict(r, c);
+						const hintHouse = isHintHouse(r, c);
+						const hintPattern = hintStep?.pattern.some(
+							(candidate) => candidate.row === r && candidate.col === c,
+						);
+						const hintElimination = hintStep?.eliminations.some(
+							(candidate) => candidate.row === r && candidate.col === c,
+						);
+						const hintPlacement =
+							hintStep?.placement?.row === r && hintStep.placement.col === c;
+						const hintCell = hintStep?.cells?.find(
+							(cell) => cell.row === r && cell.col === c,
+						);
 
 						return (
 							<m.div
@@ -72,6 +121,15 @@ export const SudokuGrid = ({
 									selected &&
 										"bg-primary/50 text-foreground font-bold ring-2 ring-inset ring-primary z-30",
 									initial && "text-foreground font-bold",
+									hintHouse && "bg-primary/5",
+									hintPattern && "bg-sky-500/15",
+									hintElimination && "bg-red-500/15",
+									hintPlacement &&
+										"bg-emerald-500/20 ring-2 ring-inset ring-emerald-500 z-20",
+									hintCell?.role === "focus" &&
+										"ring-2 ring-inset ring-primary z-20",
+									hintCell?.role === "warning" &&
+										"bg-red-500/20 ring-2 ring-inset ring-red-500 z-20",
 									conflict &&
 										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse z-30",
 								)}
@@ -83,16 +141,27 @@ export const SudokuGrid = ({
 										{Array.from({ length: 9 }).map((_, i) => {
 											const rowNotes = notes[r];
 											const cellNotes = rowNotes ? rowNotes[c] : null;
+											const value = i + 1;
+											const hintRole = hintCandidateRole(r, c, value);
 											return (
 												<div
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
+													data-hint-candidate={hintRole ?? undefined}
 													className={cn(
 														"flex items-center justify-center text-primary/80",
 														selected && "text-foreground",
+														hintRole === "pattern-a" &&
+															"text-sky-500 font-black",
+														hintRole === "pattern-b" &&
+															"text-violet-500 font-black",
+														hintRole === "elimination" &&
+															"text-red-500 font-black line-through decoration-2",
+														hintRole === "placement" &&
+															"text-emerald-500 font-black scale-125",
 													)}
 												>
-													{cellNotes?.has(i + 1) ? i + 1 : ""}
+													{cellNotes?.has(value) || hintRole ? value : ""}
 												</div>
 											);
 										})}
