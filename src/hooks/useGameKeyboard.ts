@@ -6,15 +6,29 @@ interface UseGameKeyboardProps {
 		React.SetStateAction<[number, number] | null>
 	>;
 	handleInput: (num: number | null) => void;
+	handleQuickNote: (num: number) => void;
 	setIsNoteMode: React.Dispatch<React.SetStateAction<boolean>>;
 	undo: () => void;
 	redo: () => void;
+}
+
+export function getNumberKeyInput(
+	event: Pick<KeyboardEvent, "key" | "code" | "shiftKey">,
+) {
+	const keyDigit = /^[1-9]$/.test(event.key) ? event.key : null;
+	const shiftedCodeDigit = event.shiftKey
+		? /^Digit([1-9])$/.exec(event.code)?.[1]
+		: null;
+	const digit = keyDigit ?? shiftedCodeDigit;
+
+	return digit ? { value: Number(digit), asNote: event.shiftKey } : null;
 }
 
 export function useGameKeyboard({
 	showWin,
 	setSelectedCell,
 	handleInput,
+	handleQuickNote,
 	setIsNoteMode,
 	undo,
 	redo,
@@ -41,9 +55,12 @@ export function useGameKeyboard({
 				return;
 			}
 
-			// Number input (1-9)
-			if (/^[1-9]$/.test(e.key)) {
-				handleInput(parseInt(e.key, 10));
+			// Number input (1-9). Shift changes e.key to punctuation on many layouts,
+			// so use the physical Digit key as a fallback for quick notes.
+			const numberInput = getNumberKeyInput(e);
+			if (numberInput) {
+				if (numberInput.asNote) handleQuickNote(numberInput.value);
+				else handleInput(numberInput.value);
 				return;
 			}
 
@@ -80,5 +97,13 @@ export function useGameKeyboard({
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [showWin, handleInput, undo, redo, setSelectedCell, setIsNoteMode]);
+	}, [
+		showWin,
+		handleInput,
+		handleQuickNote,
+		undo,
+		redo,
+		setSelectedCell,
+		setIsNoteMode,
+	]);
 }
