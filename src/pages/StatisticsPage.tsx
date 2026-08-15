@@ -1,4 +1,4 @@
-import { Trophy } from "lucide-react";
+import { CircleAlert, LoaderCircle, Trophy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,7 +16,7 @@ import type { Difficulty } from "@/types";
 
 export const StatisticsPage: React.FC = () => {
 	const navigate = useNavigate();
-	const { scores: allScores } = useScores();
+	const { scores: allScores, isLoading, isUnavailable } = useScores();
 	const location = useLocation();
 	const initialDiff =
 		(location.state as { activeDiff?: Difficulty })?.activeDiff || "easy";
@@ -50,7 +50,35 @@ export const StatisticsPage: React.FC = () => {
 
 			{/* Score List */}
 			<StaggeredList className="overflow-auto h-full">
-				{scores.length > 0 ? (
+				{isUnavailable ? (
+					<StaggeredListElement
+						className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground"
+						role="alert"
+						data-testid="scores-unavailable"
+					>
+						<CircleAlert
+							size={40}
+							className="text-amber-500"
+							aria-hidden="true"
+						/>
+						<p className="font-bold text-foreground">Records unavailable</p>
+						<p className="max-w-xs text-sm">
+							Your records could not be loaded. You can still play a new game.
+						</p>
+					</StaggeredListElement>
+				) : isLoading ? (
+					<StaggeredListElement
+						className="flex items-center justify-center gap-2 text-center text-muted-foreground"
+						role="status"
+					>
+						<LoaderCircle
+							size={20}
+							className="animate-spin"
+							aria-hidden="true"
+						/>
+						Loading scores…
+					</StaggeredListElement>
+				) : scores.length > 0 ? (
 					scores.map((score, idx) => (
 						<StaggeredListElement
 							key={score.date.toMillis()}
