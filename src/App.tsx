@@ -22,8 +22,15 @@ import { Spinner } from "./components/Spinner";
 import {
 	getRandomPuzzle,
 	prefetchPuzzles,
+	saveGameState,
 	subscribeToGameState,
 } from "./logic/firebase";
+import {
+	clearGuestGameState,
+	loadGuestGameState,
+	resolveGuestGameState,
+	saveGuestGameState,
+} from "./logic/guestGameStorage";
 import { createEmptyNotes, isBoardComplete } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
@@ -35,6 +42,18 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { SignupPage } from "./pages/SignupPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import type { Difficulty, GameState } from "./types";
+
+function loadActiveGuestGame() {
+	const snapshot = loadGuestGameState();
+	if (
+		snapshot &&
+		isBoardComplete(snapshot.state.current, snapshot.state.puzzle.solution)
+	) {
+		clearGuestGameState();
+		return null;
+	}
+	return snapshot;
+}
 
 function AppRoutes() {
 	const { user, loading: authLoading } = useAuth();
@@ -54,14 +73,60 @@ function AppRoutes() {
 	// Persistence effect: Subscribe to Game State
 	useEffect(() => {
 		if (user) {
+			let isCurrentUser = true;
+			const initialLocalGuestGame = loadActiveGuestGame();
+			if (initialLocalGuestGame) {
+				setGameSession({
+					gameState: initialLocalGuestGame.state,
+					isLoading: false,
+				});
+			} else {
+				setGameSession({ gameState: null, isLoading: true });
+			}
+
 			// Realtime Game State subscription
 			const unsubscribeGameState = subscribeToGameState(
 				user.uid,
-				(savedState) => {
+				(savedState, metadata) => {
+					if (!isCurrentUser) return;
+
+					const latestLocalGuestGame = loadActiveGuestGame();
+					const resolved = resolveGuestGameState(
+						savedState,
+						latestLocalGuestGame,
+						metadata,
+					);
+
+					if (resolved.source === "cloud" && user.isAnonymous && savedState) {
+						if (
+							isBoardComplete(savedState.current, savedState.puzzle.solution)
+						) {
+							clearGuestGameState();
+						} else {
+							saveGuestGameState(user.uid, savedState);
+						}
+					}
+					if (resolved.source === "cloud" && !user.isAnonymous) {
+						clearGuestGameState();
+					}
+
 					setGameSession({
-						gameState: savedState || null,
+						gameState: resolved.state,
 						isLoading: false,
 					});
+
+					if (resolved.shouldUploadLocal && resolved.state) {
+						saveGameState(user.uid, resolved.state)
+							.then(() => {
+								if (!user.isAnonymous) clearGuestGameState();
+							})
+							.catch((error) => {
+								console.error(
+									"Failed to restore guest game to Firebase",
+									error,
+								);
+							});
+					}
 				},
 			);
 
@@ -69,6 +134,7 @@ function AppRoutes() {
 			prefetchPuzzles();
 
 			return () => {
+				isCurrentUser = false;
 				unsubscribeGameState();
 			};
 		}
@@ -91,14 +157,28 @@ function AppRoutes() {
 				setGameSession((prev) => ({ ...prev, isLoading: true }));
 				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
 
+				const newGameState = {
+					puzzle,
+					current: puzzle.initial.map((r) => [...r]),
+					notes: createEmptyNotes(),
+					actions: [],
+					timer: 0,
+				};
+
+				if (user?.isAnonymous) {
+					saveGuestGameState(user.uid, newGameState);
+				} else {
+					clearGuestGameState();
+				}
+
+				if (user) {
+					saveGameState(user.uid, newGameState).catch((error) => {
+						console.error("Failed to save new game state to Firebase", error);
+					});
+				}
+
 				setGameSession({
-					gameState: {
-						puzzle,
-						current: puzzle.initial.map((r) => [...r]),
-						notes: createEmptyNotes(),
-						actions: [],
-						timer: 0,
-					},
+					gameState: newGameState,
 					isLoading: false,
 				});
 				navigate(`/game`);
@@ -110,7 +190,7 @@ function AppRoutes() {
 				setGameSession((prev) => ({ ...prev, isLoading: false }));
 			}
 		},
-		[navigate, playedPuzzles],
+		[navigate, playedPuzzles, user],
 	);
 
 	if (authLoading) {
