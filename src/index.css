@@ -82,7 +82,9 @@
 	--input: #e2e8f0;
 	--ring: #4338ca;
 
-	--grid-line: color-mix(in srgb, var(--primary) 35%, var(--background));
+	--grid-line: color-mix(in srgb, var(--primary) 26%, var(--background));
+	--grid-divider: color-mix(in srgb, var(--primary) 68%, var(--background));
+	--player-number: color-mix(in srgb, var(--primary) 60%, var(--foreground));
 	--cell-bg: rgba(255, 255, 255, 0.95);
 	--overlay-bg: rgba(248, 250, 252, 0.9);
 
@@ -124,7 +126,9 @@
 	--input: #334155;
 	--ring: rgba(99, 102, 241, 0.5);
 
-	--grid-line: color-mix(in srgb, var(--primary) 45%, var(--background));
+	--grid-line: color-mix(in srgb, var(--primary) 30%, var(--background));
+	--grid-divider: color-mix(in srgb, var(--primary) 72%, var(--background));
+	--player-number: color-mix(in srgb, var(--primary) 62%, var(--foreground));
 	--cell-bg: rgba(30, 41, 59, 0.8);
 	--overlay-bg: rgba(15, 23, 42, 0.8);
 
@@ -210,6 +214,24 @@ body {
 @layer base {
 	button {
 		@apply cursor-pointer transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+}
+
+@media (max-width: 400px) {
+	.game-board-bleed {
+		--board-bleed-left: calc(
+			max(var(--safe-left), 1rem) -
+			max(var(--safe-left), 0.25rem)
+		);
+		--board-bleed-right: calc(
+			max(var(--safe-right), 1rem) -
+			max(var(--safe-right), 0.25rem)
+		);
+
+		width: calc(100% + var(--board-bleed-left) + var(--board-bleed-right));
+		margin-left: calc(-1 * var(--board-bleed-left));
+		margin-right: calc(-1 * var(--board-bleed-right));
+		border-radius: 0.25rem;
 	}
 }
 

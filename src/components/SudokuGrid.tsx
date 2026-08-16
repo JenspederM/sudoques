@@ -68,8 +68,9 @@ export const SudokuGrid = ({
 
 	return (
 		<div
+			data-testid="sudoku-grid"
 			className={cn(
-				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-primary/30",
+				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-[var(--grid-line)]",
 				className,
 			)}
 		>
@@ -86,6 +87,7 @@ export const SudokuGrid = ({
 						const matching = highlightState === "matching";
 						const peer = highlightState === "peer";
 						const initial = isInitial(r, c);
+						const playerEntered = val !== null && !initial;
 						const conflict = hasConflict(r, c);
 						const hintHouse = isHintHouse(r, c);
 						const hintPattern = hintStep?.pattern.some(
@@ -106,21 +108,25 @@ export const SudokuGrid = ({
 								key={`cell-${r}-${c}`}
 								data-testid={`cell-${r}-${c}`}
 								data-highlight={highlightState}
+								data-origin={
+									initial ? "given" : playerEntered ? "player" : "empty"
+								}
 								whileTap={{ scale: 0.95 }}
 								onClick={() => onCellSelect(r, c)}
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
-									"bg-background text-primary/90 font-semibold",
+									"bg-background font-semibold",
 									r === 8 && c === 8 && "rounded-br-md",
 									r === 8 && c === 0 && "rounded-bl-md",
 									r === 0 && c === 8 && "rounded-tr-md",
 									r === 0 && c === 0 && "rounded-tl-md",
-									peer && "bg-primary/10",
+									peer && "bg-primary/[0.08]",
 									matching &&
-										"bg-primary/30 text-foreground font-bold ring-1 ring-inset ring-primary/60 z-30",
+										"bg-primary/[0.16] ring-1 ring-inset ring-primary/70 z-30",
 									selected &&
-										"bg-primary/50 text-foreground font-bold ring-2 ring-inset ring-primary z-30",
+										"bg-primary/[0.28] ring-2 ring-inset ring-primary z-30",
 									initial && "text-foreground font-bold",
+									playerEntered && "text-[var(--player-number)]",
 									hintHouse && "bg-primary/5",
 									hintPattern && "bg-sky-500/15",
 									hintElimination && "bg-red-500/15",
@@ -149,8 +155,7 @@ export const SudokuGrid = ({
 													key={`note-${i}`}
 													data-hint-candidate={hintRole ?? undefined}
 													className={cn(
-														"flex items-center justify-center text-primary/80",
-														selected && "text-foreground",
+														"flex items-center justify-center text-[var(--player-number)]",
 														hintRole === "pattern-a" &&
 															"text-sky-500 font-black",
 														hintRole === "pattern-b" &&
@@ -176,10 +181,10 @@ export const SudokuGrid = ({
 				data-testid="box-dividers"
 				className="pointer-events-none absolute inset-0 z-20"
 			>
-				<div className="absolute inset-y-0 left-[33.333333%] w-[2px] -translate-x-1/2 bg-[var(--grid-line)]" />
-				<div className="absolute inset-y-0 left-[66.666667%] w-[2px] -translate-x-1/2 bg-[var(--grid-line)]" />
-				<div className="absolute inset-x-0 top-[33.333333%] h-[2px] -translate-y-1/2 bg-[var(--grid-line)]" />
-				<div className="absolute inset-x-0 top-[66.666667%] h-[2px] -translate-y-1/2 bg-[var(--grid-line)]" />
+				<div className="absolute inset-y-0 left-[33.333333%] w-[2px] -translate-x-1/2 bg-[var(--grid-divider)]" />
+				<div className="absolute inset-y-0 left-[66.666667%] w-[2px] -translate-x-1/2 bg-[var(--grid-divider)]" />
+				<div className="absolute inset-x-0 top-[33.333333%] h-[2px] -translate-y-1/2 bg-[var(--grid-divider)]" />
+				<div className="absolute inset-x-0 top-[66.666667%] h-[2px] -translate-y-1/2 bg-[var(--grid-divider)]" />
 			</div>
 		</div>
 	);

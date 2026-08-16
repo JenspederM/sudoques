@@ -181,8 +181,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 			}
 		>
 			<StaggeredList className="h-full">
-				<StaggeredListElement className="flex flex-col flex-1 sm:flex-0 ">
+				<StaggeredListElement className="flex flex-col flex-1 max-[400px]:flex-none sm:flex-0">
 					<SudokuGrid
+						className="game-board-bleed"
 						initialBoard={puzzle.initial}
 						currentBoard={currentDerivedState.current}
 						notes={currentDerivedState.notes}
