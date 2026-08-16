@@ -20,30 +20,23 @@ export function gameReducer(
 				ri === row ? r.map((c, ci) => (ci === col ? value : c)) : [...r],
 			);
 
-			// Auto-remove notes if a number is completed (9 instances)
-			const counts = new Map<number, number>();
-			newBoard.forEach((r) => {
-				r.forEach((val) => {
-					if (val !== null) {
-						counts.set(val, (counts.get(val) || 0) + 1);
-					}
-				});
-			});
+			// A placed value rules out the same candidate in its row, column,
+			// and 3x3 box. Notes in the filled cell itself are no longer relevant.
+			const newNotes = state.notes.map((noteRow, ri) =>
+				noteRow.map((cellNotes, ci) => {
+					if (ri === row && ci === col) return new Set<number>();
 
-			const newNotes = state.notes.map((r) => r.map((cell) => new Set(cell)));
-			if ((counts.get(value) || 0) >= 9) {
-				for (let i = 0; i < 9; i++) {
-					const rowNotes = newNotes[i];
-					if (rowNotes) {
-						for (let j = 0; j < 9; j++) {
-							const cellNotes = rowNotes[j];
-							if (cellNotes) {
-								cellNotes.delete(value);
-							}
-						}
+					const nextNotes = new Set(cellNotes);
+					const sharesBox =
+						Math.floor(ri / 3) === Math.floor(row / 3) &&
+						Math.floor(ci / 3) === Math.floor(col / 3);
+
+					if (ri === row || ci === col || sharesBox) {
+						nextNotes.delete(value);
 					}
-				}
-			}
+					return nextNotes;
+				}),
+			);
 
 			return {
 				...state,
