@@ -31,7 +31,10 @@ export function DifficultyList({
 	const stats = useMemo(() => getDifficultyStats(scores), [scores]);
 
 	return (
-		<StaggeredList className="h-full gap-2.5 overflow-auto sm:gap-4 sm:overflow-visible">
+		<StaggeredList
+			className="h-full min-w-0 gap-2.5 overflow-x-hidden overflow-y-auto sm:gap-4 sm:overflow-visible"
+			data-testid="difficulty-list"
+		>
 			{DIFFICULTIES.map((difficulty) => {
 				const difficultyStats = stats[difficulty.id];
 				const bestTime =
@@ -44,7 +47,7 @@ export function DifficultyList({
 						key={difficulty.id}
 						onClick={() => onSelectDifficulty(difficulty.id)}
 						type="button"
-						className="justify-between gap-3 px-4 py-3 text-left sm:gap-4 sm:px-6 sm:py-4"
+						className="min-w-0 max-w-full justify-between gap-3 px-4 py-3 text-left sm:gap-4 sm:px-6 sm:py-4"
 						data-testid={`diff-${difficulty.id}`}
 						aria-label={
 							isUnavailable
@@ -54,6 +57,7 @@ export function DifficultyList({
 									: `Start ${difficulty.label} game. Personal best: ${bestTime}. Completed games: ${difficultyStats.completedGames}.`
 						}
 						whileHover={{
+							scale: 1,
 							borderColor: "var(--primary)",
 							color: "var(--primary)",
 							backgroundColor: "var(--primary/10)",

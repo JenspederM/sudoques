@@ -3,9 +3,11 @@ import {
 	m,
 	stagger,
 	type TargetAndTransition,
+	useReducedMotionConfig,
 	type Variants,
 } from "framer-motion";
 import type { PropsWithChildren } from "react";
+import { getMotionInitial } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const listVariants: Variants = {
@@ -23,10 +25,12 @@ export function StaggeredList({
 	className,
 	...props
 }: PropsWithChildren<HTMLMotionProps<"div">>) {
+	const shouldReduceMotion = useReducedMotionConfig();
+
 	return (
 		<m.div
 			variants={listVariants}
-			initial="hidden"
+			initial={getMotionInitial(shouldReduceMotion, "hidden")}
 			animate="visible"
 			{...props}
 			className={cn("w-full flex flex-col gap-4", className)}
