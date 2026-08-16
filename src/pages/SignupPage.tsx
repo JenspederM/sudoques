@@ -1,5 +1,5 @@
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { m } from "framer-motion";
+import { m, useReducedMotionConfig } from "framer-motion";
 import { Loader2, Lock, Mail, User as UserIcon } from "lucide-react";
 import type { SubmitEvent } from "react";
 import { useReducer } from "react";
@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Layout } from "@/components/Layout";
 import { auth } from "@/firebase";
+import { getMotionInitial } from "@/lib/motion";
 
 interface SignupState {
 	email: string;
@@ -43,6 +44,7 @@ function signupReducer(state: SignupState, action: SignupAction): SignupState {
 }
 
 export const SignupPage: React.FC = () => {
+	const shouldReduceMotion = useReducedMotionConfig();
 	const [state, dispatch] = useReducer(signupReducer, initialState);
 	const { email, password, name, error, loading } = state;
 
@@ -74,7 +76,10 @@ export const SignupPage: React.FC = () => {
 	return (
 		<Layout centered>
 			<m.div
-				initial={{ opacity: 0, scale: 0.9 }}
+				initial={getMotionInitial(shouldReduceMotion, {
+					opacity: 0,
+					scale: 0.9,
+				})}
 				animate={{ opacity: 1, scale: 1 }}
 				className="flex flex-col items-center bg-glass rounded-2xl border border-border px-6 py-4 w-full"
 			>

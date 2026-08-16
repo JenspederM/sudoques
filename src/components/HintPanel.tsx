@@ -1,4 +1,4 @@
-import { m } from "framer-motion";
+import { m, useReducedMotionConfig } from "framer-motion";
 import {
 	AlertTriangle,
 	ChevronDown,
@@ -11,6 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getMotionExit, getMotionInitial } from "@/lib/motion";
 import type { ExplainableHint } from "@/logic/explainableSolver";
 import {
 	getTechniqueExplanation,
@@ -41,6 +42,7 @@ export function HintPanel({
 	const step = hint.steps[stepIndex];
 	const hasPrevious = stepIndex > 0;
 	const hasNext = stepIndex < hint.steps.length - 1;
+	const shouldReduceMotion = useReducedMotionConfig();
 	const isCorrection = hint.status === "invalid" || step?.kind === "correction";
 	const visibleDisclosureStage = isCorrection ? "details" : disclosureStage;
 
@@ -54,10 +56,13 @@ export function HintPanel({
 	if (isCollapsed) {
 		return (
 			<m.aside
-				layout
-				initial={{ opacity: 0, y: 16 }}
+				layout={!shouldReduceMotion}
+				initial={getMotionInitial(shouldReduceMotion, {
+					opacity: 0,
+					y: 16,
+				})}
 				animate={{ opacity: 1, y: 0 }}
-				exit={{ opacity: 0, y: 16 }}
+				exit={getMotionExit(shouldReduceMotion, { opacity: 0, y: 16 })}
 				aria-label="Collapsed hint"
 				data-testid="hint-panel"
 				data-collapsed="true"
@@ -98,10 +103,10 @@ export function HintPanel({
 
 	return (
 		<m.aside
-			layout
-			initial={{ opacity: 0, y: 24 }}
+			layout={!shouldReduceMotion}
+			initial={getMotionInitial(shouldReduceMotion, { opacity: 0, y: 24 })}
 			animate={{ opacity: 1, y: 0 }}
-			exit={{ opacity: 0, y: 24 }}
+			exit={getMotionExit(shouldReduceMotion, { opacity: 0, y: 24 })}
 			aria-label="Sudoku hint"
 			aria-live="polite"
 			data-testid="hint-panel"

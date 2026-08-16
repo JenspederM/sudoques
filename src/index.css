@@ -246,8 +246,10 @@ body {
 	*,
 	::before,
 	::after {
+		animation-delay: 0ms;
 		animation-duration: 0.01ms;
 		animation-iteration-count: 1;
+		transition-delay: 0ms;
 		transition-duration: 0.01ms;
 		scroll-behavior: auto;
 	}

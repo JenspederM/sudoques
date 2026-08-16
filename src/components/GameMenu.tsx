@@ -1,4 +1,4 @@
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m, useReducedMotionConfig } from "framer-motion";
 import {
 	EllipsisVerticalIcon,
 	Info,
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { getMotionExit, getMotionInitial } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { DIFFICULTIES } from "@/logic/constants";
 import { isCurrentLogicalTechniqueAnalysis } from "@/logic/solver";
@@ -48,6 +49,7 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 	);
 	const analysisRequestRef = useRef(0);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const shouldReduceMotion = useReducedMotionConfig();
 	const storedAnalysisIsCurrent =
 		isCurrentLogicalTechniqueAnalysis(techniqueAnalysis);
 	const logicalAnalysis = storedAnalysisIsCurrent
@@ -137,13 +139,22 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 				<EllipsisVerticalIcon />
 			</button>
 
-			<AnimatePresence>
+			<AnimatePresence initial={!shouldReduceMotion}>
 				{isOpen && (
 					<m.div
-						initial={{ opacity: 0, y: -10, scale: 0.95 }}
+						initial={getMotionInitial(shouldReduceMotion, {
+							opacity: 0,
+							y: -10,
+							scale: 0.95,
+						})}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
-						exit={{ opacity: 0, y: -10, scale: 0.95 }}
+						exit={getMotionExit(shouldReduceMotion, {
+							opacity: 0,
+							y: -10,
+							scale: 0.95,
+						})}
 						transition={{ duration: 0.15 }}
+						data-testid="game-menu-panel"
 						className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 flex flex-col p-1"
 					>
 						<button

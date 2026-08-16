@@ -1,8 +1,9 @@
-import { m } from "framer-motion";
+import { m, useReducedMotionConfig } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
 import type React from "react";
 import type { PropsWithChildren } from "react";
 import { useNavigate } from "react-router-dom";
+import { getMotionExit, getMotionInitial } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type LayoutProps = PropsWithChildren<{
@@ -24,6 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({
 	centered,
 }) => {
 	const hasHeader = backRedirect && (headerCenter || headerRight);
+	const shouldReduceMotion = useReducedMotionConfig();
 	return (
 		<div className="flex flex-col fixed inset-0 w-full min-h-0 h-dvh overflow-hidden items-center justify-center overscroll-contain bg-background">
 			{/* Animated Background Blobs */}
@@ -32,15 +34,15 @@ export const Layout: React.FC<LayoutProps> = ({
 				<div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
 			</div>
 			<m.main
-				initial={{ opacity: 0 }}
+				initial={getMotionInitial(shouldReduceMotion, { opacity: 0 })}
 				animate={{ opacity: 1 }}
-				exit={{ opacity: 0 }}
+				exit={getMotionExit(shouldReduceMotion, { opacity: 0 })}
 				transition={{ duration: 0.3 }}
 				className={cn(
 					"safe flex flex-col h-full w-full max-w-xl sm:justify-center",
 					centered && "justify-center",
 				)}
-				layout
+				layout={!shouldReduceMotion}
 			>
 				{hasHeader && (
 					<Header
