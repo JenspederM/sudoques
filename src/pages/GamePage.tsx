@@ -103,6 +103,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 			{
 				difficulty: puzzle.difficulty,
 				techniques: puzzle.techniques,
+				notes: currentDerivedState.notes,
+				allowBeyondProfileAfterRecordedNotes: true,
 			},
 		);
 		setHintDisclosureStage(getInitialHintDisclosureStage(nextHint));

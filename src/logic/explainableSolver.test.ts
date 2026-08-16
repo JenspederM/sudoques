@@ -1,11 +1,37 @@
 import { describe, expect, test } from "bun:test";
 import { findExplainableHint } from "./explainableSolver";
-import { parsePuzzle } from "./sudoku";
+import { createEmptyNotes, parsePuzzle } from "./sudoku";
 
 const CLASSIC_PUZZLE =
 	"530070000600195000098000060800060003400803001700020006060000280000419005000080079";
 const CLASSIC_SOLUTION =
 	"534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const REPORTED_INITIAL =
+	"020780000000305002000092000095000068801000907740000130000920000500607000000031070";
+const REPORTED_CURRENT =
+	"020786000070315002050492700395174268861253947742869135007928000509647820280531079";
+const REPORTED_PROFILE = {
+	difficulty: "hard" as const,
+	techniques: [
+		"Naked Single",
+		"Hidden Single",
+		"Pointing Pairs",
+		"Naked Pair",
+		"Hidden Pair",
+		"XY-Chain",
+		"X-Wing",
+	],
+};
+
+function notesWith(entries: [number, number, number[]][]) {
+	const notes = createEmptyNotes();
+	for (const [row, col, values] of entries) {
+		const noteRow = notes[row];
+		if (!noteRow) throw new Error("Missing notes row");
+		noteRow[col] = new Set(values);
+	}
+	return notes;
+}
 
 describe("findExplainableHint", () => {
 	test("explains a naked single without changing the board", () => {
@@ -146,6 +172,179 @@ describe("findExplainableHint", () => {
 		expect(hint.steps[0]?.technique).toBe("Check for mistakes");
 		expect(hint.steps[0]?.cells).toEqual([{ row: 0, col: 2, role: "warning" }]);
 		expect(hint.steps[0]?.placement).toBeUndefined();
+	});
+
+	test("keeps the advertised ceiling by default when notes cover its deductions", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const notes = notesWith([
+			[0, 6, [3, 5]],
+			[1, 6, [4, 6]],
+			[6, 0, [4, 6]],
+			[6, 1, [1, 3]],
+			[6, 6, [3, 5]],
+			[6, 7, [1, 5]],
+			[6, 8, [4, 6]],
+			[7, 1, [1, 3]],
+			[7, 8, [1, 3]],
+			[8, 2, [4, 6]],
+			[8, 6, [4, 6]],
+		]);
+
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+		});
+
+		expect(hint.status).toBe("stuck");
+		expect(hint.steps).toEqual([]);
+	});
+
+	test("can opt into continuing past recorded notes in the reported stuck puzzle", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const notes = createEmptyNotes();
+		const setNotes = (row: number, col: number, values: number[]) => {
+			const noteRow = notes[row];
+			if (!noteRow) throw new Error("Missing notes row");
+			noteRow[col] = new Set(values);
+		};
+
+		setNotes(0, 6, [3, 5]);
+		setNotes(1, 6, [4, 6]);
+		setNotes(6, 0, [4, 6]);
+		setNotes(6, 1, [1, 3]);
+		setNotes(6, 6, [3, 5]);
+		setNotes(6, 7, [1, 5]);
+		setNotes(6, 8, [4, 6]);
+		setNotes(7, 1, [1, 3]);
+		setNotes(7, 8, [1, 3]);
+		setNotes(8, 2, [4, 6]);
+		setNotes(8, 6, [4, 6]);
+
+		const before = notes.map((row) => row.map((cell) => [...cell]));
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+			allowBeyondProfileAfterRecordedNotes: true,
+		});
+
+		expect(hint.status).toBe("hint");
+		expect(hint.message).toContain("notes already cover");
+		expect(hint.steps.map((step) => step.technique)).toEqual([
+			"Simple Colouring",
+			"Naked Single",
+		]);
+		expect(hint.steps.at(-1)?.placement).toEqual({
+			row: 0,
+			col: 2,
+			value: 3,
+		});
+		expect(notes.map((row) => row.map((cell) => [...cell]))).toEqual(before);
+	});
+
+	test("skips a naked pair already recorded in both pattern cells", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const notes = notesWith([
+			[1, 6, [4, 6]],
+			[8, 6, [4, 6]],
+		]);
+
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+		});
+
+		expect(hint.steps.map((step) => step.technique)).toEqual(["Hidden Pair"]);
+	});
+
+	test("skips a hidden pair already recorded in both pattern cells", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const notes = notesWith([
+			[6, 0, [4, 6]],
+			[6, 8, [4, 6]],
+		]);
+
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+		});
+
+		expect(hint.steps.map((step) => step.technique)).toEqual(["Naked Pair"]);
+	});
+
+	test("does not treat sparse pair notes as a recorded deduction", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const baseline = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+		});
+		const notes = notesWith([[1, 6, [4, 6]]]);
+
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+		});
+
+		expect(hint).toEqual(baseline);
+	});
+
+	test("does not trust extra or different pair notes as proof", () => {
+		const initial = parsePuzzle(REPORTED_INITIAL);
+		const current = parsePuzzle(REPORTED_CURRENT);
+		const baseline = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+		});
+		const notes = notesWith([
+			[1, 6, [4, 6]],
+			[8, 6, [4, 6, 9]],
+			[6, 0, [4]],
+			[6, 8, [4, 6]],
+		]);
+
+		const hint = findExplainableHint(current, initial, undefined, {
+			...REPORTED_PROFILE,
+			notes,
+		});
+
+		expect(hint).toEqual(baseline);
+	});
+
+	test("does not turn a single correct note into a fake naked single", () => {
+		const initial = parsePuzzle(CLASSIC_PUZZLE);
+		const notes = createEmptyNotes();
+		const firstRow = notes[0];
+		if (!firstRow) throw new Error("Missing notes row");
+		firstRow[2] = new Set([4]);
+		const withoutNotes = findExplainableHint(
+			initial,
+			initial,
+			parsePuzzle(CLASSIC_SOLUTION),
+		);
+
+		const hint = findExplainableHint(
+			initial,
+			initial,
+			parsePuzzle(CLASSIC_SOLUTION),
+			{ notes },
+		);
+
+		expect(hint).toEqual(withoutNotes);
+	});
+
+	test("does not use a wrong or partial note as candidate proof", () => {
+		const initial = parsePuzzle(CLASSIC_PUZZLE);
+		const notes = createEmptyNotes();
+		const firstRow = notes[0];
+		if (!firstRow) throw new Error("Missing notes row");
+		firstRow[2] = new Set([1]);
+		const withoutNotes = findExplainableHint(initial, initial);
+
+		const hint = findExplainableHint(initial, initial, undefined, { notes });
+
+		expect(hint).toEqual(withoutNotes);
 	});
 
 	test("reports a completed puzzle", () => {

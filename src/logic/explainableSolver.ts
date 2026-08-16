@@ -1,4 +1,4 @@
-import type { Board, Difficulty, Technique } from "@/types";
+import type { Board, CellNotes, Difficulty, Technique } from "@/types";
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -61,6 +61,13 @@ export type ExplainableHint = {
 export type HintTechniqueProfile = {
 	difficulty?: Difficulty;
 	techniques?: readonly string[];
+	notes?: CellNotes;
+	/**
+	 * The interactive game may opt into a harder logical continuation when the
+	 * player's exact notes already record every deduction available inside the
+	 * puzzle's advertised grading profile. Other callers keep the strict ceiling.
+	 */
+	allowBeyondProfileAfterRecordedNotes?: boolean;
 };
 
 type House = HouseRef & {
@@ -1315,6 +1322,108 @@ function applyEliminations(candidates: CandidateGrid, step: HintStep) {
 	return changed;
 }
 
+function setsEqual(first: ReadonlySet<number>, second: ReadonlySet<number>) {
+	if (first.size !== second.size) return false;
+	return [...first].every((value) => second.has(value));
+}
+
+const NOTE_RECORDABLE_SUBSETS = new Set<HintTechnique>([
+	"Naked Pair",
+	"Hidden Pair",
+	"Naked Triple",
+	"Hidden Triple",
+	"Naked Quad",
+	"Hidden Quad",
+]);
+
+/**
+ * The solver has already proved the subset from the board's legal candidates.
+ * Notes are consulted only to decide whether the player has recorded that exact
+ * pattern, never to establish that the pattern is valid.
+ */
+function hasRecordedSubsetPattern(step: HintStep, notes?: CellNotes) {
+	if (!notes || !NOTE_RECORDABLE_SUBSETS.has(step.technique)) return false;
+
+	const patternByCell = new Map<string, Set<number>>();
+	for (const candidate of step.pattern) {
+		const key = cellKey(candidate);
+		const values = patternByCell.get(key) ?? new Set<number>();
+		values.add(candidate.value);
+		patternByCell.set(key, values);
+	}
+	if (patternByCell.size < 2) return false;
+
+	return [...patternByCell.entries()].every(([key, expected]) => {
+		const [rowText, colText] = key.split(",");
+		const row = Number(rowText);
+		const col = Number(colText);
+		const recorded = notes[row]?.[col];
+		return recorded !== undefined && setsEqual(recorded, expected);
+	});
+}
+
+function hasRecordedEliminationResult(
+	candidates: CandidateGrid,
+	step: HintStep,
+	notes?: CellNotes,
+) {
+	if (!notes) return false;
+	const affectedCells = new Map<string, CellRef>();
+	for (const elimination of step.eliminations) {
+		affectedCells.set(cellKey(elimination), elimination);
+	}
+	return (
+		affectedCells.size > 0 &&
+		[...affectedCells.values()].every(({ row, col }) => {
+			const recorded = notes[row]?.[col];
+			const remaining = candidates[row]?.[col];
+			return (
+				recorded !== undefined &&
+				recorded.size > 0 &&
+				remaining !== undefined &&
+				setsEqual(recorded, remaining)
+			);
+		})
+	);
+}
+
+/**
+ * Candidate notes are user input, so they never alter or prove a deduction. We
+ * first derive each step from Sudoku constraints, then hide it only when either
+ * an independently found subset pattern is recorded exactly in all pattern cells,
+ * or every affected cell already records the exact post-elimination candidates.
+ * Sparse, extra, or different notes leave the hint visible.
+ */
+function omitRecordedEliminations(
+	initialCandidates: CandidateGrid,
+	steps: HintStep[],
+	notes?: CellNotes,
+) {
+	if (!notes) return { steps, recordedCount: 0 };
+
+	const candidates = cloneCandidates(initialCandidates);
+	const visibleSteps: HintStep[] = [];
+	let recordedCount = 0;
+
+	for (const step of steps) {
+		if (step.kind !== "elimination" || step.eliminations.length === 0) {
+			visibleSteps.push(step);
+			continue;
+		}
+
+		const hasRecordedPattern = hasRecordedSubsetPattern(step, notes);
+		const changed = applyEliminations(candidates, step);
+		const isFullyRecorded =
+			hasRecordedPattern ||
+			hasRecordedEliminationResult(candidates, step, notes);
+
+		if (changed && isFullyRecorded) recordedCount++;
+		else visibleSteps.push(step);
+	}
+
+	return { steps: visibleSteps, recordedCount };
+}
+
 function hasEmptyUnsolvedCell(board: Board, candidates: CandidateGrid) {
 	for (let row = 0; row < 9; row++) {
 		for (let col = 0; col < 9; col++) {
@@ -1464,7 +1573,9 @@ function findWrongEntry(
  * Builds a human-readable path to the next placement without changing the board.
  * The solution is used only to flag an incorrect player entry; all deductions are
  * derived from Sudoku constraints and candidate logic. When supplied, the profile
- * prevents hints from exceeding the puzzle's advertised technique level.
+ * prevents hints from exceeding the puzzle's advertised technique level unless
+ * the interactive caller explicitly opts into a logical continuation after the
+ * player's notes have already recorded every level-appropriate deduction.
  */
 export function findExplainableHint(
 	current: Board,
@@ -1519,12 +1630,37 @@ export function findExplainableHint(
 		}
 	}
 
-	const steps = findHumanHintPath(current, candidates, profile);
+	const levelPath = findHumanHintPath(current, candidates, profile);
+	const recordedLevelPath = omitRecordedEliminations(
+		candidates,
+		levelPath,
+		profile?.notes,
+	);
+	let steps = recordedLevelPath.steps;
+	let usedBeyondProfileFallback = false;
+	if (
+		profile?.allowBeyondProfileAfterRecordedNotes &&
+		levelPath.length > 0 &&
+		steps.length === 0 &&
+		recordedLevelPath.recordedCount === levelPath.length
+	) {
+		const unrestrictedPath = findHumanHintPath(current, candidates);
+		const recordedUnrestrictedPath = omitRecordedEliminations(
+			candidates,
+			unrestrictedPath,
+			profile.notes,
+		);
+		if (recordedUnrestrictedPath.steps.length > 0) {
+			steps = recordedUnrestrictedPath.steps;
+			usedBeyondProfileFallback = true;
+		}
+	}
 	if (steps.at(-1)?.placement) {
 		return {
 			status: "hint",
-			message:
-				steps.length === 1
+			message: usedBeyondProfileFallback
+				? "Your notes already cover the level-appropriate eliminations. A further logical technique finds the next value."
+				: steps.length === 1
 					? "One logical step finds the next value."
 					: `${steps.length} human-readable steps lead to the next value.`,
 			steps,
@@ -1534,9 +1670,11 @@ export function findExplainableHint(
 	if (steps.length > 0) {
 		return {
 			status: "hint",
-			message: profile
-				? "These level-appropriate eliminations advance the puzzle, but do not yet force a value."
-				: "These eliminations advance the puzzle, but do not yet force a value.",
+			message: usedBeyondProfileFallback
+				? "Your notes already cover the level-appropriate eliminations. This further deduction advances the puzzle."
+				: profile
+					? "These level-appropriate eliminations advance the puzzle, but do not yet force a value."
+					: "These eliminations advance the puzzle, but do not yet force a value.",
 			steps,
 		};
 	}
