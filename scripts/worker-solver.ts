@@ -1,19 +1,23 @@
-import { gradePuzzle } from "../src/logic/solver";
+import { analyzeLogicalTechniques, gradePuzzle } from "../src/logic/solver";
 import { parsePuzzle } from "../src/logic/sudoku";
 import type { WorkerRequest, WorkerResponse } from "./types";
 
 declare var self: Worker;
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-	const { puzzleStr, bankId, sourceFile } = event.data;
+	const { puzzleStr, bankId, sourceFile, analyzeTechniques } = event.data;
 	try {
 		const board = parsePuzzle(puzzleStr);
 		const graded = gradePuzzle(board);
+		const techniqueAnalysis = analyzeTechniques
+			? analyzeLogicalTechniques(board)
+			: undefined;
 		self.postMessage({
 			puzzleStr,
 			bankId,
 			sourceFile,
 			graded,
+			...(techniqueAnalysis ? { techniqueAnalysis } : {}),
 			success: true,
 		} as WorkerResponse);
 	} catch (error) {

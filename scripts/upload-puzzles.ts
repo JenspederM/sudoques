@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { cert, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { isCurrentLogicalTechniqueAnalysis } from "../src/logic/solver";
 import type { PuzzleData } from "./types";
 
 const DATA_DIR = join(process.cwd(), "src/data");
@@ -74,14 +75,23 @@ async function uploadPuzzles() {
 
 			for (const [id, data] of chunk) {
 				const puzzleRef = db.collection(COLLECTION_NAME).doc(id);
-				batch.set(puzzleRef, {
-					puzzle: data.puzzle,
-					solution: data.solution,
-					difficulty: difficulty,
-					score: data.score,
-					techniques: data.techniques,
-					updatedAt: new Date(),
-				});
+				batch.set(
+					puzzleRef,
+					{
+						puzzle: data.puzzle,
+						solution: data.solution,
+						difficulty: difficulty,
+						score: data.score,
+						techniques: data.techniques,
+						...(isCurrentLogicalTechniqueAnalysis(data.techniqueAnalysis)
+							? { techniqueAnalysis: data.techniqueAnalysis }
+							: {}),
+						updatedAt: new Date(),
+					},
+					// A normal, fast puzzle preparation omits expensive route analysis.
+					// Merge so it can never erase analysis installed by the migration.
+					{ merge: true },
+				);
 			}
 
 			await batch.commit();

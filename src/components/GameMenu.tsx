@@ -11,13 +11,17 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DIFFICULTIES } from "@/logic/constants";
-import type { Difficulty } from "@/types";
+import { isCurrentLogicalTechniqueAnalysis } from "@/logic/solver";
+import type { Board, Difficulty, LogicalTechniqueAnalysis } from "@/types";
 import { Dialog } from "./Dialog";
+import { GradingTechniquesSummary } from "./GradingTechniquesSummary";
 
 interface GameMenuProps {
 	difficulty: Difficulty;
 	score?: number;
 	techniques?: string[];
+	initialBoard?: Board;
+	techniqueAnalysis?: LogicalTechniqueAnalysis;
 	onHint?: () => void;
 	onSolve?: () => void;
 	onReset?: () => void;
@@ -27,13 +31,82 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 	difficulty,
 	score,
 	techniques,
+	initialBoard,
+	techniqueAnalysis,
 	onHint,
 	onSolve,
 	onReset,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showAbout, setShowAbout] = useState(false);
+	const [computedAnalysis, setComputedAnalysis] = useState<{
+		board: Board;
+		analysis: LogicalTechniqueAnalysis;
+	} | null>(null);
+	const [failedAnalysisBoard, setFailedAnalysisBoard] = useState<Board | null>(
+		null,
+	);
+	const analysisRequestRef = useRef(0);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const storedAnalysisIsCurrent =
+		isCurrentLogicalTechniqueAnalysis(techniqueAnalysis);
+	const logicalAnalysis = storedAnalysisIsCurrent
+		? techniqueAnalysis
+		: computedAnalysis && computedAnalysis.board === initialBoard
+			? computedAnalysis.analysis
+			: null;
+
+	useEffect(() => {
+		if (
+			!showAbout ||
+			storedAnalysisIsCurrent ||
+			logicalAnalysis ||
+			failedAnalysisBoard === initialBoard ||
+			!initialBoard
+		) {
+			return;
+		}
+
+		// Pathological puzzles can take seconds to analyze. A cancellable worker
+		// keeps the dialog, keyboard, and close button responsive on mobile.
+		const requestId = analysisRequestRef.current + 1;
+		analysisRequestRef.current = requestId;
+		const worker = new Worker(
+			new URL("../workers/logicalAnalysisWorker.ts", import.meta.url),
+			{ type: "module" },
+		);
+		worker.onmessage = (
+			event: MessageEvent<{
+				requestId: number;
+				analysis?: unknown;
+				error?: string;
+			}>,
+		) => {
+			if (event.data.requestId !== requestId) return;
+			if (isCurrentLogicalTechniqueAnalysis(event.data.analysis)) {
+				setComputedAnalysis({
+					board: initialBoard,
+					analysis: event.data.analysis,
+				});
+				setFailedAnalysisBoard(null);
+			} else {
+				setFailedAnalysisBoard(initialBoard);
+			}
+			worker.terminate();
+		};
+		worker.onerror = () => {
+			setFailedAnalysisBoard(initialBoard);
+			worker.terminate();
+		};
+		worker.postMessage({ requestId, board: initialBoard });
+		return () => worker.terminate();
+	}, [
+		showAbout,
+		storedAnalysisIsCurrent,
+		logicalAnalysis,
+		failedAnalysisBoard,
+		initialBoard,
+	]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -142,7 +215,11 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 				)}
 			</AnimatePresence>
 
-			<Dialog open={showAbout} onClose={() => setShowAbout(false)}>
+			<Dialog
+				open={showAbout}
+				onClose={() => setShowAbout(false)}
+				className="max-h-[calc(100dvh-3rem)] overflow-y-auto p-5 sm:p-10"
+			>
 				<div className="flex items-center justify-between mb-6">
 					<h2 className="text-xl font-bold">Puzzle Info</h2>
 					<button
@@ -173,23 +250,17 @@ export const GameMenu: React.FC<GameMenuProps> = ({
 						</div>
 					)}
 
-					{techniques && techniques.length > 0 && (
-						<div className="flex flex-col gap-2">
-							<span className="text-muted-foreground text-sm uppercase tracking-wider font-bold">
-								Techniques Required
-							</span>
-							<div className="flex flex-wrap gap-1.5">
-								{techniques.map((t) => (
-									<span
-										key={t}
-										className="px-2.5 py-1 bg-secondary border border-border rounded-lg text-xs font-medium"
-									>
-										{t}
-									</span>
-								))}
-							</div>
-						</div>
-					)}
+					<GradingTechniquesSummary
+						analysis={logicalAnalysis}
+						legacyTechniques={techniques}
+						isAnalyzing={
+							showAbout &&
+							!storedAnalysisIsCurrent &&
+							!logicalAnalysis &&
+							failedAnalysisBoard !== initialBoard &&
+							!!initialBoard
+						}
+					/>
 
 					{!score && (!techniques || techniques.length === 0) && (
 						<p className="text-muted-foreground text-sm text-center py-2">

@@ -1,4 +1,11 @@
-import type { Board, GameAction, GradedBoard, Technique } from "@/types";
+import type {
+	Board,
+	GameAction,
+	GradedBoard,
+	LogicalTechniqueAnalysis,
+	LogicalTechniqueRoute,
+	Technique,
+} from "@/types";
 
 const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Naked Single": 1, // Will be multiplied by F
@@ -53,15 +60,56 @@ const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Bowman Bingo": 100,
 };
 
+/** Update this whenever the supported techniques or analysis semantics change. */
+export const LOGICAL_ANALYSIS_VERSION = "bounded-logical-v1";
+
+/**
+ * Techniques this solver actually implements, in the exact priority used by
+ * `solve()`. The wider `Technique` union also contains planned techniques and
+ * must not be used to make claims about the current grader.
+ */
+export const SUPPORTED_LOGICAL_TECHNIQUES = [
+	"Naked Single",
+	"Hidden Single",
+	"Pointing Pairs",
+	"Line/Box Reduction",
+	"Naked Pair",
+	"Hidden Pair",
+	"Naked Triple",
+	"Hidden Triple",
+	"Naked Quad",
+	"Hidden Quad",
+	"X-Wing",
+	"Swordfish",
+	"Jellyfish",
+	"Unique Rectangle Type 1",
+	"Y-Wing",
+	"XYZ-Wing",
+	"XY-Chain",
+	"Simple Colouring",
+	"BUG+1",
+] as const satisfies readonly Exclude<Technique, "Backtracking">[];
+
+type SupportedLogicalTechnique = (typeof SUPPORTED_LOGICAL_TECHNIQUES)[number];
+
+type SudokuSolverOptions = {
+	allowedTechniques?: ReadonlySet<Technique>;
+	allowBacktracking?: boolean;
+};
+
 export class SudokuSolver {
 	private board: Board;
 	private candidates: Set<number>[][];
 	private techniquesUsed: Set<Technique> = new Set();
 	private actions: GameAction[] = [];
 	private startTime: number = 0;
+	private readonly allowedTechniques: ReadonlySet<Technique> | null;
+	private readonly allowBacktracking: boolean;
 
-	constructor(board: Board) {
+	constructor(board: Board, options: SudokuSolverOptions = {}) {
 		this.board = board.map((row) => [...row]);
+		this.allowedTechniques = options.allowedTechniques ?? null;
+		this.allowBacktracking = options.allowBacktracking ?? true;
 		this.candidates = Array(9)
 			.fill(null)
 			.map((_, r) =>
@@ -73,6 +121,10 @@ export class SudokuSolver {
 					}),
 			);
 		this.updateAllCandidates();
+	}
+
+	private canUse(technique: SupportedLogicalTechnique) {
+		return this.allowedTechniques?.has(technique) ?? true;
 	}
 
 	private updateAllCandidates() {
@@ -117,98 +169,103 @@ export class SudokuSolver {
 			changed = false;
 			const F = this.getCandidateDensityFactor();
 
-			if (this.findNakedSingles()) {
+			if (this.canUse("Naked Single") && this.findNakedSingles()) {
 				totalScore += TECHNIQUE_SCORES["Naked Single"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findHiddenSingles()) {
+			if (this.canUse("Hidden Single") && this.findHiddenSingles()) {
 				totalScore += TECHNIQUE_SCORES["Hidden Single"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findPointingPairs()) {
+			if (this.canUse("Pointing Pairs") && this.findPointingPairs()) {
 				totalScore += TECHNIQUE_SCORES["Pointing Pairs"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findBoxLineReduction()) {
+			if (this.canUse("Line/Box Reduction") && this.findBoxLineReduction()) {
 				totalScore += TECHNIQUE_SCORES["Line/Box Reduction"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findNakedPairs()) {
+			if (this.canUse("Naked Pair") && this.findNakedPairs()) {
 				totalScore += TECHNIQUE_SCORES["Naked Pair"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findHiddenPairs()) {
+			if (this.canUse("Hidden Pair") && this.findHiddenPairs()) {
 				totalScore += TECHNIQUE_SCORES["Hidden Pair"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findNakedTriples()) {
+			if (this.canUse("Naked Triple") && this.findNakedTriples()) {
 				totalScore += TECHNIQUE_SCORES["Naked Triple"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findHiddenTriples()) {
+			if (this.canUse("Hidden Triple") && this.findHiddenTriples()) {
 				totalScore += TECHNIQUE_SCORES["Hidden Triple"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findNakedQuads()) {
+			if (this.canUse("Naked Quad") && this.findNakedQuads()) {
 				totalScore += TECHNIQUE_SCORES["Naked Quad"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findHiddenQuads()) {
+			if (this.canUse("Hidden Quad") && this.findHiddenQuads()) {
 				totalScore += TECHNIQUE_SCORES["Hidden Quad"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findXWings()) {
+			if (this.canUse("X-Wing") && this.findXWings()) {
 				totalScore += TECHNIQUE_SCORES["X-Wing"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findSwordfish()) {
+			if (this.canUse("Swordfish") && this.findSwordfish()) {
 				totalScore += TECHNIQUE_SCORES.Swordfish * F;
 				changed = true;
 				continue;
 			}
-			if (this.findJellyfish()) {
+			if (this.canUse("Jellyfish") && this.findJellyfish()) {
 				totalScore += TECHNIQUE_SCORES.Jellyfish * F;
 				changed = true;
 				continue;
 			}
-			if (this.findUniqueRectangles()) {
+			if (
+				this.canUse("Unique Rectangle Type 1") &&
+				this.findUniqueRectangles()
+			) {
 				totalScore += TECHNIQUE_SCORES["Unique Rectangle Type 1"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findYWings()) {
+			if (this.canUse("Y-Wing") && this.findYWings()) {
 				totalScore += TECHNIQUE_SCORES["Y-Wing"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findXYZWings()) {
+			if (this.canUse("XYZ-Wing") && this.findXYZWings()) {
 				totalScore += TECHNIQUE_SCORES["XYZ-Wing"] * F;
 				changed = true;
 				continue;
 			}
-			const xyChainResult = this.findXYChains();
+			const xyChainResult = this.canUse("XY-Chain")
+				? this.findXYChains()
+				: null;
 			if (xyChainResult) {
 				totalScore += (TECHNIQUE_SCORES["XY-Chain"] + xyChainResult.length) * F;
 				changed = true;
 				continue;
 			}
-			if (this.findSimpleColoring()) {
+			if (this.canUse("Simple Colouring") && this.findSimpleColoring()) {
 				totalScore += TECHNIQUE_SCORES["Simple Colouring"] * F;
 				changed = true;
 				continue;
 			}
-			if (this.findBUGPlusOne()) {
+			if (this.canUse("BUG+1") && this.findBUGPlusOne()) {
 				totalScore += TECHNIQUE_SCORES["BUG+1"] * F;
 				changed = true;
 			}
@@ -219,7 +276,7 @@ export class SudokuSolver {
 		);
 
 		if (!isFinished) {
-			if (this.backtrack()) {
+			if (this.allowBacktracking && this.backtrack()) {
 				this.techniquesUsed.add("Backtracking");
 				totalScore += 0; // Backtracking is not scored in the new scheme
 				isFinished = true;
@@ -1361,4 +1418,258 @@ export class SudokuSolver {
 export function gradePuzzle(board: Board): GradedBoard {
 	const solver = new SudokuSolver(board);
 	return solver.solve();
+}
+
+function sortTechniques(techniques: Iterable<Technique>): Technique[] {
+	const positions = new Map<Technique, number>(
+		SUPPORTED_LOGICAL_TECHNIQUES.map((technique, index) => [technique, index]),
+	);
+	return Array.from(techniques)
+		.filter((technique) => technique !== "Backtracking")
+		.sort(
+			(left, right) =>
+				(positions.get(left) ?? Number.MAX_SAFE_INTEGER) -
+				(positions.get(right) ?? Number.MAX_SAFE_INTEGER),
+		);
+}
+
+function isValidSolvedBoard(board: Board | null): board is Board {
+	if (!board || board.length !== 9 || board.some((row) => row.length !== 9)) {
+		return false;
+	}
+	const isCompleteUnit = (values: (number | null)[]) =>
+		new Set(values).size === 9 &&
+		values.every(
+			(value) =>
+				typeof value === "number" &&
+				Number.isInteger(value) &&
+				value >= 1 &&
+				value <= 9,
+		);
+
+	for (let index = 0; index < 9; index++) {
+		const row = board[index];
+		const column = board.map((candidateRow) => candidateRow[index] ?? null);
+		if (!row || !isCompleteUnit(row) || !isCompleteUnit(column)) return false;
+	}
+	for (let boxRow = 0; boxRow < 3; boxRow++) {
+		for (let boxCol = 0; boxCol < 3; boxCol++) {
+			const box: (number | null)[] = [];
+			for (let row = 0; row < 3; row++) {
+				for (let col = 0; col < 3; col++) {
+					box.push(board[boxRow * 3 + row]?.[boxCol * 3 + col] ?? null);
+				}
+			}
+			if (!isCompleteUnit(box)) return false;
+		}
+	}
+	return true;
+}
+
+function solveWithTechniques(
+	board: Board,
+	allowedTechniques: ReadonlySet<Technique>,
+) {
+	const result = new SudokuSolver(board, {
+		allowedTechniques,
+		allowBacktracking: false,
+	}).solve();
+	return {
+		result,
+		solved: result.isSolvable && isValidSolvedBoard(result.solution),
+	};
+}
+
+function isStrictSubset<T>(candidate: ReadonlySet<T>, other: ReadonlySet<T>) {
+	return (
+		candidate.size < other.size &&
+		Array.from(candidate).every((value) => other.has(value))
+	);
+}
+
+const logicalAnalysisCache = new Map<string, LogicalTechniqueAnalysis>();
+const MAX_LOGICAL_ANALYSIS_CACHE_SIZE = 100;
+
+const supportedTechniqueNames = new Set<string>(SUPPORTED_LOGICAL_TECHNIQUES);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isTechniqueArray(value: unknown): value is Technique[] {
+	return (
+		Array.isArray(value) &&
+		value.every(
+			(technique) =>
+				typeof technique === "string" && supportedTechniqueNames.has(technique),
+		)
+	);
+}
+
+/** Runtime guard for versioned analysis loaded from Firestore. */
+export function isCurrentLogicalTechniqueAnalysis(
+	value: unknown,
+): value is LogicalTechniqueAnalysis {
+	if (
+		!isRecord(value) ||
+		value.version !== LOGICAL_ANALYSIS_VERSION ||
+		(value.status !== "solved-logically" && value.status !== "search-needed") ||
+		!isTechniqueArray(value.observedTechniques) ||
+		!isTechniqueArray(value.unavoidableInReruns) ||
+		!(
+			value.minimumCeiling === null ||
+			(typeof value.minimumCeiling === "number" &&
+				Number.isFinite(value.minimumCeiling))
+		) ||
+		!Array.isArray(value.routes)
+	) {
+		return false;
+	}
+
+	return value.routes.every(
+		(route) =>
+			isRecord(route) &&
+			isTechniqueArray(route.techniques) &&
+			isTechniqueArray(route.frontier),
+	);
+}
+
+function boardCacheKey(board: Board) {
+	if (board.length !== 9 || board.some((row) => row.length !== 9)) return null;
+	return board
+		.flat()
+		.map((value) => (value === null ? "0" : String(value)))
+		.join("");
+}
+
+/**
+ * Finds the lowest base-technique-score ceiling at which this implementation
+ * can finish without guessing. At that one ceiling, every combination of the
+ * frontier techniques is tried, so the returned frontier configurations are
+ * inclusion-minimal and alternatives are explicit.
+ *
+ * This is deliberately a bounded, solver-relative statement. All techniques
+ * below the frontier remain enabled in their deterministic priority order; the
+ * function does not claim to enumerate every valid human solve path.
+ */
+export function analyzeLogicalTechniques(
+	board: Board,
+	options: { useCache?: boolean } = {},
+): LogicalTechniqueAnalysis {
+	const cacheKey = boardCacheKey(board);
+	if (cacheKey && options.useCache !== false) {
+		const cached = logicalAnalysisCache.get(cacheKey);
+		if (cached) return cached;
+	}
+
+	const everyTechnique = new Set<Technique>(SUPPORTED_LOGICAL_TECHNIQUES);
+	const observedRun = solveWithTechniques(board, everyTechnique);
+	const observedTechniques = sortTechniques(observedRun.result.techniquesUsed);
+
+	const ceilings = [
+		0,
+		...Array.from(
+			new Set(
+				SUPPORTED_LOGICAL_TECHNIQUES.map(
+					(technique) => TECHNIQUE_SCORES[technique],
+				),
+			),
+		).sort((left, right) => left - right),
+	];
+
+	let minimumCeiling: number | null = null;
+	let allowedAtMinimum = new Set<Technique>();
+	for (const ceiling of ceilings) {
+		const allowed = new Set<Technique>(
+			SUPPORTED_LOGICAL_TECHNIQUES.filter(
+				(technique) => TECHNIQUE_SCORES[technique] <= ceiling,
+			),
+		);
+		if (solveWithTechniques(board, allowed).solved) {
+			minimumCeiling = ceiling;
+			allowedAtMinimum = allowed;
+			break;
+		}
+	}
+
+	let routes: LogicalTechniqueRoute[] = [];
+	let unavoidableInReruns: Technique[] = [];
+	if (minimumCeiling !== null) {
+		const lowerTechniques = SUPPORTED_LOGICAL_TECHNIQUES.filter(
+			(technique) => TECHNIQUE_SCORES[technique] < minimumCeiling,
+		);
+		const frontierTechniques = SUPPORTED_LOGICAL_TECHNIQUES.filter(
+			(technique) => TECHNIQUE_SCORES[technique] === minimumCeiling,
+		);
+		const successfulFrontiers: {
+			frontier: Set<Technique>;
+			techniques: Technique[];
+		}[] = [];
+
+		// Frontier groups are small (at most four in v1), so this is an exact
+		// enumeration for the documented bounded model, not a random sample.
+		for (let mask = 0; mask < 2 ** frontierTechniques.length; mask++) {
+			const frontier = new Set<Technique>();
+			for (let index = 0; index < frontierTechniques.length; index++) {
+				const technique = frontierTechniques[index];
+				if (technique && (mask & (1 << index)) !== 0) frontier.add(technique);
+			}
+			const allowed = new Set<Technique>([...lowerTechniques, ...frontier]);
+			const run = solveWithTechniques(board, allowed);
+			if (run.solved) {
+				successfulFrontiers.push({
+					frontier,
+					techniques: sortTechniques(run.result.techniquesUsed),
+				});
+			}
+		}
+
+		const minimalFrontiers = successfulFrontiers.filter(
+			(candidate) =>
+				!successfulFrontiers.some((other) =>
+					isStrictSubset(other.frontier, candidate.frontier),
+				),
+		);
+		const routeKeys = new Set<string>();
+		routes = minimalFrontiers.flatMap((route) => {
+			const key = route.techniques.join("|");
+			if (routeKeys.has(key)) return [];
+			routeKeys.add(key);
+			return [
+				{
+					techniques: route.techniques,
+					frontier: sortTechniques(route.frontier),
+				},
+			];
+		});
+
+		unavoidableInReruns = sortTechniques(
+			Array.from(allowedAtMinimum).filter((technique) => {
+				const withoutTechnique = new Set(allowedAtMinimum);
+				withoutTechnique.delete(technique);
+				return !solveWithTechniques(board, withoutTechnique).solved;
+			}),
+		);
+	}
+
+	const analysis: LogicalTechniqueAnalysis = {
+		version: LOGICAL_ANALYSIS_VERSION,
+		status:
+			minimumCeiling === null || !observedRun.solved
+				? "search-needed"
+				: "solved-logically",
+		observedTechniques,
+		minimumCeiling,
+		routes,
+		unavoidableInReruns,
+	};
+
+	if (cacheKey && options.useCache !== false) {
+		if (logicalAnalysisCache.size >= MAX_LOGICAL_ANALYSIS_CACHE_SIZE) {
+			const oldestKey = logicalAnalysisCache.keys().next().value;
+			if (oldestKey !== undefined) logicalAnalysisCache.delete(oldestKey);
+		}
+		logicalAnalysisCache.set(cacheKey, analysis);
+	}
+	return analysis;
 }
