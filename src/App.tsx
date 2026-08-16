@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	Link,
 	Navigate,
 	Route,
 	Routes,
@@ -13,6 +14,7 @@ import {
 	useNavigate,
 } from "react-router-dom";
 import { Toaster, toast } from "sonner";
+import { InitialGameResumeGate } from "@/components/InitialGameResumeGate";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +34,10 @@ import {
 	resolveGuestGameState,
 	saveGuestGameState,
 } from "./logic/guestGameStorage";
+import {
+	decideInitialGameResume,
+	getSavedGameHydrationStatus,
+} from "./logic/initialGameResume";
 import { syncPuzzleHistorySession } from "./logic/puzzleSelection";
 import { createEmptyNotes, isBoardComplete } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
@@ -57,15 +63,55 @@ function loadActiveGuestGame() {
 	return snapshot;
 }
 
+function ProvisionalGameFallback() {
+	return (
+		<div className="fixed inset-0 flex items-center justify-center bg-background p-6">
+			<div
+				className="flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 text-center shadow-xl"
+				aria-live="polite"
+			>
+				<output
+					className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
+					aria-label="Checking saved game"
+				/>
+				<div>
+					<h1 className="font-bold text-foreground">
+						Checking your saved game
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						You can keep waiting for the connection or start another game.
+					</p>
+				</div>
+				<div className="flex w-full gap-2">
+					<Link
+						to="/"
+						className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-3 text-sm font-semibold text-foreground"
+					>
+						Home
+					</Link>
+					<Link
+						to="/new-game"
+						className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground"
+					>
+						New game
+					</Link>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function AppRoutes() {
 	const { user, loading: authLoading } = useAuth();
 	const [storedGameSession, setGameSession] = useState<{
 		gameState: Omit<GameState, "lastUpdated"> | null;
 		isLoading: boolean;
+		isAuthoritative: boolean;
 		userId: string | null;
 	}>({
 		gameState: null,
 		isLoading: true,
+		isAuthoritative: false,
 		userId: null,
 	});
 
@@ -73,10 +119,10 @@ function AppRoutes() {
 	const activeUserId = user?.uid ?? null;
 	const activeUserIdRef = useRef(activeUserId);
 	activeUserIdRef.current = activeUserId;
-	const { gameState, isLoading } =
+	const { gameState, isLoading, isAuthoritative } =
 		storedGameSession.userId === activeUserId
 			? storedGameSession
-			: { gameState: null, isLoading: true };
+			: { gameState: null, isLoading: true, isAuthoritative: false };
 	const puzzleHistorySessionRef = useRef({
 		userId: activeUserId,
 		puzzleIds: new Set<string>(),
@@ -88,6 +134,25 @@ function AppRoutes() {
 
 	const navigate = useNavigate();
 	const location = useLocation();
+	const [initialPathname] = useState(location.pathname);
+	const [hasHandledInitialResume, setHasHandledInitialResume] = useState(false);
+	const authStatus = authLoading
+		? "loading"
+		: user
+			? "authenticated"
+			: "unauthenticated";
+	const gameStatus = getSavedGameHydrationStatus(
+		gameState,
+		isLoading,
+		isAuthoritative,
+	);
+	const initialGameResumeDecision = decideInitialGameResume({
+		initialPathname,
+		currentPathname: location.pathname,
+		hasHandledInitialResume,
+		authStatus,
+		gameStatus,
+	});
 
 	// Persistence effect: Subscribe to Game State
 	useEffect(() => {
@@ -99,12 +164,14 @@ function AppRoutes() {
 				setGameSession({
 					gameState: initialLocalGuestGame.state,
 					isLoading: false,
+					isAuthoritative: false,
 					userId: subscribedUserId,
 				});
 			} else {
 				setGameSession({
 					gameState: null,
 					isLoading: true,
+					isAuthoritative: false,
 					userId: subscribedUserId,
 				});
 			}
@@ -138,6 +205,7 @@ function AppRoutes() {
 					setGameSession({
 						gameState: resolved.state,
 						isLoading: false,
+						isAuthoritative: !metadata.fromCache,
 						userId: subscribedUserId,
 					});
 
@@ -159,6 +227,15 @@ function AppRoutes() {
 							});
 					}
 				},
+				(error) => {
+					if (!isCurrentUser) return;
+					console.error("Failed to load saved game state", error);
+					setGameSession((current) => ({
+						...current,
+						isLoading: false,
+						isAuthoritative: true,
+					}));
+				},
 			);
 
 			// Prefetch puzzles for offline use
@@ -171,7 +248,12 @@ function AppRoutes() {
 		}
 
 		if (!user && !authLoading) {
-			setGameSession({ gameState: null, isLoading: false, userId: null });
+			setGameSession({
+				gameState: null,
+				isLoading: false,
+				isAuthoritative: true,
+				userId: null,
+			});
 		}
 	}, [user, authLoading]);
 
@@ -200,6 +282,18 @@ function AppRoutes() {
 			};
 		}
 	}, [activeUserId]);
+
+	// Resolve the boot-only resume once. Later visits to Home must stay on Home.
+	useEffect(() => {
+		if (hasHandledInitialResume || initialGameResumeDecision === "wait") {
+			return;
+		}
+
+		setHasHandledInitialResume(true);
+		if (initialGameResumeDecision === "resume") {
+			navigate("/game", { replace: true });
+		}
+	}, [hasHandledInitialResume, initialGameResumeDecision, navigate]);
 
 	// Initialize a new game
 	const startNewGame = useCallback(
@@ -271,6 +365,7 @@ function AppRoutes() {
 				setGameSession({
 					gameState: newGameState,
 					isLoading: false,
+					isAuthoritative: true,
 					userId: startingUserId,
 				});
 				navigate(`/game`);
@@ -346,12 +441,12 @@ function AppRoutes() {
 					<Route
 						path="/"
 						element={
-							<HomePage
-								hasExistingGame={
-									!!gameState &&
-									!isBoardComplete(gameState.current, gameState.puzzle.solution)
-								}
-							/>
+							<InitialGameResumeGate
+								decision={initialGameResumeDecision}
+								showProvisionalHome={gameStatus === "provisional"}
+							>
+								<HomePage hasExistingGame={gameStatus === "unfinished"} />
+							</InitialGameResumeGate>
 						}
 					/>
 
@@ -369,7 +464,7 @@ function AppRoutes() {
 					<Route
 						path="/game"
 						element={
-							isLoading ? (
+							gameStatus === "loading" ? (
 								<Spinner />
 							) : gameState ? (
 								<GamePage
@@ -377,6 +472,8 @@ function AppRoutes() {
 									gameState={gameState}
 									timer={gameState.timer ?? 0}
 								/>
+							) : gameStatus === "provisional" ? (
+								<ProvisionalGameFallback />
 							) : (
 								<Navigate to="/new-game" replace />
 							)

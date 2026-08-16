@@ -157,16 +157,23 @@ export async function clearGameState(userId: string) {
 export function subscribeToGameState(
 	userId: string,
 	callback: (state: GameState | null, metadata: { fromCache: boolean }) => void,
+	onError?: (error: Error) => void,
 ) {
 	const stateRef = doc(db, USERS_COLLECTION, userId, "state", "current");
-	return onSnapshot(stateRef, { includeMetadataChanges: true }, (docSnap) => {
-		if (docSnap.exists()) {
-			const data = docSnap.data() as DBGameState;
-			callback(toGameState(data), { fromCache: docSnap.metadata.fromCache });
-		} else {
-			callback(null, { fromCache: docSnap.metadata.fromCache });
-		}
-	});
+	return onSnapshot(
+		stateRef,
+		{ includeMetadataChanges: true },
+		(docSnap) => {
+			const metadata = { fromCache: docSnap.metadata.fromCache };
+			if (docSnap.exists()) {
+				const data = docSnap.data() as DBGameState;
+				callback(toGameState(data), metadata);
+			} else {
+				callback(null, metadata);
+			}
+		},
+		(error) => onError?.(error),
+	);
 }
 
 /**
