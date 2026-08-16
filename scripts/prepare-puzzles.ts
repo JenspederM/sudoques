@@ -2,13 +2,43 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile } from "node:fs/promises";
 import { cpus } from "node:os";
 import { join } from "node:path";
+import { isCurrentLogicalTechniqueAnalysis } from "../src/logic/solver";
 import { boardToString } from "../src/logic/sudoku";
+import type { LogicalTechniqueAnalysis } from "../src/types";
 import type { PuzzleData, WorkerRequest, WorkerResponse } from "./types";
 
 const PUZZLES_DIR = join(process.cwd(), "puzzles");
 const OUTPUT_DIR = join(process.cwd(), "src/data");
 const UNSOLVABLES = join(OUTPUT_DIR, "unsolvables.json");
 const WORKER_COUNT = Math.max(1, cpus().length - 1);
+const INCLUDE_LOGICAL_ANALYSIS =
+	process.env.INCLUDE_LOGICAL_ANALYSIS === "true";
+
+async function loadExistingTechniqueAnalyses() {
+	const analyses = new Map<string, LogicalTechniqueAnalysis>();
+	for (const difficulty of [
+		"easy",
+		"normal",
+		"medium",
+		"hard",
+		"expert",
+		"master",
+	]) {
+		try {
+			const existing = JSON.parse(
+				await readFile(join(OUTPUT_DIR, `${difficulty}.json`), "utf-8"),
+			) as Record<string, PuzzleData>;
+			for (const [id, puzzle] of Object.entries(existing)) {
+				if (isCurrentLogicalTechniqueAnalysis(puzzle.techniqueAnalysis)) {
+					analyses.set(id, puzzle.techniqueAnalysis);
+				}
+			}
+		} catch {
+			// A first generation has no previous metadata to preserve.
+		}
+	}
+	return analyses;
+}
 
 async function generateId(puzzleStr: string): Promise<string> {
 	return createHash("sha256").update(puzzleStr).digest("hex").slice(0, 12);
@@ -27,6 +57,7 @@ function shuffle<T>(array: T[]) {
 }
 
 async function preparePuzzles() {
+	const existingTechniqueAnalyses = await loadExistingTechniqueAnalyses();
 	const entries = await readdir(PUZZLES_DIR, { withFileTypes: true });
 	const tasks: WorkerRequest[] = [];
 
@@ -50,6 +81,7 @@ async function preparePuzzles() {
 					tasks.push({
 						puzzleStr: line.trim(),
 						sourceFile: entry.name,
+						analyzeTechniques: INCLUDE_LOGICAL_ANALYSIS,
 					});
 				}
 			}
@@ -69,6 +101,7 @@ async function preparePuzzles() {
 						puzzleStr,
 						bankId,
 						sourceFile: entry.name,
+						analyzeTechniques: INCLUDE_LOGICAL_ANALYSIS,
 					});
 				}
 			}
@@ -76,6 +109,11 @@ async function preparePuzzles() {
 	}
 
 	console.log(`Collected ${tasks.length} puzzles. Shuffling...`);
+	if (INCLUDE_LOGICAL_ANALYSIS) {
+		console.log(
+			"Bounded logical route analysis enabled; this intentionally runs several solver passes per puzzle.",
+		);
+	}
 	shuffle(tasks);
 
 	const puzzlesByDifficulty: Record<string, Record<string, PuzzleData>> = {
@@ -106,19 +144,31 @@ async function preparePuzzles() {
 				);
 
 				worker.onmessage = async (event: MessageEvent<WorkerResponse>) => {
-					const { puzzleStr, bankId, sourceFile, graded, success, error } =
-						event.data;
+					const {
+						puzzleStr,
+						bankId,
+						sourceFile,
+						graded,
+						techniqueAnalysis,
+						success,
+						error,
+					} = event.data;
 					if (success) {
 						if (graded.isSolvable) {
 							const diffLabel = getDifficultyLabel(graded.difficulty);
 							const puzzles = puzzlesByDifficulty[diffLabel];
 							if (puzzles) {
 								const id = bankId || (await generateId(puzzleStr));
+								const preservedAnalysis =
+									techniqueAnalysis ?? existingTechniqueAnalyses.get(id);
 								puzzles[id] = {
 									puzzle: puzzleStr,
 									solution: boardToString(graded.solution as number[][]),
 									score: graded.difficulty,
 									techniques: Array.from(graded.techniquesUsed),
+									...(preservedAnalysis
+										? { techniqueAnalysis: preservedAnalysis }
+										: {}),
 								} as PuzzleData;
 							}
 						} else {

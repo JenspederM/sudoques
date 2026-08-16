@@ -56,6 +56,7 @@ export function buildReviewState(opts: {
 		difficulty: opts.puzzle.difficulty,
 		score: opts.puzzle.score,
 		techniques: opts.puzzle.techniques,
+		techniqueAnalysis: opts.puzzle.techniqueAnalysis,
 		actions: opts.actions,
 		time: opts.time,
 	};

@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { gradePuzzle } from "./solver";
+import {
+	analyzeLogicalTechniques,
+	gradePuzzle,
+	isCurrentLogicalTechniqueAnalysis,
+	SudokuSolver,
+} from "./solver";
 import { parsePuzzle } from "./sudoku";
 
 test("gradePuzzle - Pointing Pairs", () => {
@@ -90,4 +95,130 @@ test("gradePuzzle - XY-Chain", () => {
 
 	expect(graded.isSolvable).toBe(true);
 	expect(graded.techniquesUsed.has("XY-Chain")).toBe(true);
+});
+
+test("gradePuzzle records the observed techniques for the reported hard puzzle", () => {
+	const board = parsePuzzle(
+		"020780000000305002000092000095000068801000907740000130000920000500607000000031070",
+	);
+	const graded = gradePuzzle(board);
+
+	expect(graded.isSolvable).toBe(true);
+	expect([...graded.techniquesUsed]).toEqual([
+		"Naked Single",
+		"Hidden Single",
+		"Pointing Pairs",
+		"Naked Pair",
+		"Hidden Pair",
+		"XY-Chain",
+		"X-Wing",
+	]);
+});
+
+test("bounded analysis finds honest alternative routes for the reported hard puzzle", () => {
+	const board = parsePuzzle(
+		"020780000000305002000092000095000068801000907740000130000920000500607000000031070",
+	);
+	const analysis = analyzeLogicalTechniques(board);
+
+	expect(analysis.status).toBe("solved-logically");
+	expect(analysis.minimumCeiling).toBe(50);
+	expect(analysis.unavoidableInReruns).toEqual([]);
+	expect(analysis.routes).toEqual([
+		{
+			techniques: [
+				"Naked Single",
+				"Hidden Single",
+				"Pointing Pairs",
+				"Naked Pair",
+				"Hidden Pair",
+				"X-Wing",
+				"XY-Chain",
+			],
+			frontier: ["XY-Chain"],
+		},
+		{
+			techniques: [
+				"Naked Single",
+				"Hidden Single",
+				"Pointing Pairs",
+				"Naked Pair",
+				"Hidden Pair",
+				"Simple Colouring",
+			],
+			frontier: ["Simple Colouring"],
+		},
+	]);
+
+	// In particular, the old metadata's XY-Chain and X-Wing must not be
+	// presented as two individually required techniques.
+	expect(
+		analysis.routes.some((route) => route.techniques.includes("X-Wing")),
+	).toBe(true);
+	expect(
+		analysis.routes.some(
+			(route) =>
+				route.techniques.includes("Simple Colouring") &&
+				!route.techniques.includes("X-Wing") &&
+				!route.techniques.includes("XY-Chain"),
+		),
+	).toBe(true);
+});
+
+test("every reported bounded route deterministically reaches the same valid solution without search", () => {
+	const puzzle =
+		"020780000000305002000092000095000068801000907740000130000920000500607000000031070";
+	const board = parsePuzzle(puzzle);
+	const expectedSolution = gradePuzzle(board).solution;
+	const firstAnalysis = analyzeLogicalTechniques(board, { useCache: false });
+	const secondAnalysis = analyzeLogicalTechniques(parsePuzzle(puzzle), {
+		useCache: false,
+	});
+
+	expect(secondAnalysis).toEqual(firstAnalysis);
+	const persistedRoundTrip = JSON.parse(JSON.stringify(firstAnalysis));
+	expect(isCurrentLogicalTechniqueAnalysis(persistedRoundTrip)).toBe(true);
+	expect(persistedRoundTrip).toEqual(firstAnalysis);
+	expect(
+		isCurrentLogicalTechniqueAnalysis({
+			...persistedRoundTrip,
+			routes: [{ techniques: ["Not implemented"], frontier: [] }],
+		}),
+	).toBe(false);
+	for (const route of firstAnalysis.routes) {
+		const solved = new SudokuSolver(board, {
+			allowedTechniques: new Set(route.techniques),
+			allowBacktracking: false,
+		}).solve();
+		expect(solved.isSolvable).toBe(true);
+		expect(solved.techniquesUsed.has("Backtracking")).toBe(false);
+		expect(solved.solution).toEqual(expectedSolution);
+	}
+});
+
+test("bounded analysis distinguishes a completed grid from a puzzle that needs search", () => {
+	const reportedBoard = parsePuzzle(
+		"020780000000305002000092000095000068801000907740000130000920000500607000000031070",
+	);
+	const completedBoard = gradePuzzle(reportedBoard).solution;
+	if (!completedBoard) throw new Error("Expected the reported puzzle to solve");
+
+	expect(
+		analyzeLogicalTechniques(completedBoard, { useCache: false }),
+	).toMatchObject({
+		status: "solved-logically",
+		minimumCeiling: 0,
+		routes: [{ techniques: [], frontier: [] }],
+	});
+
+	const searchPuzzle = parsePuzzle(
+		"200050006010000090600801003007090600000703000900080002100000005060902010003060200",
+	);
+	expect(
+		analyzeLogicalTechniques(searchPuzzle, { useCache: false }),
+	).toMatchObject({
+		status: "search-needed",
+		minimumCeiling: null,
+		routes: [],
+	});
 });

@@ -46,6 +46,7 @@ function toPuzzle(dbPuzzle: DBPuzzle): Puzzle {
 		difficulty: dbPuzzle.difficulty,
 		score: dbPuzzle.score,
 		techniques: dbPuzzle.techniques,
+		techniqueAnalysis: dbPuzzle.techniqueAnalysis,
 	};
 }
 
@@ -61,6 +62,7 @@ function toHighScore(dbScore: DBHighScore): HighScore {
 			difficulty: dbScore.difficulty,
 			score: dbScore.score || 0,
 			techniques: dbScore.techniques || [],
+			techniqueAnalysis: dbScore.techniqueAnalysis,
 		},
 		time: dbScore.time,
 		date: dbScore.date,
@@ -82,6 +84,7 @@ function toGameState(gameData: DBGameState): GameState {
 			difficulty: gameData.difficulty,
 			score: gameData.score,
 			techniques: gameData.techniques,
+			techniqueAnalysis: gameData.techniqueAnalysis,
 		},
 		current: unflattenBoard(gameData.current),
 		notes: unflattenCellNotes(gameData.notes),
@@ -120,6 +123,9 @@ export async function saveGameState(
 		difficulty: state.puzzle.difficulty,
 		score: state.puzzle.score,
 		techniques: state.puzzle.techniques,
+		...(state.puzzle.techniqueAnalysis
+			? { techniqueAnalysis: state.puzzle.techniqueAnalysis }
+			: {}),
 		timer: state.timer,
 		notes: notesObj,
 		actions: state.actions,
@@ -211,6 +217,9 @@ export async function saveHighScore(score: HighScore) {
 		puzzleId: score.puzzle.id,
 		score: score.puzzle.score,
 		techniques: score.puzzle.techniques,
+		...(score.puzzle.techniqueAnalysis
+			? { techniqueAnalysis: score.puzzle.techniqueAnalysis }
+			: {}),
 	};
 	await setDoc(scoreRef, dbScore);
 }

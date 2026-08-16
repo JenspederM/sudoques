@@ -8,7 +8,12 @@ import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
 import { formatTime, unflattenBoard } from "@/lib/utils";
 import { applyActions } from "@/logic/gameReducer";
-import type { DBBoard, Difficulty, GameAction } from "@/types";
+import type {
+	DBBoard,
+	Difficulty,
+	GameAction,
+	LogicalTechniqueAnalysis,
+} from "@/types";
 
 interface ReviewPageState {
 	initial: DBBoard;
@@ -18,6 +23,7 @@ interface ReviewPageState {
 	actions?: GameAction[];
 	score?: number;
 	techniques?: string[];
+	techniqueAnalysis?: LogicalTechniqueAnalysis;
 }
 
 export const ReviewPage: React.FC = () => {
@@ -150,6 +156,8 @@ export const ReviewPage: React.FC = () => {
 					difficulty={state.difficulty}
 					score={state.score}
 					techniques={state.techniques}
+					initialBoard={initialBoard}
+					techniqueAnalysis={state.techniqueAnalysis}
 				/>
 			}
 		>
