@@ -1,12 +1,14 @@
 import {
 	arrayUnion,
 	collection,
+	type DocumentData,
 	deleteDoc,
 	doc,
 	getDocs,
 	limit,
 	onSnapshot,
 	orderBy,
+	type QueryDocumentSnapshot,
 	query,
 	setDoc,
 	startAt,
@@ -16,6 +18,12 @@ import {
 import { db } from "@/firebase";
 import { unflattenBoard, unflattenCellNotes } from "@/lib/utils";
 import { DIFFICULTIES } from "@/logic/constants";
+import {
+	createPuzzleCursor,
+	mergePuzzleCandidates,
+	pickPuzzleFromCatalog,
+	pickUnseenPuzzle,
+} from "@/logic/puzzleSelection";
 import { parsePuzzle } from "@/logic/sudoku";
 import type {
 	DBGameState,
@@ -255,16 +263,22 @@ export async function markPuzzleAsPlayed(userId: string, puzzleId: string) {
 export async function getRandomPuzzle(
 	difficulty: Difficulty,
 	playedPuzzleIds: string[] = [],
+	currentPuzzleId?: string,
 ): Promise<Puzzle> {
 	const puzzlesRef = collection(db, PUZZLES_COLLECTION);
 	const playedSet = new Set(playedPuzzleIds);
 	const MAX_RETRIES = 3;
-	const BATCH_SIZE = 5;
+	const BATCH_SIZE = 20;
+	const MAX_CATALOG_SIZE = 5_000;
+	const sampledPuzzles = new Map<
+		string,
+		QueryDocumentSnapshot<DocumentData, DocumentData>
+	>();
 
 	for (let i = 0; i < MAX_RETRIES; i++) {
-		const randomHash = Math.random().toString(16).slice(2, 14).padEnd(12, "0");
+		const randomHash = createPuzzleCursor();
 
-		let q = query(
+		const q = query(
 			puzzlesRef,
 			where("difficulty", "==", difficulty),
 			orderBy("__name__"),
@@ -272,45 +286,62 @@ export async function getRandomPuzzle(
 			limit(BATCH_SIZE),
 		);
 
-		let querySnapshot = await getDocs(q);
+		const querySnapshot = await getDocs(q);
+		let wrappedDocs: typeof querySnapshot.docs = [];
 
-		if (querySnapshot.empty) {
-			q = query(
+		if (querySnapshot.docs.length < BATCH_SIZE) {
+			const wrappedQuery = query(
 				puzzlesRef,
 				where("difficulty", "==", difficulty),
 				orderBy("__name__"),
-				limit(BATCH_SIZE),
+				limit(BATCH_SIZE - querySnapshot.docs.length),
 			);
-			querySnapshot = await getDocs(q);
+			wrappedDocs = (await getDocs(wrappedQuery)).docs;
 		}
 
-		if (querySnapshot.empty) {
-			throw new Error(`No puzzles found for difficulty: ${difficulty}`);
+		const candidates = mergePuzzleCandidates(querySnapshot.docs, wrappedDocs);
+		for (const candidate of candidates) {
+			sampledPuzzles.set(candidate.id, candidate);
 		}
 
-		for (const docSnapshot of querySnapshot.docs) {
-			if (!playedSet.has(docSnapshot.id)) {
-				const data = docSnapshot.data() as DBPuzzle;
-				return toPuzzle({ ...data, id: docSnapshot.id });
-			}
+		const selected = pickUnseenPuzzle(candidates, playedSet);
+		if (selected) {
+			const data = selected.data() as DBPuzzle;
+			return toPuzzle({ ...data, id: selected.id });
 		}
 	}
 
-	console.warn(
-		"Could not find unplayed puzzle after retries, returning a played one.",
+	let catalogCandidates: QueryDocumentSnapshot<DocumentData, DocumentData>[] =
+		[];
+	try {
+		const catalogQuery = query(
+			puzzlesRef,
+			where("difficulty", "==", difficulty),
+			orderBy("__name__"),
+			limit(MAX_CATALOG_SIZE),
+		);
+		catalogCandidates = (await getDocs(catalogQuery)).docs;
+	} catch (error) {
+		console.warn(
+			"Could not scan the puzzle catalog; falling back to sampled puzzles.",
+			error,
+		);
+	}
+
+	const selection = pickPuzzleFromCatalog(
+		Array.from(sampledPuzzles.values()),
+		catalogCandidates,
+		playedSet,
+		currentPuzzleId,
 	);
-	const fallbackQuery = query(
-		puzzlesRef,
-		where("difficulty", "==", difficulty),
-		limit(1),
-	);
-	const fallbackSnap = await getDocs(fallbackQuery);
-	if (!fallbackSnap.empty) {
-		const docSnapshot = fallbackSnap.docs[0];
-		if (docSnapshot) {
-			const data = docSnapshot.data() as DBPuzzle;
-			return toPuzzle({ ...data, id: docSnapshot.id });
+	if (selection.candidate) {
+		if (selection.reused) {
+			console.warn(
+				"All available puzzles have been seen; reusing a non-current puzzle.",
+			);
 		}
+		const data = selection.candidate.data() as DBPuzzle;
+		return toPuzzle({ ...data, id: selection.candidate.id });
 	}
 
 	throw new Error(`No puzzles found for difficulty: ${difficulty}`);

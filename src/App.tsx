@@ -4,7 +4,7 @@ import {
 	InfoIcon,
 	MessageCircleWarningIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Navigate,
 	Route,
@@ -21,6 +21,7 @@ import { UserProvider, useUser } from "@/contexts/UserContext";
 import { Spinner } from "./components/Spinner";
 import {
 	getRandomPuzzle,
+	markPuzzleAsPlayed,
 	prefetchPuzzles,
 	saveGameState,
 	subscribeToGameState,
@@ -31,6 +32,7 @@ import {
 	resolveGuestGameState,
 	saveGuestGameState,
 } from "./logic/guestGameStorage";
+import { syncPuzzleHistorySession } from "./logic/puzzleSelection";
 import { createEmptyNotes, isBoardComplete } from "./logic/sudoku";
 import { GamePage } from "./pages/GamePage";
 import { HomePage } from "./pages/HomePage";
@@ -57,15 +59,32 @@ function loadActiveGuestGame() {
 
 function AppRoutes() {
 	const { user, loading: authLoading } = useAuth();
-	const [{ gameState, isLoading }, setGameSession] = useState<{
+	const [storedGameSession, setGameSession] = useState<{
 		gameState: Omit<GameState, "lastUpdated"> | null;
 		isLoading: boolean;
+		userId: string | null;
 	}>({
 		gameState: null,
 		isLoading: true,
+		userId: null,
 	});
 
-	const { accent, mode, playedPuzzles } = useUser();
+	const { accent, mode, playedPuzzles, playedPuzzlesReady } = useUser();
+	const activeUserId = user?.uid ?? null;
+	const activeUserIdRef = useRef(activeUserId);
+	activeUserIdRef.current = activeUserId;
+	const { gameState, isLoading } =
+		storedGameSession.userId === activeUserId
+			? storedGameSession
+			: { gameState: null, isLoading: true };
+	const puzzleHistorySessionRef = useRef({
+		userId: activeUserId,
+		puzzleIds: new Set<string>(),
+	});
+	const newGameRequestRef = useRef<{
+		generation: number;
+		userId: string | null;
+	}>({ generation: 0, userId: null });
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -74,21 +93,28 @@ function AppRoutes() {
 	useEffect(() => {
 		if (user) {
 			let isCurrentUser = true;
+			const subscribedUserId = user.uid;
 			const initialLocalGuestGame = loadActiveGuestGame();
 			if (initialLocalGuestGame) {
 				setGameSession({
 					gameState: initialLocalGuestGame.state,
 					isLoading: false,
+					userId: subscribedUserId,
 				});
 			} else {
-				setGameSession({ gameState: null, isLoading: true });
+				setGameSession({
+					gameState: null,
+					isLoading: true,
+					userId: subscribedUserId,
+				});
 			}
 
 			// Realtime Game State subscription
 			const unsubscribeGameState = subscribeToGameState(
-				user.uid,
+				subscribedUserId,
 				(savedState, metadata) => {
-					if (!isCurrentUser) return;
+					if (!isCurrentUser || activeUserIdRef.current !== subscribedUserId)
+						return;
 
 					const latestLocalGuestGame = loadActiveGuestGame();
 					const resolved = resolveGuestGameState(
@@ -103,21 +129,26 @@ function AppRoutes() {
 						) {
 							clearGuestGameState();
 						} else {
-							saveGuestGameState(user.uid, savedState);
+							saveGuestGameState(subscribedUserId, savedState);
 						}
 					}
 					if (resolved.source === "cloud" && !user.isAnonymous) {
 						clearGuestGameState();
 					}
-
 					setGameSession({
 						gameState: resolved.state,
 						isLoading: false,
+						userId: subscribedUserId,
 					});
 
 					if (resolved.shouldUploadLocal && resolved.state) {
-						saveGameState(user.uid, resolved.state)
+						saveGameState(subscribedUserId, resolved.state)
 							.then(() => {
+								if (
+									!isCurrentUser ||
+									activeUserIdRef.current !== subscribedUserId
+								)
+									return;
 								if (!user.isAnonymous) clearGuestGameState();
 							})
 							.catch((error) => {
@@ -140,7 +171,7 @@ function AppRoutes() {
 		}
 
 		if (!user && !authLoading) {
-			setGameSession({ gameState: null, isLoading: false });
+			setGameSession({ gameState: null, isLoading: false, userId: null });
 		}
 	}, [user, authLoading]);
 
@@ -150,12 +181,72 @@ function AppRoutes() {
 		document.documentElement.setAttribute("data-mode", mode);
 	}, [accent, mode]);
 
+	useEffect(() => {
+		puzzleHistorySessionRef.current = syncPuzzleHistorySession(
+			puzzleHistorySessionRef.current,
+			activeUserId,
+			playedPuzzlesReady ? playedPuzzles : [],
+		);
+	}, [activeUserId, playedPuzzles, playedPuzzlesReady]);
+
+	useEffect(() => {
+		if (
+			newGameRequestRef.current.userId !== null &&
+			newGameRequestRef.current.userId !== activeUserId
+		) {
+			newGameRequestRef.current = {
+				generation: newGameRequestRef.current.generation + 1,
+				userId: null,
+			};
+		}
+	}, [activeUserId]);
+
 	// Initialize a new game
 	const startNewGame = useCallback(
 		async (diff: Difficulty) => {
+			if (!playedPuzzlesReady) return;
+			const startingUserId = activeUserId;
+			if (!startingUserId) return;
+			if (newGameRequestRef.current.userId === startingUserId) return;
+			const requestId = newGameRequestRef.current.generation + 1;
+			newGameRequestRef.current = {
+				generation: requestId,
+				userId: startingUserId,
+			};
 			try {
-				setGameSession((prev) => ({ ...prev, isLoading: true }));
-				const puzzle = await getRandomPuzzle(diff, playedPuzzles);
+				setGameSession((prev) =>
+					prev.userId === startingUserId ? { ...prev, isLoading: true } : prev,
+				);
+				const historySession = syncPuzzleHistorySession(
+					puzzleHistorySessionRef.current,
+					activeUserId,
+					playedPuzzles,
+				);
+				puzzleHistorySessionRef.current = historySession;
+				const currentPuzzleId = gameState?.puzzle.id;
+				const excludedPuzzleIds = new Set([
+					...playedPuzzles,
+					...historySession.puzzleIds,
+				]);
+				if (currentPuzzleId) excludedPuzzleIds.add(currentPuzzleId);
+
+				const puzzle = await getRandomPuzzle(
+					diff,
+					Array.from(excludedPuzzleIds),
+					currentPuzzleId,
+				);
+				if (
+					activeUserIdRef.current !== startingUserId ||
+					newGameRequestRef.current.generation !== requestId
+				) {
+					return;
+				}
+				historySession.puzzleIds.add(puzzle.id);
+				if (user?.uid === startingUserId) {
+					markPuzzleAsPlayed(startingUserId, puzzle.id).catch((error) => {
+						console.error("Failed to remember selected puzzle", error);
+					});
+				}
 
 				const newGameState = {
 					puzzle,
@@ -180,20 +271,42 @@ function AppRoutes() {
 				setGameSession({
 					gameState: newGameState,
 					isLoading: false,
+					userId: startingUserId,
 				});
 				navigate(`/game`);
 			} catch (e) {
+				if (
+					activeUserIdRef.current !== startingUserId ||
+					newGameRequestRef.current.generation !== requestId
+				)
+					return;
 				console.error("Failed to load puzzles from Firestore", e);
 				toast.error("Failed to fetch puzzle", {
 					description: (e as Error).message,
 				});
-				setGameSession((prev) => ({ ...prev, isLoading: false }));
+				setGameSession((prev) =>
+					prev.userId === startingUserId ? { ...prev, isLoading: false } : prev,
+				);
+			} finally {
+				if (newGameRequestRef.current.generation === requestId) {
+					newGameRequestRef.current = {
+						generation: requestId,
+						userId: null,
+					};
+				}
 			}
 		},
-		[navigate, playedPuzzles, user],
+		[
+			activeUserId,
+			gameState?.puzzle.id,
+			navigate,
+			playedPuzzles,
+			playedPuzzlesReady,
+			user,
+		],
 	);
 
-	if (authLoading) {
+	if (authLoading || (user && !playedPuzzlesReady)) {
 		return <Spinner />;
 	}
 
