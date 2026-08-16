@@ -50,23 +50,31 @@ export const GameControls: React.FC<GameControlsProps> = ({
 				</button>
 			</div>
 
-			<div className="flex justify-center">
+			<div className="flex flex-col items-center justify-center gap-1">
 				<button
 					type="button"
 					data-testid="note-toggle"
+					aria-pressed={isNoteMode}
+					aria-label={isNoteMode ? "Turn notes mode off" : "Turn notes mode on"}
 					onClick={onToggleNoteMode}
 					className={cn(
-						"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full transition-all duration-300",
+						"flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 						isNoteMode
-							? "bg-primary text-white shadow-lg shadow-primary/40 ring-2 ring-primary/50"
-							: "glass text-muted-foreground hover:text-primary hover:bg-primary/10",
+							? "bg-primary/20 border-primary text-foreground shadow-sm ring-1 ring-primary"
+							: "glass border-transparent text-muted-foreground hover:text-primary hover:bg-primary/10",
 					)}
 				>
-					<Pencil size={20} className={isNoteMode ? "animate-bounce" : ""} />
+					<Pencil size={20} className={isNoteMode ? "text-primary" : ""} />
 					<span className="font-semibold uppercase tracking-wider text-sm">
 						{isNoteMode ? "Notes On" : "Notes Off"}
 					</span>
 				</button>
+				<span
+					id="quick-note-help"
+					className="text-[10px] leading-none whitespace-nowrap text-muted-foreground"
+				>
+					{isNoteMode ? "Tap number for note" : "Hold number for note"}
+				</span>
 			</div>
 
 			<div className="flex justify-end" />

@@ -77,6 +77,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		canUndo,
 		canRedo,
 		handleInput,
+		handleQuickNote,
 		undo,
 		redo,
 		handleSolve,
@@ -163,6 +164,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		showWin: !!winState,
 		setSelectedCell,
 		handleInput,
+		handleQuickNote,
 		setIsNoteMode,
 		undo,
 		redo,
@@ -229,6 +231,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 				<StaggeredListElement>
 					<Numpad
 						onNumberClick={handleInput}
+						onQuickNote={handleQuickNote}
+						isNoteMode={isNoteMode}
 						disabledNumbers={disabledNumbers}
 						remainingCounts={remainingCounts}
 					/>

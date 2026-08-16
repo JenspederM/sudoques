@@ -133,15 +133,20 @@ export function useGameActions({
 		[user, puzzle, currentDerivedState, gameState.actions],
 	);
 
-	const handleInput = useCallback(
-		(num: number | null) => {
+	const commitInput = useCallback(
+		(num: number | null, forceNote = false) => {
 			if (!selectedCell) return;
 			const [r, c] = selectedCell;
 			const initialRow = puzzle.initial[r];
 			if (!initialRow || initialRow[c] !== null) return;
+			const currentRow = currentDerivedState.current[r];
+			const asNote = forceNote || isNoteMode;
+
+			// Notes on a filled player cell are invisible and cannot be useful.
+			if (asNote && num !== null && currentRow?.[c] != null) return;
 
 			let action: GameAction;
-			if (isNoteMode && num !== null) {
+			if (asNote && num !== null) {
 				const rowNotes = currentDerivedState.notes[r];
 				const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
 				if (targetCellNotes?.has(num)) {
@@ -166,7 +171,6 @@ export function useGameActions({
 					};
 				} else {
 					// If the value hasn't changed, don't update
-					const currentRow = currentDerivedState.current[r];
 					if (currentRow && currentRow[c] === num) return;
 					action = {
 						type: "addValue",
@@ -188,6 +192,16 @@ export function useGameActions({
 			isNoteMode,
 			selectedCell,
 		],
+	);
+
+	const handleInput = useCallback(
+		(num: number | null) => commitInput(num),
+		[commitInput],
+	);
+
+	const handleQuickNote = useCallback(
+		(num: number) => commitInput(num, true),
+		[commitInput],
 	);
 
 	const undo = useCallback(() => {
@@ -260,6 +274,7 @@ export function useGameActions({
 		canUndo,
 		canRedo,
 		handleInput,
+		handleQuickNote,
 		undo,
 		redo,
 		handleSolve,
