@@ -24,6 +24,12 @@ import {
 	findExplainableHint,
 } from "@/logic/explainableSolver";
 import {
+	getInitialHintDisclosureStage,
+	getVisibleHintStep,
+	type HintDisclosureStage,
+	INITIAL_HINT_DISCLOSURE_STAGE,
+} from "@/logic/hintPresentation";
+import {
 	checkBoard,
 	countValues,
 	getDisabledNumbers,
@@ -50,6 +56,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [hint, setHint] = useState<ExplainableHint | null>(null);
 	const [hintStepIndex, setHintStepIndex] = useState(0);
+	const [hintDisclosureStage, setHintDisclosureStage] =
+		useState<HintDisclosureStage>(INITIAL_HINT_DISCLOSURE_STAGE);
 	const actionCount = gameState.actions.length;
 	const previousActionCount = useRef(actionCount);
 	const [winState, setWinState] = useState<{
@@ -87,23 +95,24 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const handleHint = () => {
 		setSelectedCell(null);
 		setHintStepIndex(0);
-		setHint(
-			findExplainableHint(
-				currentDerivedState.current,
-				puzzle.initial,
-				puzzle.solution,
-				{
-					difficulty: puzzle.difficulty,
-					techniques: puzzle.techniques,
-				},
-			),
+		const nextHint = findExplainableHint(
+			currentDerivedState.current,
+			puzzle.initial,
+			puzzle.solution,
+			{
+				difficulty: puzzle.difficulty,
+				techniques: puzzle.techniques,
+			},
 		);
+		setHintDisclosureStage(getInitialHintDisclosureStage(nextHint));
+		setHint(nextHint);
 	};
 
 	useEffect(() => {
 		if (previousActionCount.current !== actionCount) {
 			setHint(null);
 			setHintStepIndex(0);
+			setHintDisclosureStage(INITIAL_HINT_DISCLOSURE_STAGE);
 		}
 		previousActionCount.current = actionCount;
 	}, [actionCount]);
@@ -163,6 +172,18 @@ export const GamePage: React.FC<GamePageProps> = ({
 	const valueCounts = countValues(currentDerivedState.current);
 	const disabledNumbers = getDisabledNumbers(valueCounts);
 	const remainingCounts = getRemainingCounts(valueCounts);
+	const visibleHintStep = getVisibleHintStep(
+		hint?.steps[hintStepIndex],
+		hintDisclosureStage,
+	);
+	const handleHintStepChange = (index: number) => {
+		setHintStepIndex(index);
+		setHintDisclosureStage(
+			hint
+				? getInitialHintDisclosureStage(hint, index)
+				: INITIAL_HINT_DISCLOSURE_STAGE,
+		);
+	};
 
 	return (
 		<Layout
@@ -190,7 +211,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 						selectedCell={selectedCell}
 						onCellSelect={handleCellSelect}
 						conflicts={conflicts}
-						hintStep={hint?.steps[hintStepIndex] ?? null}
+						hintStep={visibleHintStep}
 					/>
 				</StaggeredListElement>
 				<StaggeredListElement>
@@ -235,7 +256,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 					<HintPanel
 						hint={hint}
 						stepIndex={hintStepIndex}
-						onStepChange={setHintStepIndex}
+						disclosureStage={hintDisclosureStage}
+						onDisclosureStageChange={setHintDisclosureStage}
+						onStepChange={handleHintStepChange}
 						onClose={() => setHint(null)}
 					/>
 				)}

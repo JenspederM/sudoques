@@ -64,11 +64,99 @@ test.describe("Sudoku Game Logic", () => {
 		await page.getByTestId("menu-button").click();
 		await page.getByTestId("hint-btn").click();
 
-		await expect(page.getByTestId("hint-panel")).toBeVisible();
+		const hintPanel = page.getByTestId("hint-panel");
+		await expect(hintPanel).toBeVisible();
+		await expect(hintPanel).toHaveAttribute("data-disclosure-stage", "technique");
+		await expect(
+			page.locator('[data-hint-candidate="placement"]'),
+		).toHaveCount(0);
+
+		await page.getByTestId("show-hint-location").click();
+		await expect(hintPanel).toHaveAttribute("data-disclosure-stage", "location");
+		await expect(
+			page.locator('[data-hint-candidate="placement"]'),
+		).toHaveCount(0);
+
+		await page.getByTestId("show-full-hint").click();
+		await expect(hintPanel).toHaveAttribute("data-disclosure-stage", "details");
 		await expect(
 			page.locator('[data-hint-candidate="placement"]'),
 		).toHaveCount(1);
 		await expect(undoButton).toBeDisabled();
+	});
+
+	test("hint panel stays usable when collapsed on a narrow phone", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 320, height: 568 });
+		await page.getByText("New Game").click();
+		await page.getByText("Easy").click();
+		await expect(page.getByTestId("cell-0-0")).toBeVisible({ timeout: 15000 });
+		await page.getByTestId("menu-button").click();
+		await page.getByTestId("hint-btn").click();
+
+		const hintPanel = page.getByTestId("hint-panel");
+		await expect(hintPanel).toHaveAttribute("data-collapsed", "false");
+		const expandedBox = await hintPanel.boundingBox();
+		expect(expandedBox).not.toBeNull();
+		if (!expandedBox) throw new Error("Expanded hint panel has no bounding box");
+		expect(expandedBox.x).toBeGreaterThanOrEqual(0);
+		expect(expandedBox.x + expandedBox.width).toBeLessThanOrEqual(321);
+		expect(expandedBox.y + expandedBox.height).toBeLessThanOrEqual(569);
+
+		await page.getByTestId("collapse-hint").click();
+		await expect(hintPanel).toHaveAttribute("data-collapsed", "true");
+		const collapsedBox = await hintPanel.boundingBox();
+		expect(collapsedBox).not.toBeNull();
+		if (!collapsedBox) throw new Error("Collapsed hint panel has no bounding box");
+		expect(collapsedBox.height).toBeLessThan(expandedBox.height);
+		expect(collapsedBox.x + collapsedBox.width).toBeLessThanOrEqual(321);
+		expect(collapsedBox.y + collapsedBox.height).toBeLessThanOrEqual(569);
+
+		await page.getByTestId("expand-hint").click();
+		await expect(hintPanel).toHaveAttribute("data-collapsed", "false");
+		await expect(hintPanel).toHaveAttribute("data-disclosure-stage", "technique");
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth <= window.innerWidth,
+			),
+		).toBe(true);
+	});
+
+	test("shows an invalid-entry warning immediately", async ({ page }) => {
+		await page.getByText("New Game").click();
+		await page.getByText("Easy").click();
+		await expect(page.getByTestId("cell-0-0")).toBeVisible({ timeout: 15000 });
+
+		let target: ReturnType<typeof page.getByTestId> | undefined;
+		let conflictingValue: string | undefined;
+		for (let row = 0; row < 9 && !target; row++) {
+			const values = await Promise.all(
+				Array.from({ length: 9 }, (_, col) =>
+					page.getByTestId(`cell-${row}-${col}`).innerText(),
+				),
+			);
+			const emptyCol = values.findIndex((value) => value.trim() === "");
+			conflictingValue = values.find((value) => /^[1-9]$/.test(value.trim()))?.trim();
+			if (emptyCol >= 0 && conflictingValue) {
+				target = page.getByTestId(`cell-${row}-${emptyCol}`);
+			}
+		}
+		if (!target || !conflictingValue) {
+			throw new Error("Could not find an empty cell and row value");
+		}
+
+		await target.click();
+		await page.getByTestId(`numpad-${conflictingValue}`).click();
+		await page.getByTestId("menu-button").click();
+		await page.getByTestId("hint-btn").click();
+
+		const hintPanel = page.getByTestId("hint-panel");
+		await expect(hintPanel).toHaveAttribute("data-disclosure-stage", "details");
+		await expect(page.getByTestId("hint-heading")).toContainText("Recheck");
+		await expect(page.getByText("The correct value is deliberately not revealed.")).toBeVisible();
+		await expect(page.getByTestId("show-hint-location")).toHaveCount(0);
+		await expect(page.getByTestId("show-full-hint")).toHaveCount(0);
 	});
 
 	test("can enter a number into an empty cell", async ({ page }) => {
