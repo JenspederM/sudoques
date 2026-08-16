@@ -238,18 +238,31 @@ export async function saveHighScore(score: HighScore) {
 export function subscribeToUserScores(
 	userId: string,
 	callback: (scores: HighScore[]) => void,
+	onError: (error: Error) => void,
 ) {
 	const q = query(
 		collection(db, HIGHSCORES_COLLECTION),
 		where("userId", "==", userId),
 	);
 
-	return onSnapshot(q, (snapshot) => {
-		const scores = snapshot.docs.map((doc) =>
-			toHighScore(doc.data() as DBHighScore),
-		);
-		callback(scores);
-	});
+	return onSnapshot(
+		q,
+		(snapshot) => {
+			try {
+				const scores = snapshot.docs.map((doc) =>
+					toHighScore(doc.data() as DBHighScore),
+				);
+				callback(scores);
+			} catch (error) {
+				onError(
+					error instanceof Error
+						? error
+						: new Error("Failed to read the score snapshot"),
+				);
+			}
+		},
+		onError,
+	);
 }
 
 // ─── Puzzle Management ─────────────────────────────
