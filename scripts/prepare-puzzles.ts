@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile } from "node:fs/promises";
 import { cpus } from "node:os";
 import { join } from "node:path";
+import { classifyDifficulty } from "../src/logic/difficulty";
 import { isCurrentLogicalTechniqueAnalysis } from "../src/logic/solver";
 import { boardToString } from "../src/logic/sudoku";
 import type { LogicalTechniqueAnalysis } from "../src/types";
@@ -155,7 +156,7 @@ async function preparePuzzles() {
 					} = event.data;
 					if (success) {
 						if (graded.isSolvable) {
-							const diffLabel = getDifficultyLabel(graded.difficulty);
+							const diffLabel = classifyDifficulty(graded.techniquesUsed);
 							const puzzles = puzzlesByDifficulty[diffLabel];
 							if (puzzles) {
 								const id = bankId || (await generateId(puzzleStr));
@@ -217,15 +218,6 @@ async function preparePuzzles() {
 	for (const [k, v] of Object.entries(unsolvables)) {
 		console.log(`Unsolvable ${k}: ${v.length}`);
 	}
-}
-
-function getDifficultyLabel(score: number): string {
-	if (score < 3.0) return "easy";
-	if (score < 4.0) return "normal";
-	if (score < 5.0) return "medium";
-	if (score < 7.0) return "hard";
-	if (score < 9.0) return "expert";
-	return "master";
 }
 
 preparePuzzles().catch(console.error);
