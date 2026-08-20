@@ -88,22 +88,23 @@ const centerOfKey = (gesture: OpenCellGesture, value: number) => {
 };
 
 describe("gesture pad geometry", () => {
-	test("uses the strict left, above, right, below placement order", () => {
-		const leftCell = { left: 250, top: 300, width: 40, height: 40 };
-		const leftLayout = getGesturePadLayout(leftCell, viewport);
-		expect(leftLayout.left + leftLayout.width).toBe(leftCell.left - 12);
+	test("centers in the visible viewport regardless of the pressed cell", () => {
+		const firstLayout = getGesturePadLayout(
+			{ left: 30, top: 100, width: 40, height: 40 },
+			viewport,
+		);
+		const secondLayout = getGesturePadLayout(
+			{ left: 300, top: 570, width: 40, height: 40 },
+			viewport,
+		);
 
-		const aboveCell = { left: 100, top: 300, width: 40, height: 40 };
-		const aboveLayout = getGesturePadLayout(aboveCell, viewport);
-		expect(aboveLayout.top + aboveLayout.height).toBe(aboveCell.top - 12);
-
-		const rightCell = { left: 30, top: 100, width: 40, height: 40 };
-		const rightLayout = getGesturePadLayout(rightCell, viewport);
-		expect(rightLayout.left).toBe(rightCell.left + rightCell.width + 12);
-
-		const belowCell = { left: 150, top: 100, width: 40, height: 40 };
-		const belowLayout = getGesturePadLayout(belowCell, viewport);
-		expect(belowLayout.top).toBe(belowCell.top + belowCell.height + 12);
+		expect(firstLayout.left + firstLayout.width / 2).toBe(
+			viewport.left + viewport.width / 2,
+		);
+		expect(firstLayout.top + firstLayout.height / 2).toBe(
+			viewport.top + viewport.height / 2,
+		);
+		expect(secondLayout).toEqual(firstLayout);
 	});
 
 	test("clamps inside an offset iPhone-sized visual viewport", () => {
@@ -112,6 +113,8 @@ describe("gesture pad geometry", () => {
 			{ left: 9, top: 22, width: 375, height: 667 },
 		);
 
+		expect(layout.left + layout.width / 2).toBe(9 + 375 / 2);
+		expect(layout.top + layout.height / 2).toBe(22 + 667 / 2);
 		expect(layout.left).toBeGreaterThanOrEqual(21);
 		expect(layout.top).toBeGreaterThanOrEqual(34);
 		expect(layout.left + layout.width).toBeLessThanOrEqual(372);

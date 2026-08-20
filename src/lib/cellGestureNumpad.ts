@@ -48,7 +48,6 @@ export type CellGestureCommit = CellGestureTarget & {
 };
 
 const PAD_MARGIN_PX = 12;
-const PAD_CELL_GAP_PX = 12;
 const PAD_INNER_PADDING_PX = 8;
 const PAD_KEY_GAP_PX = 6;
 const MIN_PAD_SIZE_PX = 156;
@@ -60,28 +59,13 @@ const clamp = (value: number, min: number, max: number) =>
 const rectRight = (rect: Rect) => rect.left + rect.width;
 const rectBottom = (rect: Rect) => rect.top + rect.height;
 
-const overflowDistance = (rect: Rect, viewport: ViewportBounds) => {
-	const minLeft = viewport.left + PAD_MARGIN_PX;
-	const minTop = viewport.top + PAD_MARGIN_PX;
-	const maxRight = rectRight(viewport) - PAD_MARGIN_PX;
-	const maxBottom = rectBottom(viewport) - PAD_MARGIN_PX;
-	return (
-		Math.max(0, minLeft - rect.left) +
-		Math.max(0, minTop - rect.top) +
-		Math.max(0, rectRight(rect) - maxRight) +
-		Math.max(0, rectBottom(rect) - maxBottom)
-	);
-};
-
 /**
- * Places a compact 3x3 pad close to the pressed cell. The order is deliberate:
- * left keeps the player's hand away from the board, then above, right, and
- * finally below. A later side is only used when the whole pad cannot fit on an
- * earlier one. If no side fits, the least-overflowing option is clamped into
- * the visual viewport while preserving the same order for ties.
+ * Places a compact 3x3 pad in the center of the currently visible viewport.
+ * Keeping the position stable makes the gesture predictable regardless of
+ * which Sudoku cell started it.
  */
 export function getGesturePadLayout(
-	cell: Rect,
+	_cell: Rect,
 	viewport: ViewportBounds,
 ): GesturePadLayout {
 	const maxAvailableSize = Math.max(
@@ -93,55 +77,14 @@ export function getGesturePadLayout(
 		maxAvailableSize,
 		clamp(preferredSize, MIN_PAD_SIZE_PX, MAX_PAD_SIZE_PX),
 	);
-	const centeredLeft = cell.left + cell.width / 2 - size / 2;
-	const centeredTop = cell.top + cell.height / 2 - size / 2;
-	const above = {
-		left: centeredLeft,
-		top: cell.top - PAD_CELL_GAP_PX - size,
-		width: size,
-		height: size,
-	};
-	const below = {
-		left: centeredLeft,
-		top: cell.top + cell.height + PAD_CELL_GAP_PX,
-		width: size,
-		height: size,
-	};
-	const left = {
-		left: cell.left - PAD_CELL_GAP_PX - size,
-		top: centeredTop,
-		width: size,
-		height: size,
-	};
-	const right = {
-		left: cell.left + cell.width + PAD_CELL_GAP_PX,
-		top: centeredTop,
-		width: size,
-		height: size,
-	};
-
-	const candidates = [left, above, right, below];
-	let best = candidates.find(
-		(candidate) => overflowDistance(candidate, viewport) === 0,
-	);
-	if (!best) {
-		best = candidates[0] ?? above;
-		let bestOverflow = overflowDistance(best, viewport);
-		for (const candidate of candidates.slice(1)) {
-			const overflow = overflowDistance(candidate, viewport);
-			if (overflow < bestOverflow) {
-				best = candidate;
-				bestOverflow = overflow;
-			}
-		}
-	}
-
 	const minLeft = viewport.left + PAD_MARGIN_PX;
 	const minTop = viewport.top + PAD_MARGIN_PX;
 	const maxLeft = rectRight(viewport) - PAD_MARGIN_PX - size;
 	const maxTop = rectBottom(viewport) - PAD_MARGIN_PX - size;
-	const padLeft = clamp(best.left, minLeft, Math.max(minLeft, maxLeft));
-	const padTop = clamp(best.top, minTop, Math.max(minTop, maxTop));
+	const centeredLeft = viewport.left + (viewport.width - size) / 2;
+	const centeredTop = viewport.top + (viewport.height - size) / 2;
+	const padLeft = clamp(centeredLeft, minLeft, Math.max(minLeft, maxLeft));
+	const padTop = clamp(centeredTop, minTop, Math.max(minTop, maxTop));
 	const keySize = (size - PAD_INNER_PADDING_PX * 2 - PAD_KEY_GAP_PX * 2) / 3;
 	const keys = Array.from({ length: 9 }, (_, index) => {
 		const row = Math.floor(index / 3);
