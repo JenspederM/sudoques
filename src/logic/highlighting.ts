@@ -1,4 +1,4 @@
-import type { Board } from "@/types";
+import type { Board, CellNotes } from "@/types";
 
 export type CellHighlightState = "none" | "peer" | "matching" | "selected";
 
@@ -35,4 +35,30 @@ export function getCellHighlightState(
 	if (row === selectedRow || col === selectedCol || sharesBox) return "peer";
 
 	return "none";
+}
+
+/**
+ * Returns whether a candidate note matches the value in the selected cell.
+ * The individual candidate is highlighted instead of its whole cell so notes
+ * remain visually distinct from placed matching values.
+ */
+export function isMatchingNoteCandidate(
+	currentBoard: Board,
+	notes: CellNotes,
+	selectedCell: [number, number] | null,
+	row: number,
+	col: number,
+	value: number,
+): boolean {
+	if (selectedCell === null || currentBoard[row]?.[col] !== null) return false;
+
+	const [selectedRow, selectedCol] = selectedCell;
+	const selectedValue = currentBoard[selectedRow]?.[selectedCol];
+
+	return (
+		selectedValue !== null &&
+		selectedValue !== undefined &&
+		value === selectedValue &&
+		(notes[row]?.[col]?.has(value) ?? false)
+	);
 }

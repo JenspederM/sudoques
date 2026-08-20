@@ -2,7 +2,10 @@ import { m } from "framer-motion";
 import type { HTMLProps } from "react";
 import { cn } from "@/lib/utils";
 import type { HintStep } from "@/logic/explainableSolver";
-import { getCellHighlightState } from "@/logic/highlighting";
+import {
+	getCellHighlightState,
+	isMatchingNoteCandidate,
+} from "@/logic/highlighting";
 import type { Board, CellNotes } from "@/types";
 
 type SudokuGridProps = HTMLProps<HTMLDivElement> & {
@@ -149,13 +152,27 @@ export const SudokuGrid = ({
 											const cellNotes = rowNotes ? rowNotes[c] : null;
 											const value = i + 1;
 											const hintRole = hintCandidateRole(r, c, value);
+											const matchingNote = isMatchingNoteCandidate(
+												currentBoard,
+												notes,
+												selectedCell,
+												r,
+												c,
+												value,
+											);
+											const highlightMatchingNote = matchingNote && !hintRole;
 											return (
 												<div
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
 													key={`note-${i}`}
 													data-hint-candidate={hintRole ?? undefined}
+													data-note-highlight={
+														highlightMatchingNote || undefined
+													}
 													className={cn(
 														"flex items-center justify-center text-[var(--player-number)]",
+														highlightMatchingNote &&
+															"rounded-sm bg-primary/25 text-primary font-black ring-1 ring-inset ring-primary/60",
 														hintRole === "pattern-a" &&
 															"text-sky-500 font-black",
 														hintRole === "pattern-b" &&
