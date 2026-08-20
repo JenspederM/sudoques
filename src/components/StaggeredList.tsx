@@ -133,6 +133,8 @@ export function StaggeredListElement(props: StaggeredListElementProps) {
 	};
 	if (type === "button") {
 		const {
+			children: _children,
+			className: _className,
 			type: _type,
 			variant: _variant,
 			whileHover: _whileHover,
@@ -149,6 +151,7 @@ export function StaggeredListElement(props: StaggeredListElementProps) {
 
 		return (
 			<m.button
+				{...buttonProps}
 				type="button"
 				variants={elementVariants}
 				whileHover={canHover ? "hovering" : undefined}
@@ -159,7 +162,6 @@ export function StaggeredListElement(props: StaggeredListElementProps) {
 					className,
 				)}
 				onPointerUp={handlePointerUp}
-				{...buttonProps}
 			>
 				{children}
 			</m.button>
@@ -167,6 +169,8 @@ export function StaggeredListElement(props: StaggeredListElementProps) {
 	}
 
 	const {
+		children: _children,
+		className: _className,
 		type: _type,
 		variant: _variant,
 		whileHover: _whileHover,
@@ -176,20 +180,20 @@ export function StaggeredListElement(props: StaggeredListElementProps) {
 	if (type === "card") {
 		return (
 			<m.div
+				{...divProps}
 				variants={elementVariants}
 				className={cn(
 					"rounded-2xl",
 					variantStyles[variant || "default"],
 					className,
 				)}
-				{...divProps}
 			>
 				{children}
 			</m.div>
 		);
 	}
 	return (
-		<m.div variants={elementVariants} className={className} {...divProps}>
+		<m.div {...divProps} variants={elementVariants} className={className}>
 			{children}
 		</m.div>
 	);
