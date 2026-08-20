@@ -6,6 +6,14 @@ import { GameMenu } from "@/components/GameMenu";
 import { Layout } from "@/components/Layout";
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
+import {
+	advanceReplayPlayback,
+	createReplayPlaybackState,
+	seekReplayPlayback,
+	stepReplayBack,
+	stepReplayForward,
+	toggleReplayPlayback,
+} from "@/lib/replayPlayback";
 import { formatTime, unflattenBoard } from "@/lib/utils";
 import { applyActions } from "@/logic/gameReducer";
 import type {
@@ -30,59 +38,53 @@ export const ReviewPage: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const state = location.state as ReviewPageState;
-
-	const [playbackTime, setPlaybackTime] = useState(0);
-	const [isPlaying, setIsPlaying] = useState(false);
-	const [speedMultiplier, setSpeedMultiplier] = useState(1);
-	const lastTickRef = useRef<number>(0);
-
 	const actions = state?.actions || [];
 	const totalTime = state?.time || 0;
 
-	// Compute the playback index from the current playback time
-	const playbackIndex = useMemo(() => {
-		let index = 0;
-		for (let i = 0; i < actions.length; i++) {
-			const action = actions[i];
-			if (action && action.delta <= playbackTime) {
-				index = i + 1;
-			} else {
-				break;
-			}
-		}
-		return index;
-	}, [actions, playbackTime]);
+	const [playback, setPlayback] = useState(() =>
+		createReplayPlaybackState(actions),
+	);
+	const [speedMultiplier, setSpeedMultiplier] = useState(1);
+	const lastTickRef = useRef<number>(0);
+	const animationFrameRef = useRef<number | null>(null);
 
 	// Timer tick effect
 	useEffect(() => {
-		if (!isPlaying) {
+		if (!playback.isPlaying) {
 			lastTickRef.current = 0;
 			return;
 		}
 
-		let animId: number;
 		const tick = (timestamp: number) => {
 			if (lastTickRef.current === 0) {
 				lastTickRef.current = timestamp;
+				animationFrameRef.current = requestAnimationFrame(tick);
+				return;
 			}
 			const elapsed = (timestamp - lastTickRef.current) / 1000;
 			lastTickRef.current = timestamp;
 
-			setPlaybackTime((prev) => {
-				const next = prev + elapsed * speedMultiplier;
-				if (next >= totalTime) {
-					setIsPlaying(false);
-					return totalTime;
-				}
-				return next;
-			});
+			setPlayback((current) =>
+				advanceReplayPlayback(
+					actions,
+					current,
+					elapsed,
+					speedMultiplier,
+					totalTime,
+				),
+			);
 
-			animId = requestAnimationFrame(tick);
+			animationFrameRef.current = requestAnimationFrame(tick);
 		};
 
-		animId = requestAnimationFrame(tick);
-		return () => cancelAnimationFrame(animId);
-	}, [isPlaying, speedMultiplier, totalTime]);
+		animationFrameRef.current = requestAnimationFrame(tick);
+		return () => {
+			if (animationFrameRef.current !== null) {
+				cancelAnimationFrame(animationFrameRef.current);
+				animationFrameRef.current = null;
+			}
+		};
+	}, [actions, playback.isPlaying, speedMultiplier, totalTime]);
 
 	const initialBoard = useMemo(
 		() => unflattenBoard(state?.initial || []),
@@ -96,34 +98,26 @@ export const ReviewPage: React.FC = () => {
 	const currentDerivedState = applyActions(
 		initialBoard,
 		solutionBoard,
-		actions.slice(0, playbackIndex),
+		actions.slice(0, playback.actionIndex),
 	).state;
 
 	const stepForward = useCallback(() => {
-		const nextAction = actions[playbackIndex];
-		if (nextAction) {
-			setPlaybackTime(nextAction.delta);
-		} else {
-			setPlaybackTime(totalTime);
+		if (animationFrameRef.current !== null) {
+			cancelAnimationFrame(animationFrameRef.current);
+			animationFrameRef.current = null;
 		}
-	}, [actions, playbackIndex, totalTime]);
+		lastTickRef.current = 0;
+		setPlayback((current) => stepReplayForward(actions, current, totalTime));
+	}, [actions, totalTime]);
 
 	const stepBack = useCallback(() => {
-		if (playbackIndex > 0) {
-			const prevAction = actions[playbackIndex - 1];
-			// Go to just before this action's timestamp
-			const prevTime =
-				playbackIndex >= 2 ? (actions[playbackIndex - 2]?.delta ?? 0) : 0;
-			// If we're exactly at prevAction's time, go further back
-			if (prevAction && playbackTime <= prevAction.delta) {
-				setPlaybackTime(prevTime);
-			} else {
-				setPlaybackTime(prevAction?.delta ?? 0);
-			}
-		} else {
-			setPlaybackTime(0);
+		if (animationFrameRef.current !== null) {
+			cancelAnimationFrame(animationFrameRef.current);
+			animationFrameRef.current = null;
 		}
-	}, [actions, playbackIndex, playbackTime]);
+		lastTickRef.current = 0;
+		setPlayback((current) => stepReplayBack(actions, current));
+	}, [actions]);
 
 	if (!state || !state.initial || !state.solution) {
 		return (
@@ -150,7 +144,7 @@ export const ReviewPage: React.FC = () => {
 			backRedirect="/statistics"
 			backState={{ activeDiff: state.difficulty }}
 			headerClassName="justify-between relative z-50"
-			headerCenter={<Timer time={playbackTime} />}
+			headerCenter={<Timer time={playback.time} />}
 			headerRight={
 				<GameMenu
 					difficulty={state.difficulty}
@@ -180,6 +174,7 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepBack}
+							aria-label="Previous move"
 							className="p-3 text-muted-foreground hover:text-primary transition-colors"
 						>
 							<SkipBack size={28} />
@@ -187,15 +182,15 @@ export const ReviewPage: React.FC = () => {
 
 						<button
 							type="button"
-							onClick={() => {
-								if (playbackTime >= totalTime) {
-									setPlaybackTime(0);
-								}
-								setIsPlaying(!isPlaying);
-							}}
+							onClick={() =>
+								setPlayback((current) =>
+									toggleReplayPlayback(actions, current, totalTime),
+								)
+							}
+							aria-label={playback.isPlaying ? "Pause replay" : "Play replay"}
 							className="w-16 h-16 flex items-center justify-center bg-primary rounded-full text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
 						>
-							{isPlaying ? (
+							{playback.isPlaying ? (
 								<Pause size={32} fill="currentColor" />
 							) : (
 								<Play size={32} fill="currentColor" className="ml-1" />
@@ -205,6 +200,7 @@ export const ReviewPage: React.FC = () => {
 						<button
 							type="button"
 							onClick={stepForward}
+							aria-label="Next move"
 							className="p-3 text-muted-foreground hover:text-primary transition-colors"
 						>
 							<SkipForward size={28} />
@@ -215,7 +211,7 @@ export const ReviewPage: React.FC = () => {
 						<div className="flex justify-between items-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
 							<span className="w-16 flex justify-start">{formatTime(0)}</span>
 							<span className="flex-1 flex justify-center whitespace-nowrap px-2 tabular-nums">
-								{playbackIndex} / {actions.length} moves
+								{playback.actionIndex} / {actions.length} moves
 							</span>
 							<span className="w-16 flex justify-end">
 								{formatTime(totalTime)}
@@ -225,9 +221,16 @@ export const ReviewPage: React.FC = () => {
 							type="range"
 							min="0"
 							max={totalTime * 100}
-							value={Math.floor(playbackTime * 100)}
+							value={Math.floor(playback.time * 100)}
 							onChange={(e) =>
-								setPlaybackTime(parseInt(e.target.value, 10) / 100)
+								setPlayback((current) =>
+									seekReplayPlayback(
+										actions,
+										current,
+										parseInt(e.target.value, 10) / 100,
+										totalTime,
+									),
+								)
 							}
 							className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
 						/>
