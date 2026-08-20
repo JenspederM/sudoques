@@ -135,6 +135,8 @@ export function getTechniqueExplanation(technique: HintTechnique): string {
 			return "Strong links for one digit are alternated between two colours. A contradiction or a cell seeing both colours shows which candidates can be removed.";
 		case "XY-Chain":
 			return "A chain of two-candidate cells alternates linked digits. The endpoints force one shared candidate, allowing eliminations from cells that see both ends.";
+		case "Alternating Inference Chain":
+			return "An alternating inference chain follows strong links, where at least one candidate is true, and weak links, where both cannot be true. A candidate that conflicts with both endpoints can be removed.";
 		case "BUG+1":
 			return "Every unsolved cell has two candidates except one cell with three. Its extra candidate must be the value placed there.";
 		case "Cell Forcing Chain":

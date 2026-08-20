@@ -1,4 +1,5 @@
 import type { Board, CellNotes, Difficulty, Technique } from "@/types";
+import { findAlternatingInferenceChain } from "./alternatingInferenceChain";
 import {
 	findSkyscraper as findSkyscraperPattern,
 	findTwoStringKite as findTwoStringKitePattern,
@@ -65,6 +66,10 @@ export type ExplainableHint = {
 
 export type HintTechniqueProfile = {
 	difficulty?: Difficulty;
+	/**
+	 * Backtracking in legacy metadata is treated as search to replace, not as a
+	 * logical ceiling; newly supported AIC hints may therefore supersede it.
+	 */
 	techniques?: readonly string[];
 	notes?: CellNotes;
 	/**
@@ -1076,6 +1081,48 @@ function findBUGPlusOne(candidates: CandidateGrid): HintStep | null {
 	return null;
 }
 
+function findAIC(candidates: CandidateGrid): HintStep | null {
+	const result = findAlternatingInferenceChain(candidates);
+	if (!result || result.eliminations.length === 0) return null;
+
+	const first = result.chain[0];
+	const last = result.chain.at(-1);
+	if (!first || !last) return null;
+
+	const candidateLabel = (candidate: CandidateRef) =>
+		`${candidate.value} in ${cellName(candidate)}`;
+	const compactCandidateLabel = (candidate: CandidateRef) =>
+		`${cellName(candidate)}(${candidate.value})`;
+	const eliminationText = result.eliminations
+		.map((candidate) => `${candidate.value} from ${cellName(candidate)}`)
+		.join(", ");
+	const chainText = result.links.reduce(
+		(text, link) =>
+			`${text} ${link.strength === "strong" ? "=" : "–"} ${compactCandidateLabel(link.to)}`,
+		compactCandidateLabel(first),
+	);
+
+	return {
+		technique: "Alternating Inference Chain",
+		kind: "elimination",
+		title:
+			result.eliminations.length === 1
+				? `Remove ${eliminationText}`
+				: `AIC removes ${result.eliminations.length} candidates`,
+		summary: `A ${result.linkCount}-link chain proves that at least one of ${candidateLabel(first)} and ${candidateLabel(last)} must be true.`,
+		details: [
+			'In the chain, "=" marks a strong link (at least one is true) and "–" marks a weak link (both cannot be true).',
+			`Chain: ${chainText}.`,
+			`The marked candidate conflicts with both endpoints. Since at least one endpoint must be true, remove ${eliminationText}.`,
+		],
+		pattern: result.chain.map((candidate, index) => ({
+			...candidate,
+			group: index % 2 === 0 ? "a" : "b",
+		})),
+		eliminations: result.eliminations,
+	};
+}
+
 function hasSolution(board: Board): boolean {
 	const candidates = buildCandidates(board);
 	let best: { row: number; col: number; values: number[] } | null = null;
@@ -1197,6 +1244,7 @@ const HUMAN_TECHNIQUE_COST: Partial<Record<HintTechnique, number>> = {
 	"XY-Chain": 9,
 	"BUG+1": 9.5,
 	Jellyfish: 10.5,
+	"Alternating Inference Chain": 14,
 	"Cell Forcing Chain": 24,
 };
 
@@ -1234,6 +1282,7 @@ const ELIMINATION_FINDERS: Array<
 	findSimpleColoring,
 	findXYChain,
 	(candidates) => findFish(candidates, 4),
+	findAIC,
 ];
 
 function techniqueFamily(technique: HintTechnique) {
@@ -1329,11 +1378,22 @@ function compareSearchNodes(first: HintSearchNode, second: HintSearchNode) {
 
 function techniqueCeiling(profile?: HintTechniqueProfile) {
 	if (!profile) return Number.POSITIVE_INFINITY;
-	const difficultyLimit = profile.difficulty
+	let difficultyLimit = profile.difficulty
 		? DIFFICULTY_TECHNIQUE_CEILING[profile.difficulty]
 		: Number.POSITIVE_INFINITY;
 	const advertised = profile.techniques ?? [];
 	if (advertised.length === 0) return difficultyLimit;
+
+	// Older records can say that the previous grader needed Backtracking while
+	// still carrying a pre-reranking difficulty such as Hard. Backtracking is not
+	// a human hint ceiling, so let newly supported logical AICs replace that search
+	// instead of preserving a stale "no next step" result.
+	if (advertised.includes("Backtracking")) {
+		difficultyLimit = Math.max(
+			difficultyLimit,
+			HUMAN_TECHNIQUE_COST["Alternating Inference Chain"] ?? difficultyLimit,
+		);
+	}
 
 	const rankedCosts: number[] = [];
 	let hasUnrankedTechnique = false;
@@ -1645,9 +1705,10 @@ function findWrongEntry(
  * Builds a human-readable path to the next placement without changing the board.
  * The solution is used only to flag an incorrect player entry; all deductions are
  * derived from Sudoku constraints and candidate logic. When supplied, the profile
- * prevents hints from exceeding the puzzle's advertised technique level unless
- * the interactive caller explicitly opts into a logical continuation after the
- * player's notes have already recorded every level-appropriate deduction.
+ * prevents hints from exceeding the puzzle's advertised logical technique level.
+ * Legacy Backtracking metadata can be replaced by a newly supported AIC, and the
+ * interactive caller can also opt into a continuation after the player's notes
+ * already record every level-appropriate deduction.
  */
 export function findExplainableHint(
 	current: Board,

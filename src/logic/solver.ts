@@ -6,6 +6,7 @@ import type {
 	LogicalTechniqueRoute,
 	Technique,
 } from "@/types";
+import { findAlternatingInferenceChain } from "./alternatingInferenceChain";
 import {
 	findSkyscraper as findSkyscraperPattern,
 	findTwoStringKite as findTwoStringKitePattern,
@@ -68,7 +69,7 @@ const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 };
 
 /** Update this whenever the supported techniques or analysis semantics change. */
-export const LOGICAL_ANALYSIS_VERSION = "bounded-logical-v2";
+export const LOGICAL_ANALYSIS_VERSION = "bounded-logical-v3";
 
 /**
  * Techniques this solver actually implements, in the exact priority used by
@@ -97,6 +98,7 @@ export const SUPPORTED_LOGICAL_TECHNIQUES = [
 	"XY-Chain",
 	"Simple Colouring",
 	"BUG+1",
+	"Alternating Inference Chain",
 ] as const satisfies readonly Exclude<Technique, "Backtracking">[];
 
 type SupportedLogicalTechnique = (typeof SUPPORTED_LOGICAL_TECHNIQUES)[number];
@@ -295,6 +297,19 @@ export class SudokuSolver {
 			if (this.canUse("BUG+1") && this.findBUGPlusOne()) {
 				totalScore += TECHNIQUE_SCORES["BUG+1"] * F;
 				changed = true;
+				continue;
+			}
+			const alternatingInferenceChain = this.canUse(
+				"Alternating Inference Chain",
+			)
+				? this.findAlternatingInferenceChain()
+				: null;
+			if (alternatingInferenceChain) {
+				totalScore +=
+					(TECHNIQUE_SCORES["Alternating Inference Chain"] +
+						alternatingInferenceChain.links) *
+					F;
+				changed = true;
 			}
 		}
 
@@ -393,6 +408,21 @@ export class SudokuSolver {
 		}
 
 		return false;
+	}
+
+	private findAlternatingInferenceChain(): { links: number } | null {
+		const result = findAlternatingInferenceChain(this.candidates);
+		if (!result) return null;
+
+		let removed = false;
+		for (const elimination of result.eliminations) {
+			const candidates = this.candidates[elimination.row]?.[elimination.col];
+			if (candidates?.delete(elimination.value)) removed = true;
+		}
+		if (!removed) return null;
+
+		this.techniquesUsed.add("Alternating Inference Chain");
+		return { links: result.links.length };
 	}
 
 	private getCandidateDensityFactor(): number {
@@ -1646,7 +1676,7 @@ export function analyzeLogicalTechniques(
 			techniques: Technique[];
 		}[] = [];
 
-		// Frontier groups are small (at most four in v1), so this is an exact
+		// Frontier groups are intentionally small, so this is an exact
 		// enumeration for the documented bounded model, not a random sample.
 		for (let mask = 0; mask < 2 ** frontierTechniques.length; mask++) {
 			const frontier = new Set<Technique>();

@@ -100,6 +100,9 @@ export function HintPanel({
 	const isTechniqueStage = visibleDisclosureStage === "technique";
 	const isLocationStage = visibleDisclosureStage === "location";
 	const isDetailsStage = visibleDisclosureStage === "details";
+	const hasPatternGroups = step?.pattern.some(
+		(candidate) => candidate.group === "b",
+	);
 
 	return (
 		<m.aside
@@ -208,9 +211,17 @@ export function HintPanel({
 
 						<div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
 							{step.pattern.length > 0 && (
-								<span className="flex items-center gap-1.5">
-									<span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
-									Pattern
+								<span
+									className="flex items-center gap-1.5"
+									data-testid="hint-pattern-legend"
+								>
+									<span className="flex items-center gap-0.5">
+										<span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+										{hasPatternGroups && (
+											<span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+										)}
+									</span>
+									{hasPatternGroups ? "Pattern groups" : "Pattern"}
 								</span>
 							)}
 							{step.eliminations.length > 0 && (

@@ -17,6 +17,7 @@ describe("classifyDifficulty", () => {
 		["Y-Wing", "expert"],
 		["Swordfish", "expert"],
 		["XY-Chain", "master"],
+		["Alternating Inference Chain", "master"],
 		["Backtracking", "master"],
 	] satisfies Array<
 		[Technique, Difficulty]
@@ -55,7 +56,7 @@ describe("classifyDifficulty", () => {
 	test("moves a backtracking puzzle out of the old medium score band", () => {
 		const graded = gradePuzzle(
 			parsePuzzle(
-				"000000000706308905004675800097030650058902710000000000009000100000103000010060080",
+				"054100070000400003030500200000800009002619500900004000001005090800007000070001860",
 			),
 		);
 

@@ -4,6 +4,7 @@ import {
 	analyzeLogicalTechniques,
 	gradePuzzle,
 	isCurrentLogicalTechniqueAnalysis,
+	SUPPORTED_LOGICAL_TECHNIQUES,
 	SudokuSolver,
 } from "./solver";
 import { parsePuzzle } from "./sudoku";
@@ -110,6 +111,50 @@ test("gradePuzzle - XY-Chain", () => {
 	expect(graded.techniquesUsed.has("XY-Chain")).toBe(true);
 });
 
+const REPORTED_1809_PUZZLE =
+	"074800900001050004500000063000305008060070090900106000730000006800030200005004830";
+const REPORTED_1809_SOLUTION =
+	"674813925391652784582947163427395618163478592958126347739281456846539271215764839";
+
+test("gradePuzzle solves the reported 18:09 puzzle logically with an AIC", () => {
+	const board = parsePuzzle(REPORTED_1809_PUZZLE);
+	const graded = gradePuzzle(board);
+
+	expect(graded.isSolvable).toBe(true);
+	expect(graded.solution).toEqual(parsePuzzle(REPORTED_1809_SOLUTION));
+	expect(graded.techniquesUsed.has("Alternating Inference Chain")).toBe(true);
+	expect(graded.techniquesUsed.has("Backtracking")).toBe(false);
+
+	const withoutAIC = new SudokuSolver(board, {
+		allowedTechniques: new Set(
+			SUPPORTED_LOGICAL_TECHNIQUES.filter(
+				(technique) => technique !== "Alternating Inference Chain",
+			),
+		),
+		allowBacktracking: false,
+	}).solve();
+	expect(withoutAIC.isSolvable).toBe(false);
+});
+
+test("bounded analysis finds the logical AIC route for the reported 18:09 puzzle", () => {
+	const analysis = analyzeLogicalTechniques(parsePuzzle(REPORTED_1809_PUZZLE), {
+		useCache: false,
+	});
+
+	expect(analysis).toMatchObject({
+		version: "bounded-logical-v3",
+		status: "solved-logically",
+		minimumCeiling: 100,
+		routes: [
+			{
+				frontier: ["Alternating Inference Chain"],
+			},
+		],
+		unavoidableInReruns: ["Alternating Inference Chain"],
+	});
+	expect(analysis.observedTechniques).toContain("Alternating Inference Chain");
+});
+
 test("gradePuzzle records the observed techniques for the reported hard puzzle", () => {
 	const board = parsePuzzle(
 		"020780000000305002000092000095000068801000907740000130000920000500607000000031070",
@@ -211,7 +256,7 @@ test("bounded analysis distinguishes a completed grid from a puzzle that needs s
 	});
 
 	const searchPuzzle = parsePuzzle(
-		"200050006010000090600801003007090600000703000900080002100000005060902010003060200",
+		"006000200900000004243000896000591000002080300400203001300000007000907000010408020",
 	);
 	expect(
 		analyzeLogicalTechniques(searchPuzzle, { useCache: false }),
