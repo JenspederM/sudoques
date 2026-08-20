@@ -18,6 +18,7 @@ import { VictoryDialog } from "@/components/VictoryDialog";
 import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
+import { useScreenWakeLock } from "@/hooks/useScreenWakeLock";
 import { buildReviewState } from "@/lib/utils";
 import {
 	type ExplainableHint,
@@ -50,6 +51,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	timer: initialTime,
 }) => {
 	const navigate = useNavigate();
+	useScreenWakeLock();
 	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
 		null,
 	);
