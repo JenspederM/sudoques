@@ -193,6 +193,7 @@ body {
 html.game-route-active,
 body.game-route-active {
 	overscroll-behavior-x: none;
+	touch-action: pan-y;
 }
 
 .game-route-shell {
