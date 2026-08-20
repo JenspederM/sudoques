@@ -117,6 +117,10 @@ export function getTechniqueExplanation(technique: HintTechnique): string {
 			return "In one row or column, every position for a candidate lies inside the same box. It can be removed from the other cells in that box.";
 		case "X-Wing":
 			return "A candidate occurs in the same two columns of two rows, or the same two rows of two columns. Those four corners remove the candidate elsewhere on the crossed lines.";
+		case "Skyscraper":
+			return "Two rows or columns each have exactly two places for a candidate, with one pair aligned. At least one of the two unaligned ends must be true, so cells seeing both ends cannot contain that candidate.";
+		case "2-String Kite":
+			return "A row and a column each have exactly two places for a candidate, with one end of each link meeting in the same box. At least one outer end must be true, so cells seeing both outer ends lose that candidate.";
 		case "Swordfish":
 			return "A candidate is confined to three matching rows and columns. The candidate can be removed from the other cells on the three crossing lines.";
 		case "Jellyfish":

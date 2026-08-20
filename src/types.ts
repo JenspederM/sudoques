@@ -233,6 +233,8 @@ export type Technique =
 	| "Gurth's Theorem"
 	| "BUG+1"
 	| "X-Wing"
+	| "Skyscraper"
+	| "2-String Kite"
 	| "Unique Rectangle Type 1"
 	| "Chute Remote Pair"
 	| "Simple Colouring"

@@ -22,6 +22,32 @@ const REPORTED_PROFILE = {
 		"X-Wing",
 	],
 };
+const REPORTED_PAIR_ONLY_PROFILE = {
+	difficulty: "hard" as const,
+	techniques: [
+		"Naked Single",
+		"Hidden Single",
+		"Pointing Pairs",
+		"Naked Pair",
+		"Hidden Pair",
+	],
+};
+const TURBOT_REPORTED_INITIAL =
+	"000000000200374005050000080070090030080207090009040500900852003000030000005010400";
+const TURBOT_REPORTED_CURRENT =
+	"000085040208374005050021080070598030583267194629143578940852003002439850835716429";
+const TURBOT_REPORTED_SOLUTION =
+	"317685942298374615456921387174598236583267194629143578941852763762439851835716429";
+const TURBOT_REPORTED_LEGACY_PROFILE = {
+	difficulty: "hard" as const,
+	techniques: [
+		"Naked Single",
+		"Hidden Single",
+		"Pointing Pairs",
+		"Unique Rectangle Type 1",
+		"Line/Box Reduction",
+	],
+};
 
 function notesWith(entries: [number, number, number[]][]) {
 	const notes = createEmptyNotes();
@@ -68,6 +94,41 @@ describe("findExplainableHint", () => {
 		expect(hint.steps.at(-1)?.technique).toBe("Hidden Single");
 		expect(hint.steps.at(-1)?.placement).toEqual({ row: 2, col: 0, value: 4 });
 		expect(findExplainableHint(board, board)).toEqual(hint);
+	});
+
+	test("explains the reported hard position with a Skyscraper before placing R8C2", () => {
+		const initial = parsePuzzle(TURBOT_REPORTED_INITIAL);
+		const current = parsePuzzle(TURBOT_REPORTED_CURRENT);
+		const solution = parsePuzzle(TURBOT_REPORTED_SOLUTION);
+		const before = JSON.stringify(current);
+
+		const hint = findExplainableHint(current, initial, solution, {
+			...TURBOT_REPORTED_LEGACY_PROFILE,
+		});
+
+		expect(hint.status).toBe("hint");
+		expect(hint.steps.map((step) => step.technique)).toEqual([
+			"Skyscraper",
+			"Naked Single",
+		]);
+		expect(hint.steps[0]?.eliminations).toContainEqual({
+			row: 7,
+			col: 1,
+			value: 1,
+		});
+		expect(hint.steps.at(-1)?.placement).toEqual({
+			row: 7,
+			col: 1,
+			value: 6,
+		});
+		for (const step of hint.steps) {
+			for (const elimination of step.eliminations) {
+				expect(solution[elimination.row]?.[elimination.col]).not.toBe(
+					elimination.value,
+				);
+			}
+		}
+		expect(JSON.stringify(current)).toBe(before);
 	});
 
 	test("never crosses the puzzle's advertised technique ceiling", () => {
@@ -192,7 +253,7 @@ describe("findExplainableHint", () => {
 		]);
 
 		const hint = findExplainableHint(current, initial, undefined, {
-			...REPORTED_PROFILE,
+			...REPORTED_PAIR_ONLY_PROFILE,
 			notes,
 		});
 
@@ -224,7 +285,7 @@ describe("findExplainableHint", () => {
 
 		const before = notes.map((row) => row.map((cell) => [...cell]));
 		const hint = findExplainableHint(current, initial, undefined, {
-			...REPORTED_PROFILE,
+			...REPORTED_PAIR_ONLY_PROFILE,
 			notes,
 			allowBeyondProfileAfterRecordedNotes: true,
 		});
@@ -232,7 +293,7 @@ describe("findExplainableHint", () => {
 		expect(hint.status).toBe("hint");
 		expect(hint.message).toContain("notes already cover");
 		expect(hint.steps.map((step) => step.technique)).toEqual([
-			"Simple Colouring",
+			"2-String Kite",
 			"Naked Single",
 		]);
 		expect(hint.steps.at(-1)?.placement).toEqual({
@@ -252,7 +313,7 @@ describe("findExplainableHint", () => {
 		]);
 
 		const hint = findExplainableHint(current, initial, undefined, {
-			...REPORTED_PROFILE,
+			...REPORTED_PAIR_ONLY_PROFILE,
 			notes,
 		});
 
@@ -268,7 +329,7 @@ describe("findExplainableHint", () => {
 		]);
 
 		const hint = findExplainableHint(current, initial, undefined, {
-			...REPORTED_PROFILE,
+			...REPORTED_PAIR_ONLY_PROFILE,
 			notes,
 		});
 

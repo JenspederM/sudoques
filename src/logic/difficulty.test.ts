@@ -12,6 +12,8 @@ describe("classifyDifficulty", () => {
 		["Pointing Pairs", "medium"],
 		["Naked Triple", "hard"],
 		["X-Wing", "hard"],
+		["Skyscraper", "hard"],
+		["2-String Kite", "hard"],
 		["Y-Wing", "expert"],
 		["Swordfish", "expert"],
 		["XY-Chain", "master"],

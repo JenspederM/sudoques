@@ -99,6 +99,13 @@ describe("technique explanations", () => {
 		expect(explanation).toContain("cells that see both pincers");
 	});
 
+	test("explains the distinguishing Turbot Fish links", () => {
+		expect(getTechniqueExplanation("Skyscraper")).toContain(
+			"two unaligned ends",
+		);
+		expect(getTechniqueExplanation("2-String Kite")).toContain("same box");
+	});
+
 	test("covers every technique the explainable hint solver can display", () => {
 		const techniques: HintTechnique[] = [
 			"Naked Single",
@@ -112,6 +119,8 @@ describe("technique explanations", () => {
 			"Naked Quad",
 			"Hidden Quad",
 			"X-Wing",
+			"Skyscraper",
+			"2-String Kite",
 			"Swordfish",
 			"Jellyfish",
 			"Y-Wing",
