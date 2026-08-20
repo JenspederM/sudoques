@@ -135,6 +135,7 @@ describe("SudokuGrid visual states", () => {
 	test("limits iOS gesture suppression to the board surface", () => {
 		const markup = renderGrid(emptyBoard(), emptyBoard(), [0, 0]);
 
+		expect(markup).toContain("sudoku-gesture-surface");
 		expect(markup).toContain("touch-none");
 		expect(markup).toContain("select-none");
 		expect(markup).toContain("[-webkit-touch-callout:none]");

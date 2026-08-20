@@ -88,6 +88,24 @@ const centerOfKey = (gesture: OpenCellGesture, value: number) => {
 };
 
 describe("gesture pad geometry", () => {
+	test("uses the strict left, above, right, below placement order", () => {
+		const leftCell = { left: 250, top: 300, width: 40, height: 40 };
+		const leftLayout = getGesturePadLayout(leftCell, viewport);
+		expect(leftLayout.left + leftLayout.width).toBe(leftCell.left - 12);
+
+		const aboveCell = { left: 100, top: 300, width: 40, height: 40 };
+		const aboveLayout = getGesturePadLayout(aboveCell, viewport);
+		expect(aboveLayout.top + aboveLayout.height).toBe(aboveCell.top - 12);
+
+		const rightCell = { left: 30, top: 100, width: 40, height: 40 };
+		const rightLayout = getGesturePadLayout(rightCell, viewport);
+		expect(rightLayout.left).toBe(rightCell.left + rightCell.width + 12);
+
+		const belowCell = { left: 150, top: 100, width: 40, height: 40 };
+		const belowLayout = getGesturePadLayout(belowCell, viewport);
+		expect(belowLayout.top).toBe(belowCell.top + belowCell.height + 12);
+	});
+
 	test("clamps inside an offset iPhone-sized visual viewport", () => {
 		const layout = getGesturePadLayout(
 			{ left: 318, top: 570, width: 40, height: 40 },

@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { useHaptics } from "@/contexts/HapticsContext";
 import type { CellGestureCommit } from "@/lib/cellGestureNumpad";
 import type { PendingNumberInput } from "@/lib/doubleTapInput";
+import { getInputHapticCue } from "@/lib/haptics";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,
@@ -210,13 +211,12 @@ export function useGameActions({
 			const { change, newActions, nextState } = transition;
 
 			if (withHaptic) {
-				if (isBoardComplete(nextState.current, puzzle.solution)) {
-					trigger("success");
-				} else if (change.kind === "value") {
-					trigger(change.isCorrect ? "value" : "incorrect");
-				} else {
-					trigger(change.kind);
-				}
+				trigger(
+					getInputHapticCue(
+						change,
+						isBoardComplete(nextState.current, puzzle.solution),
+					),
+				);
 			}
 			void commitActions(newActions, undefined, nextState);
 			return true;

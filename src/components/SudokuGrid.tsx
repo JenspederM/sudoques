@@ -1,6 +1,7 @@
 import { m } from "framer-motion";
 import { type HTMLProps, useEffect, useRef, useState } from "react";
 import { CellGestureNumpad } from "@/components/CellGestureNumpad";
+import { installBoardGestureSuppression } from "@/lib/boardGestureSuppression";
 import {
 	type CellGestureCommit,
 	type CellGestureMode,
@@ -77,6 +78,7 @@ export const SudokuGrid = ({
 	onCellGestureFocus,
 	onCellGestureCommit,
 }: SudokuGridProps) => {
+	const gridRef = useRef<HTMLDivElement | null>(null);
 	const [openGesture, setOpenGesture] = useState<OpenCellGesture | null>(null);
 	const gesturePropsRef = useRef({
 		onCellSelect,
@@ -111,6 +113,12 @@ export const SudokuGrid = ({
 		});
 	}
 	const gestureController = gestureControllerRef.current;
+
+	useEffect(() => {
+		const grid = gridRef.current;
+		if (!grid) return;
+		return installBoardGestureSuppression(grid);
+	}, []);
 
 	useEffect(() => {
 		const cancelGesture = () => gestureController.cancel();
@@ -185,9 +193,10 @@ export const SudokuGrid = ({
 
 	return (
 		<div
+			ref={gridRef}
 			data-testid="sudoku-grid"
 			className={cn(
-				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-[var(--grid-line)] touch-none select-none [-webkit-touch-callout:none]",
+				"sudoku-gesture-surface relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-[var(--grid-line)] touch-none select-none [-webkit-touch-callout:none]",
 				className,
 			)}
 		>

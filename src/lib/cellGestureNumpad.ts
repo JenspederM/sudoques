@@ -74,8 +74,11 @@ const overflowDistance = (rect: Rect, viewport: ViewportBounds) => {
 };
 
 /**
- * Places a compact 3x3 pad close to the pressed cell, preferring the side with
- * the most useful space and clamping the result inside the visual viewport.
+ * Places a compact 3x3 pad close to the pressed cell. The order is deliberate:
+ * left keeps the player's hand away from the board, then above, right, and
+ * finally below. A later side is only used when the whole pad cannot fit on an
+ * earlier one. If no side fits, the least-overflowing option is clamped into
+ * the visual viewport while preserving the same order for ties.
  */
 export function getGesturePadLayout(
 	cell: Rect,
@@ -92,9 +95,6 @@ export function getGesturePadLayout(
 	);
 	const centeredLeft = cell.left + cell.width / 2 - size / 2;
 	const centeredTop = cell.top + cell.height / 2 - size / 2;
-	const viewportCenterX = viewport.left + viewport.width / 2;
-	const viewportCenterY = viewport.top + viewport.height / 2;
-
 	const above = {
 		left: centeredLeft,
 		top: cell.top - PAD_CELL_GAP_PX - size,
@@ -120,22 +120,19 @@ export function getGesturePadLayout(
 		height: size,
 	};
 
-	const verticalPreference =
-		cell.top + cell.height / 2 >= viewportCenterY
-			? [above, below]
-			: [below, above];
-	const horizontalPreference =
-		cell.left + cell.width / 2 >= viewportCenterX
-			? [left, right]
-			: [right, left];
-	const candidates = [...verticalPreference, ...horizontalPreference];
-	let best = candidates[0] ?? above;
-	let bestOverflow = overflowDistance(best, viewport);
-	for (const candidate of candidates.slice(1)) {
-		const overflow = overflowDistance(candidate, viewport);
-		if (overflow < bestOverflow) {
-			best = candidate;
-			bestOverflow = overflow;
+	const candidates = [left, above, right, below];
+	let best = candidates.find(
+		(candidate) => overflowDistance(candidate, viewport) === 0,
+	);
+	if (!best) {
+		best = candidates[0] ?? above;
+		let bestOverflow = overflowDistance(best, viewport);
+		for (const candidate of candidates.slice(1)) {
+			const overflow = overflowDistance(candidate, viewport);
+			if (overflow < bestOverflow) {
+				best = candidate;
+				bestOverflow = overflow;
+			}
 		}
 	}
 
