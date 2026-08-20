@@ -71,9 +71,10 @@ export const GameControls: React.FC<GameControlsProps> = ({
 				</button>
 				<span
 					id="quick-note-help"
+					aria-hidden="true"
 					className="text-[10px] leading-none whitespace-nowrap text-muted-foreground"
 				>
-					{isNoteMode ? "Tap number for note" : "Hold number for note"}
+					{isNoteMode ? "Tap number for note" : "Double-tap number for note"}
 				</span>
 			</div>
 

@@ -4,6 +4,8 @@ import { GameControls } from "./GameControls";
 import { Numpad } from "./Numpad";
 
 const noop = () => undefined;
+const renderNumpad = (isNoteMode: boolean) =>
+	renderToStaticMarkup(<Numpad onNumberClick={noop} isNoteMode={isNoteMode} />);
 
 describe("notes controls", () => {
 	test("persistent notes mode is exposed by text, semantics, and numpad state", () => {
@@ -17,9 +19,7 @@ describe("notes controls", () => {
 				canRedo={false}
 			/>,
 		);
-		const numpad = renderToStaticMarkup(
-			<Numpad onNumberClick={noop} onQuickNote={noop} isNoteMode={true} />,
-		);
+		const numpad = renderNumpad(true);
 
 		expect(controls).toContain('aria-pressed="true"');
 		expect(controls).toContain("Notes On");
@@ -29,7 +29,7 @@ describe("notes controls", () => {
 		expect(numpad.match(/data-note-mode="true"/g)).toHaveLength(9);
 	});
 
-	test("value mode exposes the press-and-hold shortcut", () => {
+	test("value mode exposes the double-tap shortcut", () => {
 		const controls = renderToStaticMarkup(
 			<GameControls
 				isNoteMode={false}
@@ -40,24 +40,18 @@ describe("notes controls", () => {
 				canRedo={false}
 			/>,
 		);
-		const numpad = renderToStaticMarkup(
-			<Numpad onNumberClick={noop} onQuickNote={noop} isNoteMode={false} />,
-		);
+		const numpad = renderNumpad(false);
 
 		expect(controls).toContain('aria-pressed="false"');
-		expect(controls).toContain("Hold number for note");
+		expect(controls).toContain("Double-tap number for note");
 		expect(numpad).toContain('aria-label="Number pad, value mode"');
-		expect(numpad).toContain("Press and hold to toggle note 1");
+		expect(numpad).toContain('aria-label="Enter 1"');
+		expect(numpad).not.toContain("Double-tap to toggle note 1");
 	});
 
 	test("visually and functionally disables every input without a selected cell", () => {
 		const numpad = renderToStaticMarkup(
-			<Numpad
-				onNumberClick={noop}
-				onQuickNote={noop}
-				isNoteMode={false}
-				disabled={true}
-			/>,
+			<Numpad onNumberClick={noop} isNoteMode={false} disabled={true} />,
 		);
 
 		expect(numpad).toContain('aria-disabled="true"');
@@ -70,7 +64,6 @@ describe("notes controls", () => {
 		const numpad = renderToStaticMarkup(
 			<Numpad
 				onNumberClick={noop}
-				onQuickNote={noop}
 				isNoteMode={false}
 				disabled={false}
 				disabledNumbers={[5]}

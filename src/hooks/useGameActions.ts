@@ -1,11 +1,14 @@
 import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { useCallback, useRef } from "react";
+import { useHaptics } from "@/contexts/HapticsContext";
+import type { PendingNumberInput } from "@/lib/doubleTapInput";
 import {
 	markPuzzleAsPlayed,
 	saveGameState,
 	saveHighScore,
 } from "@/logic/firebase";
+import { getGameInputChange } from "@/logic/gameInput";
 import { applyActions } from "@/logic/gameReducer";
 import {
 	clearGuestGameState,
@@ -36,6 +39,7 @@ export function useGameActions({
 }: UseGameActionsProps) {
 	const { puzzle } = gameState;
 	const hasWonLocallyRef = useRef(false);
+	const { trigger } = useHaptics();
 
 	// Compute current state and undo/redo info from actions
 	const {
@@ -48,12 +52,14 @@ export function useGameActions({
 	const canRedo = pointer < historyLength - 1;
 
 	const commitActions = useCallback(
-		async (newActions: GameAction[], overrideTimer?: number) => {
-			const { state: newState } = applyActions(
-				puzzle.initial,
-				puzzle.solution,
-				newActions,
-			);
+		async (
+			newActions: GameAction[],
+			overrideTimer?: number,
+			precomputedState?: Pick<GameState, "current" | "notes">,
+		) => {
+			const newState =
+				precomputedState ??
+				applyActions(puzzle.initial, puzzle.solution, newActions).state;
 
 			const currentTimer = overrideTimer ?? timer;
 			const isWon = isBoardComplete(newState.current, puzzle.solution);
@@ -133,63 +139,113 @@ export function useGameActions({
 		[user, puzzle, currentDerivedState, gameState.actions],
 	);
 
-	const commitInput = useCallback(
-		(num: number | null, forceNote = false) => {
-			if (!selectedCell) return;
-			const [r, c] = selectedCell;
-			const initialRow = puzzle.initial[r];
-			if (!initialRow || initialRow[c] !== null) return;
-			const currentRow = currentDerivedState.current[r];
-			const asNote = forceNote || isNoteMode;
+	const buildInputTransition = useCallback(
+		(
+			num: number | null,
+			{
+				forceNote = false,
+				forceValue = false,
+				targetCell,
+			}: {
+				forceNote?: boolean;
+				forceValue?: boolean;
+				targetCell?: [number, number];
+			} = {},
+		) => {
+			const change = getGameInputChange({
+				selectedCell: targetCell ?? selectedCell,
+				initial: puzzle.initial,
+				solution: puzzle.solution,
+				current: currentDerivedState.current,
+				notes: currentDerivedState.notes,
+				isNoteMode: forceValue ? false : isNoteMode,
+				forceNote,
+				value: num,
+				timer,
+			});
+			if (!change) return null;
 
-			// Notes on a filled player cell are invisible and cannot be useful.
-			if (asNote && num !== null && currentRow?.[c] != null) return;
-
-			let action: GameAction;
-			if (asNote && num !== null) {
-				const rowNotes = currentDerivedState.notes[r];
-				const targetCellNotes = rowNotes ? rowNotes[c] : undefined;
-				if (targetCellNotes?.has(num)) {
-					action = {
-						type: "removeNote",
-						delta: timer,
-						payload: { row: r, col: c, value: num },
-					};
-				} else {
-					action = {
-						type: "addNote",
-						delta: timer,
-						payload: { row: r, col: c, value: num },
-					};
-				}
-			} else {
-				if (num === null) {
-					action = {
-						type: "removeValue",
-						delta: timer,
-						payload: { row: r, col: c },
-					};
-				} else {
-					// If the value hasn't changed, don't update
-					if (currentRow && currentRow[c] === num) return;
-					action = {
-						type: "addValue",
-						delta: timer,
-						payload: { row: r, col: c, value: num },
-					};
-				}
-			}
-
-			commitActions([...gameState.actions, action]);
+			const newActions = [...gameState.actions, change.action];
+			const { state: nextState } = applyActions(
+				puzzle.initial,
+				puzzle.solution,
+				newActions,
+			);
+			return { change, newActions, nextState };
 		},
 		[
-			gameState,
-			timer,
-			puzzle,
-			commitActions,
+			gameState.actions,
 			currentDerivedState.current,
 			currentDerivedState.notes,
 			isNoteMode,
+			puzzle.initial,
+			puzzle.solution,
+			selectedCell,
+			timer,
+		],
+	);
+
+	const commitInput = useCallback(
+		(
+			num: number | null,
+			{
+				forceNote = false,
+				forceValue = false,
+				withHaptic = true,
+				targetCell,
+			}: {
+				forceNote?: boolean;
+				forceValue?: boolean;
+				withHaptic?: boolean;
+				targetCell?: [number, number];
+			} = {},
+		) => {
+			const transition = buildInputTransition(num, {
+				forceNote,
+				forceValue,
+				targetCell,
+			});
+			if (!transition) return false;
+			const { change, newActions, nextState } = transition;
+
+			if (withHaptic) {
+				if (isBoardComplete(nextState.current, puzzle.solution)) {
+					trigger("success");
+				} else if (change.kind === "value") {
+					trigger(change.isCorrect ? "value" : "incorrect");
+				} else {
+					trigger(change.kind);
+				}
+			}
+			void commitActions(newActions, undefined, nextState);
+			return true;
+		},
+		[buildInputTransition, commitActions, puzzle.solution, trigger],
+	);
+
+	const getValuePreview = useCallback(
+		(num: number) => {
+			const transition = buildInputTransition(num, { forceValue: true });
+			if (!transition || transition.change.kind !== "value" || !selectedCell)
+				return null;
+			const [row, col] = selectedCell;
+			return {
+				row,
+				col,
+				value: num,
+				isCorrect: transition.change.isCorrect === true,
+				isComplete: isBoardComplete(
+					transition.nextState.current,
+					puzzle.solution,
+				),
+				canQuickNote: currentDerivedState.current[row]?.[col] == null,
+				hasMatchingNote: transition.change.hasMatchingNote === true,
+			};
+		},
+		[
+			buildInputTransition,
+			currentDerivedState.current,
+			puzzle.solution,
 			selectedCell,
 		],
 	);
@@ -200,7 +256,26 @@ export function useGameActions({
 	);
 
 	const handleQuickNote = useCallback(
-		(num: number) => commitInput(num, true),
+		(num: number) => commitInput(num, { forceNote: true }),
+		[commitInput],
+	);
+
+	const handleDeferredInput = useCallback(
+		(input: PendingNumberInput) =>
+			commitInput(input.value, {
+				forceValue: true,
+				withHaptic: false,
+				targetCell: [input.row, input.col],
+			}),
+		[commitInput],
+	);
+
+	const handleQuickNoteAt = useCallback(
+		(input: PendingNumberInput) =>
+			commitInput(input.value, {
+				forceNote: true,
+				targetCell: [input.row, input.col],
+			}),
 		[commitInput],
 	);
 
@@ -210,9 +285,10 @@ export function useGameActions({
 				...gameState.actions,
 				{ type: "undo", delta: timer },
 			];
-			commitActions(newActions);
+			trigger("undo");
+			void commitActions(newActions);
 		}
-	}, [canUndo, gameState.actions, timer, commitActions]);
+	}, [canUndo, gameState.actions, timer, commitActions, trigger]);
 
 	const redo = useCallback(() => {
 		if (canRedo) {
@@ -220,9 +296,10 @@ export function useGameActions({
 				...gameState.actions,
 				{ type: "redo", delta: timer },
 			];
-			commitActions(newActions);
+			trigger("redo");
+			void commitActions(newActions);
 		}
-	}, [canRedo, gameState.actions, timer, commitActions]);
+	}, [canRedo, gameState.actions, timer, commitActions, trigger]);
 
 	const handleSolve = useCallback(() => {
 		const solver = new SudokuSolver(currentDerivedState.current);
@@ -237,13 +314,15 @@ export function useGameActions({
 
 		const endTime = timer + solveActions.length;
 		setTimer(endTime);
-		commitActions([...gameState.actions, ...solveActions], endTime);
+		trigger("success");
+		void commitActions([...gameState.actions, ...solveActions], endTime);
 	}, [
 		currentDerivedState.current,
 		timer,
 		gameState.actions,
 		commitActions,
 		setTimer,
+		trigger,
 	]);
 
 	const handleReset = useCallback(() => {
@@ -264,10 +343,11 @@ export function useGameActions({
 			saveGuestGameState(user.uid, stateToSave);
 		}
 
+		trigger("reset");
 		saveGameState(user.uid, stateToSave).catch((err) =>
 			console.error("Failed to reset game state on Firebase", err),
 		);
-	}, [gameState, puzzle.initial, user, setWinState]);
+	}, [gameState, puzzle.initial, user, setWinState, trigger]);
 
 	return {
 		currentDerivedState,
@@ -275,6 +355,9 @@ export function useGameActions({
 		canRedo,
 		handleInput,
 		handleQuickNote,
+		handleQuickNoteAt,
+		handleDeferredInput,
+		getValuePreview,
 		undo,
 		redo,
 		handleSolve,

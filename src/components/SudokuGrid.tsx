@@ -1,5 +1,9 @@
 import { m } from "framer-motion";
 import type { HTMLProps } from "react";
+import type {
+	PendingNoteToggle,
+	PendingNumberInput,
+} from "@/lib/doubleTapInput";
 import { cn } from "@/lib/utils";
 import type { HintStep } from "@/logic/explainableSolver";
 import {
@@ -16,6 +20,8 @@ type SudokuGridProps = HTMLProps<HTMLDivElement> & {
 	onCellSelect: (row: number, col: number) => void;
 	conflicts: { row: number; col: number }[];
 	hintStep?: HintStep | null;
+	pendingValue?: PendingNumberInput | null;
+	pendingNoteToggle?: PendingNoteToggle | null;
 };
 
 export const SudokuGrid = ({
@@ -27,6 +33,8 @@ export const SudokuGrid = ({
 	onCellSelect,
 	conflicts,
 	hintStep,
+	pendingValue,
+	pendingNoteToggle,
 }: SudokuGridProps) => {
 	const isInitial = (r: number, c: number) => {
 		const row = initialBoard[r];
@@ -80,6 +88,8 @@ export const SudokuGrid = ({
 			{(currentBoard as (number | null)[][]).map(
 				(row: (number | null)[], r: number) =>
 					row.map((val: number | null, c: number) => {
+						const pending = pendingValue?.row === r && pendingValue.col === c;
+						const displayValue = pending ? pendingValue.value : val;
 						const highlightState = getCellHighlightState(
 							currentBoard,
 							selectedCell,
@@ -91,7 +101,7 @@ export const SudokuGrid = ({
 						const peer = highlightState === "peer";
 						const initial = isInitial(r, c);
 						const playerEntered = val !== null && !initial;
-						const conflict = hasConflict(r, c);
+						const conflict = !pending && hasConflict(r, c);
 						const hintHouse = isHintHouse(r, c);
 						const hintPattern = hintStep?.pattern.some(
 							(candidate) => candidate.row === r && candidate.col === c,
@@ -111,8 +121,15 @@ export const SudokuGrid = ({
 								key={`cell-${r}-${c}`}
 								data-testid={`cell-${r}-${c}`}
 								data-highlight={highlightState}
+								data-pending={pending || undefined}
 								data-origin={
-									initial ? "given" : playerEntered ? "player" : "empty"
+									initial
+										? "given"
+										: pending
+											? "pending"
+											: playerEntered
+												? "player"
+												: "empty"
 								}
 								whileTap={{ scale: 0.95 }}
 								onClick={() => onCellSelect(r, c)}
@@ -130,6 +147,7 @@ export const SudokuGrid = ({
 										"bg-primary/[0.28] ring-2 ring-inset ring-primary z-30",
 									initial && "text-foreground font-bold",
 									playerEntered && "text-[var(--player-number)]",
+									pending && "text-[var(--player-number)]",
 									hintHouse && "bg-primary/5",
 									hintPattern && "bg-sky-500/15",
 									hintElimination && "bg-red-500/15",
@@ -143,8 +161,8 @@ export const SudokuGrid = ({
 										"text-foreground bg-red-500/80 ring ring-red-500 border border-red-500 animate-pulse z-30",
 								)}
 							>
-								{val !== null ? (
-									<span>{val}</span>
+								{displayValue !== null ? (
+									<span>{displayValue}</span>
 								) : (
 									<div className="grid grid-cols-3 grid-rows-3 w-full h-full p-[2px] text-[8px] sm:text-[10px] leading-tight text-muted-foreground">
 										{Array.from({ length: 9 }).map((_, i) => {
@@ -161,6 +179,13 @@ export const SudokuGrid = ({
 												value,
 											);
 											const highlightMatchingNote = matchingNote && !hintRole;
+											const pendingNoteMatches =
+												pendingNoteToggle?.row === r &&
+												pendingNoteToggle.col === c &&
+												pendingNoteToggle.value === value;
+											const showCandidate = pendingNoteMatches
+												? pendingNoteToggle.shouldExist
+												: (cellNotes?.has(value) ?? false) || hintRole !== null;
 											return (
 												<div
 													// biome-ignore lint/suspicious/noArrayIndexKey: Indices are stable for Sudoku grid
@@ -168,6 +193,13 @@ export const SudokuGrid = ({
 													data-hint-candidate={hintRole ?? undefined}
 													data-note-highlight={
 														highlightMatchingNote || undefined
+													}
+													data-pending-note={
+														pendingNoteMatches
+															? pendingNoteToggle.shouldExist
+																? "visible"
+																: "hidden"
+															: undefined
 													}
 													className={cn(
 														"flex items-center justify-center text-[var(--player-number)]",
@@ -183,7 +215,7 @@ export const SudokuGrid = ({
 															"text-emerald-500 font-black scale-125",
 													)}
 												>
-													{cellNotes?.has(value) || hintRole ? value : ""}
+													{showCandidate ? value : ""}
 												</div>
 											);
 										})}

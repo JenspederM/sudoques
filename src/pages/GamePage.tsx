@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import { AnimatePresence } from "framer-motion";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GameControls } from "@/components/GameControls";
 import { GameMenu } from "@/components/GameMenu";
@@ -15,10 +15,16 @@ import {
 import { SudokuGrid } from "@/components/SudokuGrid";
 import { Timer } from "@/components/Timer";
 import { VictoryDialog } from "@/components/VictoryDialog";
+import { useHaptics } from "@/contexts/HapticsContext";
 import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useScreenWakeLock } from "@/hooks/useScreenWakeLock";
+import {
+	createDoubleTapInputController,
+	type PendingNoteToggle,
+	type PendingNumberInput,
+} from "@/lib/doubleTapInput";
 import { buildReviewState } from "@/lib/utils";
 import {
 	type ExplainableHint,
@@ -45,6 +51,12 @@ interface GamePageProps {
 	timer: number;
 }
 
+type PendingValue = PendingNumberInput & {
+	phase: "preview" | "committing";
+};
+
+const COMMIT_ECHO_TIMEOUT_MS = 2_000;
+
 export const GamePage: React.FC<GamePageProps> = ({
 	user,
 	gameState,
@@ -52,8 +64,34 @@ export const GamePage: React.FC<GamePageProps> = ({
 }) => {
 	const navigate = useNavigate();
 	useScreenWakeLock();
+	const { trigger, cancel: cancelHaptic } = useHaptics();
 	const [selectedCell, setSelectedCell] = useState<[number, number] | null>(
 		null,
+	);
+	const [pendingValue, setPendingValueState] = useState<PendingValue | null>(
+		null,
+	);
+	const pendingValueRef = useRef<PendingValue | null>(null);
+	const [pendingNoteToggle, setPendingNoteToggleState] =
+		useState<PendingNoteToggle | null>(null);
+	const pendingNoteToggleRef = useRef<PendingNoteToggle | null>(null);
+	const inputControllerRef = useRef<ReturnType<
+		typeof createDoubleTapInputController
+	> | null>(null);
+	if (!inputControllerRef.current) {
+		inputControllerRef.current = createDoubleTapInputController();
+	}
+	const inputController = inputControllerRef.current;
+	const setPendingValue = useCallback((value: PendingValue | null) => {
+		pendingValueRef.current = value;
+		setPendingValueState(value);
+	}, []);
+	const setPendingNoteToggle = useCallback(
+		(value: PendingNoteToggle | null) => {
+			pendingNoteToggleRef.current = value;
+			setPendingNoteToggleState(value);
+		},
+		[],
 	);
 	const [isNoteMode, setIsNoteMode] = useState(false);
 	const [hint, setHint] = useState<ExplainableHint | null>(null);
@@ -73,6 +111,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 	);
 
 	const { puzzle } = gameState;
+	const previousPuzzleId = useRef(puzzle.id);
 
 	const {
 		currentDerivedState,
@@ -80,6 +119,9 @@ export const GamePage: React.FC<GamePageProps> = ({
 		canRedo,
 		handleInput,
 		handleQuickNote,
+		handleQuickNoteAt,
+		handleDeferredInput,
+		getValuePreview,
 		undo,
 		redo,
 		handleSolve,
@@ -95,7 +137,163 @@ export const GamePage: React.FC<GamePageProps> = ({
 		isNoteMode,
 	});
 
+	const cancelPendingInput = useCallback(
+		() => inputController.cancel(),
+		[inputController],
+	);
+
+	const handleNumpadInput = useCallback(
+		(num: number | null) => {
+			if (
+				pendingValueRef.current?.phase === "committing" ||
+				pendingNoteToggleRef.current
+			)
+				return;
+
+			if (num === null) {
+				cancelPendingInput();
+				handleInput(null);
+				return;
+			}
+
+			if (isNoteMode) {
+				cancelPendingInput();
+				handleInput(num);
+				return;
+			}
+
+			const preview = getValuePreview(num);
+			if (!preview) return;
+			if (!preview.canQuickNote) {
+				cancelPendingInput();
+				handleInput(num);
+				return;
+			}
+
+			const input: PendingNumberInput = {
+				row: preview.row,
+				col: preview.col,
+				value: preview.value,
+			};
+			inputController.tap(input, {
+				onPreview: (nextInput) => {
+					if (!preview.hasMatchingNote) {
+						setPendingValue({ ...nextInput, phase: "preview" });
+					}
+					trigger(
+						preview.isComplete
+							? "pendingSuccess"
+							: preview.isCorrect
+								? "value"
+								: "pendingIncorrect",
+					);
+				},
+				onCommit: (committedInput, reason) => {
+					if (reason === "flush") {
+						cancelHaptic();
+						if (preview.isComplete) trigger("success");
+						else if (!preview.isCorrect) trigger("incorrect");
+					}
+					setPendingValue({ ...committedInput, phase: "committing" });
+					if (!handleDeferredInput(committedInput)) {
+						setPendingValue(null);
+						cancelHaptic();
+					}
+				},
+				onNote: (noteInput) => {
+					setPendingValue(null);
+					setPendingNoteToggle({
+						...noteInput,
+						shouldExist: !preview.hasMatchingNote,
+					});
+					cancelHaptic();
+					if (!handleQuickNoteAt(noteInput)) {
+						setPendingNoteToggle(null);
+						cancelHaptic();
+					}
+				},
+				onCancel: () => {
+					setPendingValue(null);
+					cancelHaptic();
+				},
+			});
+		},
+		[
+			cancelHaptic,
+			cancelPendingInput,
+			getValuePreview,
+			handleDeferredInput,
+			handleInput,
+			handleQuickNoteAt,
+			inputController,
+			isNoteMode,
+			setPendingValue,
+			setPendingNoteToggle,
+			trigger,
+		],
+	);
+
+	useEffect(() => {
+		if (pendingValue?.phase !== "committing") return;
+		if (
+			currentDerivedState.current[pendingValue.row]?.[pendingValue.col] ===
+			pendingValue.value
+		) {
+			setPendingValue(null);
+			return;
+		}
+
+		// Firestore normally echoes a local write immediately, even while offline.
+		// Never leave the controls locked forever if a write is rejected or reverted.
+		const timeout = globalThis.setTimeout(() => {
+			const latestPending = pendingValueRef.current;
+			if (
+				latestPending?.phase === "committing" &&
+				latestPending.row === pendingValue.row &&
+				latestPending.col === pendingValue.col &&
+				latestPending.value === pendingValue.value
+			) {
+				setPendingValue(null);
+			}
+		}, COMMIT_ECHO_TIMEOUT_MS);
+
+		return () => globalThis.clearTimeout(timeout);
+	}, [currentDerivedState.current, pendingValue, setPendingValue]);
+
+	useEffect(() => {
+		if (!pendingNoteToggle) return;
+		const noteExists =
+			currentDerivedState.notes[pendingNoteToggle.row]?.[
+				pendingNoteToggle.col
+			]?.has(pendingNoteToggle.value) ?? false;
+		if (noteExists === pendingNoteToggle.shouldExist) {
+			setPendingNoteToggle(null);
+			return;
+		}
+
+		const timeout = globalThis.setTimeout(() => {
+			const latestPending = pendingNoteToggleRef.current;
+			if (
+				latestPending?.row === pendingNoteToggle.row &&
+				latestPending.col === pendingNoteToggle.col &&
+				latestPending.value === pendingNoteToggle.value &&
+				latestPending.shouldExist === pendingNoteToggle.shouldExist
+			) {
+				setPendingNoteToggle(null);
+			}
+		}, COMMIT_ECHO_TIMEOUT_MS);
+
+		return () => globalThis.clearTimeout(timeout);
+	}, [currentDerivedState.notes, pendingNoteToggle, setPendingNoteToggle]);
+
 	const handleHint = () => {
+		if (
+			pendingValueRef.current?.phase === "committing" ||
+			pendingNoteToggleRef.current
+		)
+			return;
+		cancelPendingInput();
+		trigger("hint");
 		setSelectedCell(null);
 		setHintStepIndex(0);
 		const nextHint = findExplainableHint(
@@ -115,12 +313,29 @@ export const GamePage: React.FC<GamePageProps> = ({
 
 	useEffect(() => {
 		if (previousActionCount.current !== actionCount) {
+			cancelPendingInput();
 			setHint(null);
 			setHintStepIndex(0);
 			setHintDisclosureStage(INITIAL_HINT_DISCLOSURE_STAGE);
 		}
 		previousActionCount.current = actionCount;
-	}, [actionCount]);
+	}, [actionCount, cancelPendingInput]);
+
+	useEffect(() => {
+		if (previousPuzzleId.current !== puzzle.id) {
+			cancelPendingInput();
+			setPendingValue(null);
+			setPendingNoteToggle(null);
+			cancelHaptic();
+			previousPuzzleId.current = puzzle.id;
+		}
+	}, [
+		cancelHaptic,
+		cancelPendingInput,
+		puzzle.id,
+		setPendingNoteToggle,
+		setPendingValue,
+	]);
 
 	// Check for win on load
 	useEffect(() => {
@@ -140,12 +355,26 @@ export const GamePage: React.FC<GamePageProps> = ({
 	useEffect(() => {
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "hidden") {
-				saveCurrentStateRef.current(timerRef.current);
+				const committedPendingInput = inputController.flush();
+				if (
+					!committedPendingInput &&
+					!pendingValueRef.current &&
+					!pendingNoteToggleRef.current
+				) {
+					saveCurrentStateRef.current(timerRef.current);
+				}
 			}
 		};
 
 		const handlePageHide = () => {
-			saveCurrentStateRef.current(timerRef.current);
+			const committedPendingInput = inputController.flush();
+			if (
+				!committedPendingInput &&
+				!pendingValueRef.current &&
+				!pendingNoteToggleRef.current
+			) {
+				saveCurrentStateRef.current(timerRef.current);
+			}
 		};
 
 		window.addEventListener("visibilitychange", handleVisibilityChange);
@@ -154,24 +383,113 @@ export const GamePage: React.FC<GamePageProps> = ({
 		return () => {
 			window.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("pagehide", handlePageHide);
-			saveCurrentStateRef.current(timerRef.current);
+			const committedPendingInput = inputController.flush();
+			if (
+				!committedPendingInput &&
+				!pendingValueRef.current &&
+				!pendingNoteToggleRef.current
+			) {
+				saveCurrentStateRef.current(timerRef.current);
+			}
+			inputController.dispose();
+			cancelHaptic();
 		};
-	}, []);
+	}, [cancelHaptic, inputController]);
 
 	const handleCellSelect = (r: number, c: number) => {
+		if (pendingNoteToggleRef.current) return;
+		inputController.flush();
 		if (selectedCell !== null && selectedCell[0] === r && selectedCell[1] === c)
 			setSelectedCell(null);
 		else setSelectedCell([r, c]);
 	};
+	const handleToggleNoteMode = useCallback(() => {
+		if (pendingNoteToggleRef.current) return;
+		cancelPendingInput();
+		setIsNoteMode((currentMode) => !currentMode);
+		trigger("mode");
+	}, [cancelPendingInput, trigger]);
+
+	const setSelectedCellAfterPending: React.Dispatch<
+		React.SetStateAction<[number, number] | null>
+	> = useCallback(
+		(update) => {
+			if (pendingNoteToggleRef.current) return;
+			inputController.flush();
+			setSelectedCell(update);
+		},
+		[inputController],
+	);
+
+	const handleKeyboardInput = useCallback(
+		(num: number | null) => {
+			if (
+				pendingValueRef.current?.phase === "committing" ||
+				pendingNoteToggleRef.current
+			)
+				return;
+			cancelPendingInput();
+			handleInput(num);
+		},
+		[cancelPendingInput, handleInput],
+	);
+	const handleKeyboardQuickNote = useCallback(
+		(num: number) => {
+			if (
+				pendingValueRef.current?.phase === "committing" ||
+				pendingNoteToggleRef.current
+			)
+				return;
+			cancelPendingInput();
+			handleQuickNote(num);
+		},
+		[cancelPendingInput, handleQuickNote],
+	);
+	const handleUndo = useCallback(() => {
+		if (
+			cancelPendingInput() ||
+			pendingValueRef.current ||
+			pendingNoteToggleRef.current
+		)
+			return;
+		undo();
+	}, [cancelPendingInput, undo]);
+	const handleRedo = useCallback(() => {
+		if (
+			cancelPendingInput() ||
+			pendingValueRef.current ||
+			pendingNoteToggleRef.current
+		)
+			return;
+		redo();
+	}, [cancelPendingInput, redo]);
+	const handleSolveAfterPending = useCallback(() => {
+		if (
+			pendingValueRef.current?.phase === "committing" ||
+			pendingNoteToggleRef.current
+		)
+			return;
+		cancelPendingInput();
+		handleSolve();
+	}, [cancelPendingInput, handleSolve]);
+	const handleResetAfterPending = useCallback(() => {
+		if (
+			pendingValueRef.current?.phase === "committing" ||
+			pendingNoteToggleRef.current
+		)
+			return;
+		cancelPendingInput();
+		handleReset();
+	}, [cancelPendingInput, handleReset]);
 
 	useGameKeyboard({
 		showWin: !!winState,
-		setSelectedCell,
-		handleInput,
-		handleQuickNote,
-		setIsNoteMode,
-		undo,
-		redo,
+		setSelectedCell: setSelectedCellAfterPending,
+		handleInput: handleKeyboardInput,
+		handleQuickNote: handleKeyboardQuickNote,
+		onToggleNoteMode: handleToggleNoteMode,
+		undo: handleUndo,
+		redo: handleRedo,
 	});
 
 	const conflicts = checkBoard(currentDerivedState.current, puzzle.solution);
@@ -205,8 +523,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 					initialBoard={puzzle.initial}
 					techniqueAnalysis={puzzle.techniqueAnalysis}
 					onHint={handleHint}
-					onSolve={handleSolve}
-					onReset={handleReset}
+					onSolve={handleSolveAfterPending}
+					onReset={handleResetAfterPending}
 				/>
 			}
 		>
@@ -221,22 +539,23 @@ export const GamePage: React.FC<GamePageProps> = ({
 						onCellSelect={handleCellSelect}
 						conflicts={conflicts}
 						hintStep={visibleHintStep}
+						pendingValue={pendingValue}
+						pendingNoteToggle={pendingNoteToggle}
 					/>
 				</StaggeredListElement>
 				<StaggeredListElement>
 					<GameControls
 						isNoteMode={isNoteMode}
-						onToggleNoteMode={() => setIsNoteMode(!isNoteMode)}
-						onUndo={undo}
-						onRedo={redo}
+						onToggleNoteMode={handleToggleNoteMode}
+						onUndo={handleUndo}
+						onRedo={handleRedo}
 						canUndo={canUndo}
 						canRedo={canRedo}
 					/>
 				</StaggeredListElement>
 				<StaggeredListElement>
 					<Numpad
-						onNumberClick={handleInput}
-						onQuickNote={handleQuickNote}
+						onNumberClick={handleNumpadInput}
 						isNoteMode={isNoteMode}
 						disabled={selectedCell === null}
 						disabledNumbers={disabledNumbers}
