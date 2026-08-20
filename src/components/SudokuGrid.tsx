@@ -1,5 +1,12 @@
 import { m } from "framer-motion";
-import type { HTMLProps } from "react";
+import { type HTMLProps, useEffect, useRef, useState } from "react";
+import { CellGestureNumpad } from "@/components/CellGestureNumpad";
+import {
+	type CellGestureCommit,
+	type CellGestureMode,
+	createCellGestureNumpadController,
+	type OpenCellGesture,
+} from "@/lib/cellGestureNumpad";
 import type {
 	PendingNoteToggle,
 	PendingNumberInput,
@@ -22,6 +29,33 @@ type SudokuGridProps = HTMLProps<HTMLDivElement> & {
 	hintStep?: HintStep | null;
 	pendingValue?: PendingNumberInput | null;
 	pendingNoteToggle?: PendingNoteToggle | null;
+	isNoteMode?: boolean;
+	disabledNumbers?: number[];
+	gestureDisabled?: boolean;
+	onCellGestureArm?: (mode: CellGestureMode) => void;
+	onCellGestureDisarm?: () => void;
+	onCellGestureFocus?: (row: number, col: number) => void;
+	onCellGestureCommit?: (input: CellGestureCommit) => void;
+};
+
+const EMPTY_DISABLED_NUMBERS: number[] = [];
+
+const getVisualViewportBounds = () => {
+	const visualViewport = window.visualViewport;
+	if (visualViewport) {
+		return {
+			left: visualViewport.offsetLeft,
+			top: visualViewport.offsetTop,
+			width: visualViewport.width,
+			height: visualViewport.height,
+		};
+	}
+	return {
+		left: 0,
+		top: 0,
+		width: window.innerWidth,
+		height: window.innerHeight,
+	};
 };
 
 export const SudokuGrid = ({
@@ -35,7 +69,67 @@ export const SudokuGrid = ({
 	hintStep,
 	pendingValue,
 	pendingNoteToggle,
+	isNoteMode = false,
+	disabledNumbers = EMPTY_DISABLED_NUMBERS,
+	gestureDisabled = false,
+	onCellGestureArm,
+	onCellGestureDisarm,
+	onCellGestureFocus,
+	onCellGestureCommit,
 }: SudokuGridProps) => {
+	const [openGesture, setOpenGesture] = useState<OpenCellGesture | null>(null);
+	const gesturePropsRef = useRef({
+		onCellSelect,
+		onCellGestureArm,
+		onCellGestureDisarm,
+		onCellGestureFocus,
+		onCellGestureCommit,
+	});
+	gesturePropsRef.current = {
+		onCellSelect,
+		onCellGestureArm,
+		onCellGestureDisarm,
+		onCellGestureFocus,
+		onCellGestureCommit,
+	};
+	const gestureControllerRef = useRef<ReturnType<
+		typeof createCellGestureNumpadController
+	> | null>(null);
+	if (!gestureControllerRef.current) {
+		gestureControllerRef.current = createCellGestureNumpadController({
+			callbacks: {
+				onArm: (mode) => gesturePropsRef.current.onCellGestureArm?.(mode),
+				onDisarm: () => gesturePropsRef.current.onCellGestureDisarm?.(),
+				onOpenChange: setOpenGesture,
+				onFocusTarget: ({ row, col }) =>
+					gesturePropsRef.current.onCellGestureFocus?.(row, col),
+				onSelect: ({ row, col }) =>
+					gesturePropsRef.current.onCellSelect(row, col),
+				onCommit: (input) =>
+					gesturePropsRef.current.onCellGestureCommit?.(input),
+			},
+		});
+	}
+	const gestureController = gestureControllerRef.current;
+
+	useEffect(() => {
+		const cancelGesture = () => gestureController.cancel();
+		const handleVisibilityChange = () => {
+			if (document.visibilityState !== "visible") cancelGesture();
+		};
+		window.addEventListener("blur", cancelGesture);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.visualViewport?.addEventListener("resize", cancelGesture);
+		window.visualViewport?.addEventListener("scroll", cancelGesture);
+		return () => {
+			window.removeEventListener("blur", cancelGesture);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.visualViewport?.removeEventListener("resize", cancelGesture);
+			window.visualViewport?.removeEventListener("scroll", cancelGesture);
+			gestureController.dispose();
+		};
+	}, [gestureController]);
+
 	const isInitial = (r: number, c: number) => {
 		const row = initialBoard[r];
 		return row ? row[c] !== null : false;
@@ -76,12 +170,24 @@ export const SudokuGrid = ({
 				: ("pattern-a" as const);
 		return null;
 	};
+	const releasePointerCapture = (
+		element: HTMLDivElement,
+		pointerId: number,
+	) => {
+		try {
+			if (element.hasPointerCapture(pointerId)) {
+				element.releasePointerCapture(pointerId);
+			}
+		} catch {
+			// Pointer capture can disappear when iOS interrupts a gesture.
+		}
+	};
 
 	return (
 		<div
 			data-testid="sudoku-grid"
 			className={cn(
-				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-[var(--grid-line)]",
+				"relative isolate grid grid-cols-9 gap-[1px] p-[1px] rounded-lg overflow-hidden aspect-square w-full bg-[var(--grid-line)] touch-none select-none [-webkit-touch-callout:none]",
 				className,
 			)}
 		>
@@ -131,8 +237,85 @@ export const SudokuGrid = ({
 												? "player"
 												: "empty"
 								}
+								draggable={false}
+								onContextMenu={(event) => event.preventDefault()}
+								onDragStart={(event) => event.preventDefault()}
 								whileTap={{ scale: 0.95 }}
-								onClick={() => onCellSelect(r, c)}
+								onClick={(event) => {
+									// Pointer input is handled on release so it cannot fire twice.
+									if (event.detail === 0) onCellSelect(r, c);
+								}}
+								onPointerDown={(event) => {
+									if (
+										!event.isPrimary ||
+										(event.pointerType === "mouse" && event.button !== 0)
+									)
+										return;
+									event.preventDefault();
+									try {
+										event.currentTarget.setPointerCapture(event.pointerId);
+									} catch {
+										// Selection still works if an older browser lacks capture.
+									}
+									const rect = event.currentTarget.getBoundingClientRect();
+									const editable =
+										Boolean(onCellGestureCommit) &&
+										!gestureDisabled &&
+										!initial;
+									gestureController.pointerDown({
+										pointerId: event.pointerId,
+										row: r,
+										col: c,
+										x: event.clientX,
+										y: event.clientY,
+										time: event.timeStamp,
+										cellRect: {
+											left: rect.left,
+											top: rect.top,
+											width: rect.width,
+											height: rect.height,
+										},
+										viewport: getVisualViewportBounds(),
+										globalNoteMode: isNoteMode,
+										canEnterValue: editable,
+										canEnterNote: editable && val === null,
+										disabledNumbers,
+									});
+								}}
+								onPointerMove={(event) => {
+									if (!gestureController.hasActivePointer(event.pointerId))
+										return;
+									event.preventDefault();
+									gestureController.pointerMove({
+										pointerId: event.pointerId,
+										x: event.clientX,
+										y: event.clientY,
+										time: event.timeStamp,
+									});
+								}}
+								onPointerUp={(event) => {
+									if (!gestureController.hasActivePointer(event.pointerId))
+										return;
+									event.preventDefault();
+									gestureController.pointerUp({
+										pointerId: event.pointerId,
+										x: event.clientX,
+										y: event.clientY,
+										time: event.timeStamp,
+									});
+									releasePointerCapture(event.currentTarget, event.pointerId);
+								}}
+								onPointerCancel={(event) => {
+									if (!gestureController.hasActivePointer(event.pointerId))
+										return;
+									gestureController.cancel();
+									releasePointerCapture(event.currentTarget, event.pointerId);
+								}}
+								onLostPointerCapture={(event) => {
+									if (gestureController.hasActivePointer(event.pointerId)) {
+										gestureController.cancel();
+									}
+								}}
 								className={cn(
 									"relative flex items-center justify-center aspect-square text-lg sm:text-2xl cursor-pointer select-none",
 									"bg-background font-semibold",
@@ -235,6 +418,7 @@ export const SudokuGrid = ({
 				<div className="absolute inset-x-0 top-[33.333333%] h-[2px] -translate-y-1/2 bg-[var(--grid-divider)]" />
 				<div className="absolute inset-x-0 top-[66.666667%] h-[2px] -translate-y-1/2 bg-[var(--grid-divider)]" />
 			</div>
+			<CellGestureNumpad gesture={openGesture} />
 		</div>
 	);
 };

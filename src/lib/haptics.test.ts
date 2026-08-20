@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { CELL_GESTURE_HOLD_MS } from "./cellGestureNumpad";
 import { DOUBLE_TAP_WINDOW_MS } from "./doubleTapInput";
 import {
 	HAPTIC_OUTCOME_SAFETY_MS,
@@ -89,5 +90,17 @@ describe("haptic language", () => {
 				expect(phase.duration).toBeGreaterThanOrEqual(30);
 			}
 		}
+	});
+
+	test("arms distinct hold feedback from the initial trusted pointer event", () => {
+		expect(HAPTIC_PATTERNS.gestureValueOpen[0]?.delay).toBe(
+			CELL_GESTURE_HOLD_MS,
+		);
+		expect(HAPTIC_PATTERNS.gestureNoteOpen[0]?.delay).toBe(
+			CELL_GESTURE_HOLD_MS,
+		);
+		expect(HAPTIC_PATTERNS.gestureValueOpen).not.toEqual(
+			HAPTIC_PATTERNS.gestureNoteOpen,
+		);
 	});
 });

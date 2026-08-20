@@ -1,4 +1,5 @@
 import type { Vibration } from "web-haptics";
+import { CELL_GESTURE_HOLD_MS } from "@/lib/cellGestureNumpad";
 import { DOUBLE_TAP_WINDOW_MS } from "@/lib/doubleTapInput";
 
 export type HapticCue =
@@ -13,7 +14,9 @@ export type HapticCue =
 	| "reset"
 	| "success"
 	| "pendingIncorrect"
-	| "pendingSuccess";
+	| "pendingSuccess"
+	| "gestureValueOpen"
+	| "gestureNoteOpen";
 
 const VALUE_PATTERN: Vibration[] = [{ duration: 18, intensity: 0.7 }];
 const NOTE_PATTERN: Vibration[] = [
@@ -82,6 +85,16 @@ export const HAPTIC_PATTERNS: Record<HapticCue, Vibration[]> = {
 	success: SUCCESS_PATTERN,
 	pendingIncorrect: afterDoubleTapWindow(INCORRECT_PATTERN),
 	pendingSuccess: afterDoubleTapWindow(SUCCESS_PATTERN),
+	// These are started on pointerdown. The leading delay keeps iOS's hidden
+	// switch activation inside the trusted gesture while aligning feedback with
+	// the moment the hold menu appears.
+	gestureValueOpen: [
+		{ delay: CELL_GESTURE_HOLD_MS, duration: 18, intensity: 0.55 },
+	],
+	gestureNoteOpen: [
+		{ delay: CELL_GESTURE_HOLD_MS, duration: 12, intensity: 0.3 },
+		{ delay: 28, duration: 32, intensity: 0.75 },
+	],
 };
 
 export function getHapticPattern(cue: HapticCue): Vibration[] {

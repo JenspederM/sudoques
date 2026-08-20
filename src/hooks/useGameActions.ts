@@ -2,6 +2,7 @@ import type { User } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { useCallback, useRef } from "react";
 import { useHaptics } from "@/contexts/HapticsContext";
+import type { CellGestureCommit } from "@/lib/cellGestureNumpad";
 import type { PendingNumberInput } from "@/lib/doubleTapInput";
 import {
 	markPuzzleAsPlayed,
@@ -279,6 +280,16 @@ export function useGameActions({
 		[commitInput],
 	);
 
+	const handleCellGestureInput = useCallback(
+		(input: CellGestureCommit) =>
+			commitInput(input.value, {
+				forceNote: input.mode === "note",
+				forceValue: input.mode === "value",
+				targetCell: [input.row, input.col],
+			}),
+		[commitInput],
+	);
+
 	const undo = useCallback(() => {
 		if (canUndo) {
 			const newActions: GameAction[] = [
@@ -356,6 +367,7 @@ export function useGameActions({
 		handleInput,
 		handleQuickNote,
 		handleQuickNoteAt,
+		handleCellGestureInput,
 		handleDeferredInput,
 		getValuePreview,
 		undo,
