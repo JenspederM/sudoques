@@ -1,7 +1,6 @@
 export const CELL_GESTURE_HOLD_MS = 260;
 export const CELL_GESTURE_DOUBLE_TAP_MS = 280;
 export const CELL_GESTURE_MOVE_THRESHOLD_PX = 12;
-export const CELL_GESTURE_SELECTION_THRESHOLD_PX = 6;
 
 export type CellGestureMode = "value" | "note";
 
@@ -175,7 +174,6 @@ type PointerSession = CellGestureTarget & {
 	canOpen: boolean;
 	disabledNumbers: number[];
 	open: OpenCellGesture | null;
-	selectionOrigin: Point | null;
 	moved: boolean;
 	armed: boolean;
 	cancelHold: (() => void) | null;
@@ -190,14 +188,12 @@ export function createCellGestureNumpadController({
 	holdDelay = CELL_GESTURE_HOLD_MS,
 	doubleTapWindow = CELL_GESTURE_DOUBLE_TAP_MS,
 	moveThreshold = CELL_GESTURE_MOVE_THRESHOLD_PX,
-	selectionThreshold = CELL_GESTURE_SELECTION_THRESHOLD_PX,
 }: {
 	callbacks: CellGestureCallbacks;
 	schedule?: Schedule;
 	holdDelay?: number;
 	doubleTapWindow?: number;
 	moveThreshold?: number;
-	selectionThreshold?: number;
 }) {
 	let session: PointerSession | null = null;
 	let lastTap: LastTap | null = null;
@@ -222,7 +218,7 @@ export function createCellGestureNumpadController({
 		callbacks.onOpenChange(activeSession.open);
 	};
 
-	const open = (activeSession: PointerSession, point?: Point) => {
+	const open = (activeSession: PointerSession, point: Point) => {
 		if (
 			session !== activeSession ||
 			activeSession.open ||
@@ -234,10 +230,11 @@ export function createCellGestureNumpadController({
 			activeSession.boardRect,
 			activeSession.viewport,
 		);
-		const activeValue = point
-			? getGesturePadValueAtPoint(layout, point, activeSession.disabledNumbers)
-			: null;
-		activeSession.selectionOrigin = point ? null : { ...activeSession.current };
+		const activeValue = getGesturePadValueAtPoint(
+			layout,
+			point,
+			activeSession.disabledNumbers,
+		);
 		activeSession.open = {
 			row: activeSession.row,
 			col: activeSession.col,
@@ -285,7 +282,6 @@ export function createCellGestureNumpadController({
 				canOpen,
 				disabledNumbers: [...(input.disabledNumbers ?? [])],
 				open: null,
-				selectionOrigin: null,
 				moved: false,
 				armed: false,
 				cancelHold: null,
@@ -295,7 +291,7 @@ export function createCellGestureNumpadController({
 				activeSession.armed = true;
 				callbacks.onArm(mode);
 				activeSession.cancelHold = schedule(
-					() => open(activeSession),
+					() => open(activeSession, activeSession.current),
 					holdDelay,
 				);
 			}
@@ -316,14 +312,6 @@ export function createCellGestureNumpadController({
 				return;
 			}
 			if (!activeSession.open) return;
-			if (activeSession.selectionOrigin) {
-				const selectionDistance = Math.hypot(
-					input.x - activeSession.selectionOrigin.x,
-					input.y - activeSession.selectionOrigin.y,
-				);
-				if (selectionDistance < selectionThreshold) return;
-				activeSession.selectionOrigin = null;
-			}
 			const activeValue = getGesturePadValueAtPoint(
 				activeSession.open.layout,
 				input,
@@ -339,13 +327,11 @@ export function createCellGestureNumpadController({
 			if (!activeSession || activeSession.pointerId !== input.pointerId)
 				return false;
 			if (activeSession.open) {
-				const value = activeSession.selectionOrigin
-					? null
-					: getGesturePadValueAtPoint(
-							activeSession.open.layout,
-							input,
-							activeSession.disabledNumbers,
-						);
+				const value = getGesturePadValueAtPoint(
+					activeSession.open.layout,
+					input,
+					activeSession.disabledNumbers,
+				);
 				const commit =
 					value === null
 						? null

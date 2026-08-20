@@ -145,7 +145,7 @@ describe("gesture pad geometry", () => {
 describe("cell gesture controller", () => {
 	test("opens after a stationary hold and commits the released key", () => {
 		const harness = createHarness();
-		harness.down();
+		harness.down({ y: 330 });
 		expect(harness.arms).toEqual(["value"]);
 		expect(harness.opens).toHaveLength(0);
 
@@ -153,7 +153,7 @@ describe("cell gesture controller", () => {
 		const open = harness.controller.getOpenGesture();
 		if (!open) throw new Error("Gesture did not open");
 		expect(harness.focused).toEqual([{ row: 2, col: 3 }]);
-		expect(open.activeValue).toBeNull();
+		expect(open.activeValue).toBe(5);
 
 		const point = centerOfKey(open, 6);
 		harness.controller.pointerMove({ pointerId: 1, time: 370, ...point });
@@ -168,55 +168,25 @@ describe("cell gesture controller", () => {
 		expect(harness.getDisarms()).toBe(1);
 	});
 
-	test("waits for a small post-hold movement before activating the key under the finger", () => {
+	test("highlights and commits the key already under a stationary finger", () => {
 		const harness = createHarness();
 		harness.down({ y: 330 });
 		harness.runScheduled();
 		const open = harness.controller.getOpenGesture();
 		if (!open) throw new Error("Gesture did not open");
 
-		harness.controller.pointerMove({
-			pointerId: 1,
-			time: 370,
-			x: 173,
-			y: 330,
-		});
-		expect(harness.controller.getOpenGesture()?.activeValue).toBeNull();
-
-		harness.controller.pointerMove({
-			pointerId: 1,
-			time: 380,
-			x: 177,
-			y: 330,
-		});
-		expect(harness.controller.getOpenGesture()?.activeValue).toBe(5);
+		expect(open.activeValue).toBe(5);
 		expect(
 			harness.controller.pointerUp({
 				pointerId: 1,
-				time: 390,
-				x: 177,
+				time: 370,
+				x: 170,
 				y: 330,
 			}),
 		).toBe(true);
 		expect(harness.commits).toEqual([
 			{ row: 2, col: 3, value: 5, mode: "value" },
 		]);
-	});
-
-	test("releasing a stationary hold cancels instead of committing the covered key", () => {
-		const harness = createHarness();
-		harness.down();
-		harness.runScheduled();
-
-		expect(
-			harness.controller.pointerUp({
-				pointerId: 1,
-				time: 370,
-				x: 170,
-				y: 320,
-			}),
-		).toBe(false);
-		expect(harness.commits).toHaveLength(0);
 	});
 
 	test("opens immediately once a drag crosses the movement threshold", () => {
