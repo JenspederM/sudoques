@@ -1,4 +1,4 @@
-import { CircleAlert, LoaderCircle, Trophy } from "lucide-react";
+import { CalendarDays, CircleAlert, LoaderCircle, Trophy } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import {
 } from "@/components/StaggeredList";
 import { Timer } from "@/components/Timer";
 import { useScores } from "@/contexts/ScoresContext";
+import { sortScoresNewestFirst } from "@/lib/scoreOrdering";
 import { buildReviewState } from "@/lib/utils";
 import { DIFFICULTIES } from "@/logic/constants";
 import type { Difficulty } from "@/types";
@@ -22,9 +23,9 @@ export const StatisticsPage: React.FC = () => {
 		(location.state as { activeDiff?: Difficulty })?.activeDiff || "easy";
 	const [activeDiff, setActiveDiff] = useState<Difficulty>(initialDiff);
 
-	const scores = allScores
-		.filter((s) => s.puzzle.difficulty === activeDiff)
-		.sort((a, b) => a.time - b.time);
+	const scores = sortScoresNewestFirst(
+		allScores.filter((score) => score.puzzle.difficulty === activeDiff),
+	);
 
 	return (
 		<Layout
@@ -79,7 +80,7 @@ export const StatisticsPage: React.FC = () => {
 						Loading scores…
 					</StaggeredListElement>
 				) : scores.length > 0 ? (
-					scores.map((score, idx) => (
+					scores.map((score) => (
 						<StaggeredListElement
 							key={score.date.toMillis()}
 							type="button"
@@ -96,18 +97,8 @@ export const StatisticsPage: React.FC = () => {
 							className="flex items-center justify-between"
 						>
 							<div className="flex items-center gap-4">
-								<span
-									className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
-										idx === 0
-											? "bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-400/20"
-											: idx === 1
-												? "bg-slate-300 text-slate-900 shadow-lg shadow-slate-300/20"
-												: idx === 2
-													? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
-													: "bg-accent text-muted-foreground"
-									}`}
-								>
-									{idx + 1}
+								<span className="w-8 h-8 rounded-full flex items-center justify-center bg-accent text-muted-foreground">
+									<CalendarDays size={16} aria-hidden="true" />
 								</span>
 								<div>
 									<p className="font-bold text-foreground text-lg">
