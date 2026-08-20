@@ -19,6 +19,7 @@ import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useScreenWakeLock } from "@/hooks/useScreenWakeLock";
+import { acquireGameGestureContainment } from "@/lib/gameGestureContainment";
 import { buildReviewState } from "@/lib/utils";
 import {
 	type ExplainableHint,
@@ -66,6 +67,11 @@ export const GamePage: React.FC<GamePageProps> = ({
 		actions: GameAction[];
 		timer: number;
 	} | null>(null);
+
+	useEffect(() => {
+		if (typeof document === "undefined") return;
+		return acquireGameGestureContainment(document);
+	}, []);
 
 	const { time: timer, setTime: setTimer } = useGameTimer(
 		initialTime,
@@ -210,7 +216,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 				/>
 			}
 		>
-			<StaggeredList className="game-stack min-h-0 flex-1">
+			<StaggeredList className="game-route-shell game-stack min-h-0 flex-1">
 				<StaggeredListElement className="game-board-slot flex min-h-0 flex-1 items-center justify-center">
 					<SudokuGrid
 						className="game-board-bleed"

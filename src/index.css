@@ -190,6 +190,20 @@ body {
 	-ms-user-select: none;
 }
 
+html.game-route-active,
+body.game-route-active {
+	overscroll-behavior-x: none;
+}
+
+.game-route-shell {
+	touch-action: pan-y;
+	overscroll-behavior-x: none;
+}
+
+.game-route-shell .game-board-bleed {
+	touch-action: none;
+}
+
 .glass {
 	background: var(--glass-bg);
 	backdrop-filter: blur(var(--glass-blur));
