@@ -267,6 +267,8 @@ export const SudokuGrid = ({
 										// Selection still works if an older browser lacks capture.
 									}
 									const rect = event.currentTarget.getBoundingClientRect();
+									const boardRect =
+										gridRef.current?.getBoundingClientRect() ?? rect;
 									const editable =
 										Boolean(onCellGestureCommit) &&
 										!gestureDisabled &&
@@ -278,11 +280,11 @@ export const SudokuGrid = ({
 										x: event.clientX,
 										y: event.clientY,
 										time: event.timeStamp,
-										cellRect: {
-											left: rect.left,
-											top: rect.top,
-											width: rect.width,
-											height: rect.height,
+										boardRect: {
+											left: boardRect.left,
+											top: boardRect.top,
+											width: boardRect.width,
+											height: boardRect.height,
 										},
 										viewport: getVisualViewportBounds(),
 										globalNoteMode: isNoteMode,

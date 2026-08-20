@@ -6,7 +6,7 @@ import {
 	type OpenCellGesture,
 } from "./cellGestureNumpad";
 
-const cellRect = { left: 150, top: 300, width: 40, height: 40 };
+const boardRect = { left: 16, top: 180, width: 343, height: 343 };
 const viewport = { left: 0, top: 0, width: 375, height: 667 };
 
 function createHarness() {
@@ -51,7 +51,7 @@ function createHarness() {
 			x: 170,
 			y: 320,
 			time: 100,
-			cellRect,
+			boardRect,
 			viewport,
 			globalNoteMode: false,
 			canEnterValue: true,
@@ -88,33 +88,28 @@ const centerOfKey = (gesture: OpenCellGesture, value: number) => {
 };
 
 describe("gesture pad geometry", () => {
-	test("centers in the visible viewport regardless of the pressed cell", () => {
-		const firstLayout = getGesturePadLayout(
-			{ left: 30, top: 100, width: 40, height: 40 },
-			viewport,
-		);
-		const secondLayout = getGesturePadLayout(
-			{ left: 300, top: 570, width: 40, height: 40 },
-			viewport,
-		);
+	test("centers on the Sudoku board instead of the viewport", () => {
+		const layout = getGesturePadLayout(boardRect, viewport);
 
-		expect(firstLayout.left + firstLayout.width / 2).toBe(
-			viewport.left + viewport.width / 2,
+		expect(layout.left + layout.width / 2).toBe(
+			boardRect.left + boardRect.width / 2,
 		);
-		expect(firstLayout.top + firstLayout.height / 2).toBe(
+		expect(layout.top + layout.height / 2).toBe(
+			boardRect.top + boardRect.height / 2,
+		);
+		expect(layout.top + layout.height / 2).not.toBe(
 			viewport.top + viewport.height / 2,
 		);
-		expect(secondLayout).toEqual(firstLayout);
 	});
 
 	test("clamps inside an offset iPhone-sized visual viewport", () => {
 		const layout = getGesturePadLayout(
-			{ left: 318, top: 570, width: 40, height: 40 },
+			{ left: 25, top: 180, width: 343, height: 343 },
 			{ left: 9, top: 22, width: 375, height: 667 },
 		);
 
-		expect(layout.left + layout.width / 2).toBe(9 + 375 / 2);
-		expect(layout.top + layout.height / 2).toBe(22 + 667 / 2);
+		expect(layout.left + layout.width / 2).toBe(25 + 343 / 2);
+		expect(layout.top + layout.height / 2).toBe(180 + 343 / 2);
 		expect(layout.left).toBeGreaterThanOrEqual(21);
 		expect(layout.top).toBeGreaterThanOrEqual(34);
 		expect(layout.left + layout.width).toBeLessThanOrEqual(372);
@@ -122,7 +117,7 @@ describe("gesture pad geometry", () => {
 	});
 
 	test("only resolves the actual key surface, not gaps, margins, or disabled keys", () => {
-		const layout = getGesturePadLayout(cellRect, viewport);
+		const layout = getGesturePadLayout(boardRect, viewport);
 		const first = layout.keys[0];
 		if (!first) throw new Error("Missing first key");
 		const firstCenter = {
@@ -158,6 +153,7 @@ describe("cell gesture controller", () => {
 		const open = harness.controller.getOpenGesture();
 		if (!open) throw new Error("Gesture did not open");
 		expect(harness.focused).toEqual([{ row: 2, col: 3 }]);
+		expect(open.activeValue).toBeNull();
 
 		const point = centerOfKey(open, 6);
 		harness.controller.pointerMove({ pointerId: 1, time: 370, ...point });
@@ -170,6 +166,57 @@ describe("cell gesture controller", () => {
 		]);
 		expect(harness.opens.at(-1)).toBeNull();
 		expect(harness.getDisarms()).toBe(1);
+	});
+
+	test("waits for a small post-hold movement before activating the key under the finger", () => {
+		const harness = createHarness();
+		harness.down({ y: 330 });
+		harness.runScheduled();
+		const open = harness.controller.getOpenGesture();
+		if (!open) throw new Error("Gesture did not open");
+
+		harness.controller.pointerMove({
+			pointerId: 1,
+			time: 370,
+			x: 173,
+			y: 330,
+		});
+		expect(harness.controller.getOpenGesture()?.activeValue).toBeNull();
+
+		harness.controller.pointerMove({
+			pointerId: 1,
+			time: 380,
+			x: 177,
+			y: 330,
+		});
+		expect(harness.controller.getOpenGesture()?.activeValue).toBe(5);
+		expect(
+			harness.controller.pointerUp({
+				pointerId: 1,
+				time: 390,
+				x: 177,
+				y: 330,
+			}),
+		).toBe(true);
+		expect(harness.commits).toEqual([
+			{ row: 2, col: 3, value: 5, mode: "value" },
+		]);
+	});
+
+	test("releasing a stationary hold cancels instead of committing the covered key", () => {
+		const harness = createHarness();
+		harness.down();
+		harness.runScheduled();
+
+		expect(
+			harness.controller.pointerUp({
+				pointerId: 1,
+				time: 370,
+				x: 170,
+				y: 320,
+			}),
+		).toBe(false);
+		expect(harness.commits).toHaveLength(0);
 	});
 
 	test("opens immediately once a drag crosses the movement threshold", () => {
@@ -218,6 +265,7 @@ describe("cell gesture controller", () => {
 		expect(open.mode).toBe("note");
 
 		const point = centerOfKey(open, 8);
+		harness.controller.pointerMove({ pointerId: 2, time: 560, ...point });
 		harness.controller.pointerUp({ pointerId: 2, time: 570, ...point });
 		expect(harness.commits).toEqual([
 			{ row: 2, col: 3, value: 8, mode: "note" },
@@ -241,6 +289,11 @@ describe("cell gesture controller", () => {
 		const firstOpen = harness.controller.getOpenGesture();
 		if (!firstOpen) throw new Error("Gesture did not open");
 		const disabledPoint = centerOfKey(firstOpen, 4);
+		harness.controller.pointerMove({
+			pointerId: 1,
+			time: 360,
+			...disabledPoint,
+		});
 		expect(
 			harness.controller.pointerUp({
 				pointerId: 99,
@@ -294,6 +347,7 @@ describe("cell gesture controller", () => {
 		// Simulates unrelated selection state changing while the pointer is held.
 		harness.selected.push({ row: 0, col: 0 });
 		const point = centerOfKey(open, 9);
+		harness.controller.pointerMove({ pointerId: 1, time: 370, ...point });
 		harness.controller.pointerUp({ pointerId: 1, time: 380, ...point });
 
 		expect(harness.commits).toEqual([

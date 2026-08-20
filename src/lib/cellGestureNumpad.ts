@@ -1,6 +1,7 @@
 export const CELL_GESTURE_HOLD_MS = 260;
 export const CELL_GESTURE_DOUBLE_TAP_MS = 280;
 export const CELL_GESTURE_MOVE_THRESHOLD_PX = 12;
+export const CELL_GESTURE_SELECTION_THRESHOLD_PX = 6;
 
 export type CellGestureMode = "value" | "note";
 
@@ -60,12 +61,11 @@ const rectRight = (rect: Rect) => rect.left + rect.width;
 const rectBottom = (rect: Rect) => rect.top + rect.height;
 
 /**
- * Places a compact 3x3 pad in the center of the currently visible viewport.
- * Keeping the position stable makes the gesture predictable regardless of
- * which Sudoku cell started it.
+ * Places a compact 3x3 pad in the center of the Sudoku board, clamped to the
+ * currently visible viewport when the board is partly off-screen.
  */
 export function getGesturePadLayout(
-	_cell: Rect,
+	board: Rect,
 	viewport: ViewportBounds,
 ): GesturePadLayout {
 	const maxAvailableSize = Math.max(
@@ -81,8 +81,8 @@ export function getGesturePadLayout(
 	const minTop = viewport.top + PAD_MARGIN_PX;
 	const maxLeft = rectRight(viewport) - PAD_MARGIN_PX - size;
 	const maxTop = rectBottom(viewport) - PAD_MARGIN_PX - size;
-	const centeredLeft = viewport.left + (viewport.width - size) / 2;
-	const centeredTop = viewport.top + (viewport.height - size) / 2;
+	const centeredLeft = board.left + (board.width - size) / 2;
+	const centeredTop = board.top + (board.height - size) / 2;
 	const padLeft = clamp(centeredLeft, minLeft, Math.max(minLeft, maxLeft));
 	const padTop = clamp(centeredTop, minTop, Math.max(minTop, maxTop));
 	const keySize = (size - PAD_INNER_PADDING_PX * 2 - PAD_KEY_GAP_PX * 2) / 3;
@@ -150,7 +150,7 @@ type PointerDownInput = CellGestureTarget &
 	Point & {
 		pointerId: number;
 		time: number;
-		cellRect: Rect;
+		boardRect: Rect;
 		viewport: ViewportBounds;
 		globalNoteMode: boolean;
 		canEnterValue: boolean;
@@ -168,12 +168,14 @@ type LastTap = CellGestureTarget & { time: number };
 type PointerSession = CellGestureTarget & {
 	pointerId: number;
 	start: Point;
-	cellRect: Rect;
+	current: Point;
+	boardRect: Rect;
 	viewport: ViewportBounds;
 	mode: CellGestureMode;
 	canOpen: boolean;
 	disabledNumbers: number[];
 	open: OpenCellGesture | null;
+	selectionOrigin: Point | null;
 	moved: boolean;
 	armed: boolean;
 	cancelHold: (() => void) | null;
@@ -188,12 +190,14 @@ export function createCellGestureNumpadController({
 	holdDelay = CELL_GESTURE_HOLD_MS,
 	doubleTapWindow = CELL_GESTURE_DOUBLE_TAP_MS,
 	moveThreshold = CELL_GESTURE_MOVE_THRESHOLD_PX,
+	selectionThreshold = CELL_GESTURE_SELECTION_THRESHOLD_PX,
 }: {
 	callbacks: CellGestureCallbacks;
 	schedule?: Schedule;
 	holdDelay?: number;
 	doubleTapWindow?: number;
 	moveThreshold?: number;
+	selectionThreshold?: number;
 }) {
 	let session: PointerSession | null = null;
 	let lastTap: LastTap | null = null;
@@ -227,12 +231,13 @@ export function createCellGestureNumpadController({
 			return false;
 		cancelHold(activeSession);
 		const layout = getGesturePadLayout(
-			activeSession.cellRect,
+			activeSession.boardRect,
 			activeSession.viewport,
 		);
 		const activeValue = point
 			? getGesturePadValueAtPoint(layout, point, activeSession.disabledNumbers)
 			: null;
+		activeSession.selectionOrigin = point ? null : { ...activeSession.current };
 		activeSession.open = {
 			row: activeSession.row,
 			col: activeSession.col,
@@ -273,12 +278,14 @@ export function createCellGestureNumpadController({
 				...target,
 				pointerId: input.pointerId,
 				start: { x: input.x, y: input.y },
-				cellRect: input.cellRect,
+				current: { x: input.x, y: input.y },
+				boardRect: input.boardRect,
 				viewport: input.viewport,
 				mode,
 				canOpen,
 				disabledNumbers: [...(input.disabledNumbers ?? [])],
 				open: null,
+				selectionOrigin: null,
 				moved: false,
 				armed: false,
 				cancelHold: null,
@@ -298,6 +305,7 @@ export function createCellGestureNumpadController({
 		pointerMove(input: PointerInput) {
 			const activeSession = session;
 			if (!activeSession || activeSession.pointerId !== input.pointerId) return;
+			activeSession.current = { x: input.x, y: input.y };
 			const distance = Math.hypot(
 				input.x - activeSession.start.x,
 				input.y - activeSession.start.y,
@@ -308,6 +316,14 @@ export function createCellGestureNumpadController({
 				return;
 			}
 			if (!activeSession.open) return;
+			if (activeSession.selectionOrigin) {
+				const selectionDistance = Math.hypot(
+					input.x - activeSession.selectionOrigin.x,
+					input.y - activeSession.selectionOrigin.y,
+				);
+				if (selectionDistance < selectionThreshold) return;
+				activeSession.selectionOrigin = null;
+			}
 			const activeValue = getGesturePadValueAtPoint(
 				activeSession.open.layout,
 				input,
@@ -323,11 +339,13 @@ export function createCellGestureNumpadController({
 			if (!activeSession || activeSession.pointerId !== input.pointerId)
 				return false;
 			if (activeSession.open) {
-				const value = getGesturePadValueAtPoint(
-					activeSession.open.layout,
-					input,
-					activeSession.disabledNumbers,
-				);
+				const value = activeSession.selectionOrigin
+					? null
+					: getGesturePadValueAtPoint(
+							activeSession.open.layout,
+							input,
+							activeSession.disabledNumbers,
+						);
 				const commit =
 					value === null
 						? null
