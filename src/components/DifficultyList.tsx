@@ -11,7 +11,7 @@ import {
 	StaggeredListElement,
 } from "@/components/StaggeredList";
 import { getDifficultyStats } from "@/lib/difficultyStats";
-import { formatTime } from "@/lib/utils";
+import { cn, formatTime } from "@/lib/utils";
 import { DIFFICULTIES } from "@/logic/constants";
 import type { Difficulty, HighScore } from "@/types";
 
@@ -20,6 +20,7 @@ type DifficultyListProps = {
 	isLoading: boolean;
 	isUnavailable: boolean;
 	onSelectDifficulty: (difficulty: Difficulty) => void;
+	startingDifficulty: Difficulty | null;
 };
 
 export function DifficultyList({
@@ -27,8 +28,10 @@ export function DifficultyList({
 	isLoading,
 	isUnavailable,
 	onSelectDifficulty,
+	startingDifficulty,
 }: DifficultyListProps) {
 	const stats = useMemo(() => getDifficultyStats(scores), [scores]);
+	const isStartingGame = startingDifficulty !== null;
 
 	return (
 		<StaggeredList
@@ -37,6 +40,7 @@ export function DifficultyList({
 		>
 			{DIFFICULTIES.map((difficulty) => {
 				const difficultyStats = stats[difficulty.id];
+				const isStarting = startingDifficulty === difficulty.id;
 				const bestTime =
 					difficultyStats.bestTime === null
 						? "No record yet"
@@ -47,20 +51,28 @@ export function DifficultyList({
 						key={difficulty.id}
 						onClick={() => onSelectDifficulty(difficulty.id)}
 						type="button"
-						className="min-w-0 max-w-full justify-between gap-3 px-4 py-3 text-left sm:gap-4 sm:px-6 sm:py-4"
+						disabled={isStartingGame}
+						aria-busy={isStarting}
+						className={cn(
+							"min-w-0 max-w-full justify-between gap-3 px-4 py-3 text-left sm:gap-4 sm:px-6 sm:py-4",
+							isStarting && "disabled:opacity-100",
+						)}
 						data-testid={`diff-${difficulty.id}`}
 						aria-label={
-							isUnavailable
-								? `Start ${difficulty.label} game. Personal records are unavailable.`
-								: isLoading
-									? `Start ${difficulty.label} game. Records are loading.`
-									: `Start ${difficulty.label} game. Personal best: ${bestTime}. Completed games: ${difficultyStats.completedGames}.`
+							isStarting
+								? `Starting ${difficulty.label} game…`
+								: isUnavailable
+									? `Start ${difficulty.label} game. Personal records are unavailable.`
+									: isLoading
+										? `Start ${difficulty.label} game. Records are loading.`
+										: `Start ${difficulty.label} game. Personal best: ${bestTime}. Completed games: ${difficultyStats.completedGames}.`
 						}
 						whileHover={{
 							scale: 1,
 							borderColor: "var(--primary)",
 							color: "var(--primary)",
-							backgroundColor: "var(--primary/10)",
+							backgroundColor:
+								"color-mix(in srgb, var(--primary) 10%, transparent)",
 						}}
 					>
 						<div className="min-w-0 flex-1">
@@ -118,7 +130,15 @@ export function DifficultyList({
 							)}
 						</div>
 						<div className="grid size-10 shrink-0 place-items-center rounded-xl bg-secondary sm:size-12 sm:rounded-2xl">
-							<Play size={20} fill="currentColor" aria-hidden="true" />
+							{isStarting ? (
+								<LoaderCircle
+									size={20}
+									className="animate-spin"
+									aria-hidden="true"
+								/>
+							) : (
+								<Play size={20} fill="currentColor" aria-hidden="true" />
+							)}
 						</div>
 					</StaggeredListElement>
 				);

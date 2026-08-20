@@ -131,6 +131,8 @@ function AppRoutes() {
 		generation: number;
 		userId: string | null;
 	}>({ generation: 0, userId: null });
+	const [startingDifficulty, setStartingDifficulty] =
+		useState<Difficulty | null>(null);
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -280,6 +282,7 @@ function AppRoutes() {
 				generation: newGameRequestRef.current.generation + 1,
 				userId: null,
 			};
+			setStartingDifficulty(null);
 		}
 	}, [activeUserId]);
 
@@ -307,6 +310,7 @@ function AppRoutes() {
 				generation: requestId,
 				userId: startingUserId,
 			};
+			setStartingDifficulty(diff);
 			try {
 				setGameSession((prev) =>
 					prev.userId === startingUserId ? { ...prev, isLoading: true } : prev,
@@ -388,6 +392,7 @@ function AppRoutes() {
 						generation: requestId,
 						userId: null,
 					};
+					setStartingDifficulty(null);
 				}
 			}
 		},
@@ -452,7 +457,12 @@ function AppRoutes() {
 
 					<Route
 						path="/new-game"
-						element={<NewGamePage onSelectDifficulty={startNewGame} />}
+						element={
+							<NewGamePage
+								onSelectDifficulty={startNewGame}
+								startingDifficulty={startingDifficulty}
+							/>
+						}
 					/>
 
 					<Route path="/settings" element={<SettingsPage />} />

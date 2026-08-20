@@ -6,9 +6,44 @@ import {
 	useReducedMotionConfig,
 	type Variants,
 } from "framer-motion";
-import type { PropsWithChildren } from "react";
+import {
+	type PointerEvent,
+	type PropsWithChildren,
+	useSyncExternalStore,
+} from "react";
 import { getMotionInitial } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+
+const hoverMediaQuery = "(hover: hover) and (pointer: fine)";
+
+function subscribeToHoverCapability(onChange: () => void) {
+	if (
+		typeof window === "undefined" ||
+		typeof window.matchMedia !== "function"
+	) {
+		return () => {};
+	}
+
+	const mediaQuery = window.matchMedia(hoverMediaQuery);
+	mediaQuery.addEventListener("change", onChange);
+	return () => mediaQuery.removeEventListener("change", onChange);
+}
+
+function getHoverCapability() {
+	return (
+		typeof window !== "undefined" &&
+		typeof window.matchMedia === "function" &&
+		window.matchMedia(hoverMediaQuery).matches
+	);
+}
+
+function useHoverCapability() {
+	return useSyncExternalStore(
+		subscribeToHoverCapability,
+		getHoverCapability,
+		() => false,
+	);
+}
 
 const listVariants: Variants = {
 	hidden: { opacity: 0 },
@@ -40,22 +75,33 @@ export function StaggeredList({
 	);
 }
 
-export function StaggeredListElement({
-	children,
-	type,
-	variant,
-	className,
-	whileHover,
-	whileTap,
-	...props
-}: PropsWithChildren<
-	HTMLMotionProps<"div"> & {
-		type?: "button" | "card";
-		variant?: "brand" | "default" | "transparent";
-		whileHover?: TargetAndTransition;
-		whileTap?: TargetAndTransition;
-	}
->) {
+type StaggeredListElementOptions = {
+	variant?: "brand" | "default" | "transparent";
+	whileHover?: TargetAndTransition;
+	whileTap?: TargetAndTransition;
+};
+
+type StaggeredListButtonProps = PropsWithChildren<
+	Omit<HTMLMotionProps<"button">, "type"> &
+		StaggeredListElementOptions & {
+			type: "button";
+		}
+>;
+
+type StaggeredListDivProps = PropsWithChildren<
+	HTMLMotionProps<"div"> &
+		StaggeredListElementOptions & {
+			type?: "card";
+		}
+>;
+
+type StaggeredListElementProps =
+	| StaggeredListButtonProps
+	| StaggeredListDivProps;
+
+export function StaggeredListElement(props: StaggeredListElementProps) {
+	const canHover = useHoverCapability();
+	const { children, type, variant, className, whileHover, whileTap } = props;
 	const elementVariants: Variants = {
 		hidden: { opacity: 0, y: 20 },
 		hovering: {
@@ -86,23 +132,48 @@ export function StaggeredListElement({
 		transparent: "bg-transparent text-foreground drop-shadow-none",
 	};
 	if (type === "button") {
+		const {
+			type: _type,
+			variant: _variant,
+			whileHover: _whileHover,
+			whileTap: _whileTap,
+			onPointerUp,
+			...buttonProps
+		} = props;
+		const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
+			onPointerUp?.(event);
+			if (!event.defaultPrevented && event.pointerType === "touch") {
+				event.currentTarget.blur();
+			}
+		};
+
 		return (
-			<m.div
+			<m.button
+				type="button"
 				variants={elementVariants}
-				whileHover="hovering"
+				whileHover={canHover ? "hovering" : undefined}
 				whileTap="tap"
 				className={cn(
-					"flex items-center justify-center w-full gap-4 rounded-2xl font-bold text-lg cursor-pointer",
+					"flex w-full touch-manipulation appearance-none items-center justify-center gap-4 rounded-2xl font-bold text-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 					variantStyles[variant || "default"],
 					className,
 				)}
-				role="button"
-				{...props}
+				onPointerUp={handlePointerUp}
+				{...buttonProps}
 			>
 				{children}
-			</m.div>
+			</m.button>
 		);
-	} else if (type === "card") {
+	}
+
+	const {
+		type: _type,
+		variant: _variant,
+		whileHover: _whileHover,
+		whileTap: _whileTap,
+		...divProps
+	} = props;
+	if (type === "card") {
 		return (
 			<m.div
 				variants={elementVariants}
@@ -111,14 +182,14 @@ export function StaggeredListElement({
 					variantStyles[variant || "default"],
 					className,
 				)}
-				{...props}
+				{...divProps}
 			>
 				{children}
 			</m.div>
 		);
 	}
 	return (
-		<m.div variants={elementVariants} className={className} {...props}>
+		<m.div variants={elementVariants} className={className} {...divProps}>
 			{children}
 		</m.div>
 	);
