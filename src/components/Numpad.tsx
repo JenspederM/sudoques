@@ -8,6 +8,7 @@ interface NumpadProps {
 	onNumberClick: (num: number | null) => void;
 	onQuickNote: (num: number) => void;
 	isNoteMode: boolean;
+	disabled?: boolean;
 	disabledNumbers?: number[];
 	remainingCounts?: Map<number, number>;
 }
@@ -94,6 +95,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 	onNumberClick,
 	onQuickNote,
 	isNoteMode,
+	disabled = false,
 	disabledNumbers = EMPTY_NUMBERS,
 	remainingCounts,
 }) => {
@@ -102,6 +104,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 	return (
 		<fieldset
 			className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full shrink-0 border-0 p-0 m-0 min-w-0"
+			aria-disabled={disabled}
 			aria-label={
 				isNoteMode ? "Number pad, notes mode" : "Number pad, value mode"
 			}
@@ -113,7 +116,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 				<NumpadButton
 					key={num}
 					num={num}
-					disabled={disabledNumbers.includes(num)}
+					disabled={disabled || disabledNumbers.includes(num)}
 					isNoteMode={isNoteMode}
 					remaining={remainingCounts?.get(num)}
 					onClick={() => onNumberClick(num)}
@@ -126,7 +129,7 @@ export const Numpad: React.FC<NumpadProps> = ({
 				<NumpadButton
 					key={num}
 					num={num}
-					disabled={disabledNumbers.includes(num)}
+					disabled={disabled || disabledNumbers.includes(num)}
 					isNoteMode={isNoteMode}
 					remaining={remainingCounts?.get(num)}
 					onClick={() => onNumberClick(num)}
@@ -136,8 +139,14 @@ export const Numpad: React.FC<NumpadProps> = ({
 			<button
 				type="button"
 				data-testid="numpad-delete"
+				aria-label="Erase selected cell"
+				disabled={disabled}
 				onClick={() => onNumberClick(null)}
-				className="aspect-16/12 sm:aspect-square flex items-center justify-center text-xl sm:text-2xl font-semibold rounded-xl glass transition-all active:scale-95 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-red-400"
+				className={cn(
+					"aspect-16/12 sm:aspect-square flex items-center justify-center text-xl sm:text-2xl font-semibold rounded-xl glass transition-all active:scale-95 bg-red-500/10 hover:bg-red-500/20 hover:border-red-500/50 text-red-400",
+					disabled &&
+						"opacity-30 cursor-not-allowed hover:bg-red-500/10 active:scale-100",
+				)}
 			>
 				<Delete size={24} />
 			</button>

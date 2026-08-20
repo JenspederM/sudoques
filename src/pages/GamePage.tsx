@@ -235,6 +235,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 						onNumberClick={handleInput}
 						onQuickNote={handleQuickNote}
 						isNoteMode={isNoteMode}
+						disabled={selectedCell === null}
 						disabledNumbers={disabledNumbers}
 						remainingCounts={remainingCounts}
 					/>

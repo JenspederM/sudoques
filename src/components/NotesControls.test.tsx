@@ -49,4 +49,35 @@ describe("notes controls", () => {
 		expect(numpad).toContain('aria-label="Number pad, value mode"');
 		expect(numpad).toContain("Press and hold to toggle note 1");
 	});
+
+	test("visually and functionally disables every input without a selected cell", () => {
+		const numpad = renderToStaticMarkup(
+			<Numpad
+				onNumberClick={noop}
+				onQuickNote={noop}
+				isNoteMode={false}
+				disabled={true}
+			/>,
+		);
+
+		expect(numpad).toContain('aria-disabled="true"');
+		expect(numpad).toContain('aria-label="Erase selected cell"');
+		expect(numpad.match(/ disabled=""/g)).toHaveLength(10);
+		expect(numpad.match(/opacity-30/g)).toHaveLength(10);
+	});
+
+	test("keeps count-complete numbers disabled after a cell is selected", () => {
+		const numpad = renderToStaticMarkup(
+			<Numpad
+				onNumberClick={noop}
+				onQuickNote={noop}
+				isNoteMode={false}
+				disabled={false}
+				disabledNumbers={[5]}
+			/>,
+		);
+
+		expect(numpad).toContain('aria-disabled="false"');
+		expect(numpad.match(/ disabled=""/g)).toHaveLength(1);
+	});
 });
