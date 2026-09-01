@@ -4,7 +4,7 @@ import type { LogicalTechniqueAnalysis } from "@/types";
 import { GradingTechniquesSummary } from "./GradingTechniquesSummary";
 
 const reportedPuzzleAnalysis: LogicalTechniqueAnalysis = {
-	version: "bounded-logical-v2",
+	version: "bounded-logical-v3",
 	status: "solved-logically",
 	observedTechniques: ["Naked Single", "X-Wing", "XY-Chain"],
 	minimumCeiling: 50,

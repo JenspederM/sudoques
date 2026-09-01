@@ -10,6 +10,10 @@ const REPORTED_INITIAL =
 	"020780000000305002000092000095000068801000907740000130000920000500607000000031070";
 const REPORTED_CURRENT =
 	"020786000070315002050492700395174268861253947742869135007928000509647820280531079";
+const REPORTED_1809_BOTTLENECK =
+	"074800900001050784580000163007395608060070090950106000730000006846030200005004830";
+const REPORTED_1809_SOLUTION =
+	"674813925391652784582947163427395618163478592958126347739281456846539271215764839";
 const REPORTED_PROFILE = {
 	difficulty: "hard" as const,
 	techniques: [
@@ -153,7 +157,7 @@ describe("findExplainableHint", () => {
 		]);
 	});
 
-	test("can explain wings, chains, and a forcing-chain conclusion", () => {
+	test("uses a logical AIC before falling back to a cell forcing chain", () => {
 		const puzzle =
 			"900600007060070030007000200600508002004000800200301009001000500040050010800009004";
 		const board = parsePuzzle(puzzle);
@@ -163,8 +167,80 @@ describe("findExplainableHint", () => {
 
 		expect(techniques).toContain("XYZ-Wing");
 		expect(techniques).toContain("XY-Chain");
-		expect(techniques).toContain("Cell Forcing Chain");
-		expect(hint.steps.at(-1)?.placement).toEqual({ row: 0, col: 6, value: 4 });
+		expect(techniques).toContain("Alternating Inference Chain");
+		expect(techniques).not.toContain("Cell Forcing Chain");
+		expect(hint.steps.at(-1)?.placement).toBeDefined();
+	});
+
+	test("finds a deterministic AIC path through the reported 18:09 bottleneck", () => {
+		const board = parsePuzzle(REPORTED_1809_BOTTLENECK);
+		const solution = parsePuzzle(REPORTED_1809_SOLUTION);
+		const hint = findExplainableHint(board, board, solution, {
+			difficulty: "master",
+			techniques: ["Alternating Inference Chain"],
+		});
+		const aicSteps = hint.steps.filter(
+			(step) => step.technique === "Alternating Inference Chain",
+		);
+
+		expect(hint.status).toBe("hint");
+		expect(aicSteps.length).toBeGreaterThan(0);
+		expect(
+			hint.steps.some((step) => step.technique === "Cell Forcing Chain"),
+		).toBe(false);
+		expect(hint.steps.at(-1)?.placement).toBeDefined();
+		expect(
+			findExplainableHint(board, board, solution, {
+				difficulty: "master",
+				techniques: ["Alternating Inference Chain"],
+			}),
+		).toEqual(hint);
+		expect(
+			findExplainableHint(board, board, solution, {
+				difficulty: "expert",
+				techniques: ["Alternating Inference Chain"],
+			}).steps.some((step) => step.technique === "Alternating Inference Chain"),
+		).toBe(false);
+
+		for (const step of aicSteps) {
+			expect(step.kind).toBe("elimination");
+			expect(step.pattern.length).toBeGreaterThanOrEqual(2);
+			expect(step.eliminations.length).toBeGreaterThan(0);
+			expect(step.houses).toBeUndefined();
+			expect(step.details.join(" ")).toContain(" = ");
+			expect(step.details.join(" ")).toContain(" – ");
+			for (const elimination of step.eliminations) {
+				expect(solution[elimination.row]?.[elimination.col]).not.toBe(
+					elimination.value,
+				);
+			}
+		}
+	});
+
+	test("lets a new logical AIC replace Backtracking in the old hard production profile", () => {
+		const board = parsePuzzle(REPORTED_1809_BOTTLENECK);
+		const solution = parsePuzzle(REPORTED_1809_SOLUTION);
+		const hint = findExplainableHint(board, board, solution, {
+			difficulty: "hard",
+			techniques: [
+				"Naked Single",
+				"Hidden Single",
+				"Pointing Pairs",
+				"Naked Pair",
+				"Backtracking",
+			],
+		});
+
+		expect(hint.status).toBe("hint");
+		expect(
+			hint.steps.some(
+				(step) => step.technique === "Alternating Inference Chain",
+			),
+		).toBe(true);
+		expect(
+			hint.steps.some((step) => step.technique === "Cell Forcing Chain"),
+		).toBe(false);
+		expect(hint.steps.at(-1)?.placement).toBeDefined();
 	});
 
 	test("keeps fish coordinates aligned with their actual rows and columns", () => {

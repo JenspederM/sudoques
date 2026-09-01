@@ -106,6 +106,14 @@ describe("technique explanations", () => {
 		expect(getTechniqueExplanation("2-String Kite")).toContain("same box");
 	});
 
+	test("explains the strong and weak links in an AIC", () => {
+		const explanation = getTechniqueExplanation("Alternating Inference Chain");
+
+		expect(explanation).toContain("strong links");
+		expect(explanation).toContain("weak links");
+		expect(explanation).toContain("both endpoints");
+	});
+
 	test("covers every technique the explainable hint solver can display", () => {
 		const techniques: HintTechnique[] = [
 			"Naked Single",
@@ -128,6 +136,7 @@ describe("technique explanations", () => {
 			"Unique Rectangle Type 1",
 			"Simple Colouring",
 			"XY-Chain",
+			"Alternating Inference Chain",
 			"BUG+1",
 			"Cell Forcing Chain",
 			"Check for mistakes",

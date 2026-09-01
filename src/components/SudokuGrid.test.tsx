@@ -123,4 +123,31 @@ describe("SudokuGrid visual states", () => {
 		expect(markup).not.toContain("bg-primary/25");
 		expect(markup).toContain("text-red-500");
 	});
+
+	test("renders both AIC chain groups and its elimination as distinct candidates", () => {
+		const hintStep: HintStep = {
+			technique: "Alternating Inference Chain",
+			kind: "elimination",
+			title: "Remove 1 from R4C1",
+			summary: "At least one endpoint must be true.",
+			details: [],
+			pattern: [
+				{ row: 3, col: 0, value: 4, group: "a" },
+				{ row: 4, col: 0, value: 4, group: "b" },
+			],
+			eliminations: [{ row: 3, col: 0, value: 1 }],
+		};
+
+		const markup = renderGrid(
+			emptyBoard(),
+			emptyBoard(),
+			[0, 0],
+			emptyNotes(),
+			hintStep,
+		);
+
+		expect(markup).toContain('data-hint-candidate="pattern-a"');
+		expect(markup).toContain('data-hint-candidate="pattern-b"');
+		expect(markup).toContain('data-hint-candidate="elimination"');
+	});
 });
