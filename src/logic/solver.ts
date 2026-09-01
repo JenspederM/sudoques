@@ -6,6 +6,11 @@ import type {
 	LogicalTechniqueRoute,
 	Technique,
 } from "@/types";
+import {
+	findSkyscraper as findSkyscraperPattern,
+	findTwoStringKite as findTwoStringKitePattern,
+	type TurbotFishPattern,
+} from "./turbotFish";
 
 const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Naked Single": 1, // Will be multiplied by F
@@ -21,6 +26,8 @@ const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 	"Gurth's Theorem": 80,
 	"BUG+1": 30,
 	"X-Wing": 30,
+	Skyscraper: 30,
+	"2-String Kite": 30,
 	"Unique Rectangle Type 1": 20,
 	"Chute Remote Pair": 25,
 	"Simple Colouring": 50,
@@ -61,7 +68,7 @@ const TECHNIQUE_SCORES: Record<Exclude<Technique, "Backtracking">, number> = {
 };
 
 /** Update this whenever the supported techniques or analysis semantics change. */
-export const LOGICAL_ANALYSIS_VERSION = "bounded-logical-v1";
+export const LOGICAL_ANALYSIS_VERSION = "bounded-logical-v2";
 
 /**
  * Techniques this solver actually implements, in the exact priority used by
@@ -80,6 +87,8 @@ export const SUPPORTED_LOGICAL_TECHNIQUES = [
 	"Naked Quad",
 	"Hidden Quad",
 	"X-Wing",
+	"Skyscraper",
+	"2-String Kite",
 	"Swordfish",
 	"Jellyfish",
 	"Unique Rectangle Type 1",
@@ -221,6 +230,24 @@ export class SudokuSolver {
 			}
 			if (this.canUse("X-Wing") && this.findXWings()) {
 				totalScore += TECHNIQUE_SCORES["X-Wing"] * F;
+				changed = true;
+				continue;
+			}
+			if (
+				this.canUse("Skyscraper") &&
+				this.applyTurbotFishEliminations(findSkyscraperPattern(this.candidates))
+			) {
+				totalScore += TECHNIQUE_SCORES.Skyscraper * F;
+				changed = true;
+				continue;
+			}
+			if (
+				this.canUse("2-String Kite") &&
+				this.applyTurbotFishEliminations(
+					findTwoStringKitePattern(this.candidates),
+				)
+			) {
+				totalScore += TECHNIQUE_SCORES["2-String Kite"] * F;
 				changed = true;
 				continue;
 			}
@@ -867,6 +894,19 @@ export class SudokuSolver {
 			if (this.findFishInUnits(val, 2, "X-Wing", false)) return true;
 		}
 		return false;
+	}
+
+	private applyTurbotFishEliminations(
+		pattern: TurbotFishPattern | null,
+	): boolean {
+		if (!pattern) return false;
+		let removed = false;
+		for (const { row, col } of pattern.eliminations) {
+			const candidates = this.candidates[row]?.[col];
+			if (candidates?.delete(pattern.value)) removed = true;
+		}
+		if (removed) this.techniquesUsed.add(pattern.technique);
+		return removed;
 	}
 
 	private findSwordfish(): boolean {

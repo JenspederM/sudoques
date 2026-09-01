@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { classifyDifficulty } from "./difficulty";
 import {
 	analyzeLogicalTechniques,
 	gradePuzzle,
@@ -45,6 +46,18 @@ test("gradePuzzle - X-Wing", () => {
 
 	expect(graded.isSolvable).toBe(true);
 	expect(graded.techniquesUsed.has("X-Wing")).toBe(true);
+});
+
+test("the reported Turbot Fish puzzle is solved logically and remains hard", () => {
+	const board = parsePuzzle(
+		"000000000200374005050000080070090030080207090009040500900852003000030000005010400",
+	);
+	const graded = gradePuzzle(board);
+
+	expect(graded.isSolvable).toBe(true);
+	expect(graded.techniquesUsed.has("Skyscraper")).toBe(true);
+	expect(graded.techniquesUsed.has("Backtracking")).toBe(false);
+	expect(classifyDifficulty(graded.techniquesUsed)).toBe("hard");
 });
 
 test("gradePuzzle - Y-Wing", () => {
@@ -110,20 +123,20 @@ test("gradePuzzle records the observed techniques for the reported hard puzzle",
 		"Pointing Pairs",
 		"Naked Pair",
 		"Hidden Pair",
-		"XY-Chain",
+		"2-String Kite",
 		"X-Wing",
 	]);
 });
 
-test("bounded analysis finds honest alternative routes for the reported hard puzzle", () => {
+test("bounded analysis finds the lower Turbot Fish route for the reported hard puzzle", () => {
 	const board = parsePuzzle(
 		"020780000000305002000092000095000068801000907740000130000920000500607000000031070",
 	);
 	const analysis = analyzeLogicalTechniques(board);
 
 	expect(analysis.status).toBe("solved-logically");
-	expect(analysis.minimumCeiling).toBe(50);
-	expect(analysis.unavoidableInReruns).toEqual([]);
+	expect(analysis.minimumCeiling).toBe(30);
+	expect(analysis.unavoidableInReruns).toEqual(["2-String Kite"]);
 	expect(analysis.routes).toEqual([
 		{
 			techniques: [
@@ -132,37 +145,17 @@ test("bounded analysis finds honest alternative routes for the reported hard puz
 				"Pointing Pairs",
 				"Naked Pair",
 				"Hidden Pair",
-				"X-Wing",
-				"XY-Chain",
+				"2-String Kite",
 			],
-			frontier: ["XY-Chain"],
-		},
-		{
-			techniques: [
-				"Naked Single",
-				"Hidden Single",
-				"Pointing Pairs",
-				"Naked Pair",
-				"Hidden Pair",
-				"Simple Colouring",
-			],
-			frontier: ["Simple Colouring"],
+			frontier: ["2-String Kite"],
 		},
 	]);
 
-	// In particular, the old metadata's XY-Chain and X-Wing must not be
-	// presented as two individually required techniques.
-	expect(
-		analysis.routes.some((route) => route.techniques.includes("X-Wing")),
-	).toBe(true);
-	expect(
-		analysis.routes.some(
-			(route) =>
-				route.techniques.includes("Simple Colouring") &&
-				!route.techniques.includes("X-Wing") &&
-				!route.techniques.includes("XY-Chain"),
-		),
-	).toBe(true);
+	// The newly supported kite removes the old need to report either X-Wing +
+	// XY-Chain or Simple Colouring as the lowest supported logical route.
+	expect(analysis.routes[0]?.techniques).not.toContain("X-Wing");
+	expect(analysis.routes[0]?.techniques).not.toContain("XY-Chain");
+	expect(analysis.routes[0]?.techniques).not.toContain("Simple Colouring");
 });
 
 test("every reported bounded route deterministically reaches the same valid solution without search", () => {
@@ -179,6 +172,12 @@ test("every reported bounded route deterministically reaches the same valid solu
 	const persistedRoundTrip = JSON.parse(JSON.stringify(firstAnalysis));
 	expect(isCurrentLogicalTechniqueAnalysis(persistedRoundTrip)).toBe(true);
 	expect(persistedRoundTrip).toEqual(firstAnalysis);
+	expect(
+		isCurrentLogicalTechniqueAnalysis({
+			...persistedRoundTrip,
+			version: "bounded-logical-v1",
+		}),
+	).toBe(false);
 	expect(
 		isCurrentLogicalTechniqueAnalysis({
 			...persistedRoundTrip,

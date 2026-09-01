@@ -27,6 +27,8 @@ const TECHNIQUE_RANK: Record<Technique, number> = {
 	"Hidden Quad": 3,
 	"BUG+1": 3,
 	"X-Wing": 3,
+	Skyscraper: 3,
+	"2-String Kite": 3,
 	"Unique Rectangle Type 1": 3,
 	"Chute Remote Pair": 4,
 	"Simple Colouring": 4,

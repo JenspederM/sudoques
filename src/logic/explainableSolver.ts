@@ -1,4 +1,9 @@
 import type { Board, CellNotes, Difficulty, Technique } from "@/types";
+import {
+	findSkyscraper as findSkyscraperPattern,
+	findTwoStringKite as findTwoStringKitePattern,
+	type TurbotFishPattern,
+} from "./turbotFish";
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
@@ -524,6 +529,67 @@ function findFish(candidates: CandidateGrid, size: 2 | 3 | 4): HintStep | null {
 		}
 	}
 	return null;
+}
+
+function turbotFishHint(pattern: TurbotFishPattern): HintStep {
+	const houses = [
+		...pattern.strongLinks.map((link) => link.house),
+		pattern.bridgeHouse,
+	].filter(
+		(house, index, all) =>
+			all.findIndex(
+				(candidate) =>
+					candidate.type === house.type && candidate.index === house.index,
+			) === index,
+	);
+	const [firstLink, secondLink] = pattern.strongLinks;
+	const [firstBridge, secondBridge] = pattern.bridgeCells;
+	const [firstEnd, secondEnd] = pattern.ends;
+	const firstHouse = houseName(firstLink.house);
+	const secondHouse = houseName(secondLink.house);
+	const bridge = houseName(pattern.bridgeHouse);
+	const summary =
+		pattern.technique === "Skyscraper"
+			? `${firstHouse} and ${secondHouse} each have exactly two places for ${pattern.value}, joined through ${bridge}.`
+			: `A row and a column each have exactly two places for ${pattern.value}, with one end of each link meeting in ${bridge}.`;
+	const details =
+		pattern.technique === "Skyscraper"
+			? [
+					`The highlighted candidates form two strong links: ${pattern.value} must appear at one end of each link.`,
+					`${cellName(firstBridge)} and ${cellName(secondBridge)} see each other in ${bridge}, so they cannot both be ${pattern.value}. At least one outer end, ${cellName(firstEnd)} or ${cellName(secondEnd)}, must therefore be ${pattern.value}; remove it from cells that see both outer ends.`,
+				]
+			: [
+					`The highlighted candidates form one strong link in ${firstHouse} and one in ${secondHouse}.`,
+					`${cellName(firstBridge)} and ${cellName(secondBridge)} see each other in ${bridge}, so they cannot both be ${pattern.value}. At least one outer end, ${cellName(firstEnd)} or ${cellName(secondEnd)}, must therefore be ${pattern.value}; remove it from cells that see both outer ends.`,
+				];
+
+	return {
+		technique: pattern.technique,
+		kind: "elimination",
+		title: `${pattern.technique} on ${pattern.value}`,
+		summary,
+		details,
+		pattern: pattern.chain.map((cell, index) => ({
+			...cell,
+			value: pattern.value,
+			group: index % 2 === 0 ? "a" : "b",
+		})),
+		eliminations: pattern.eliminations.map((cell) => ({
+			...cell,
+			value: pattern.value,
+		})),
+		houses,
+	};
+}
+
+function findSkyscraperHint(candidates: CandidateGrid): HintStep | null {
+	const pattern = findSkyscraperPattern(candidates);
+	return pattern ? turbotFishHint(pattern) : null;
+}
+
+function findTwoStringKiteHint(candidates: CandidateGrid): HintStep | null {
+	const pattern = findTwoStringKitePattern(candidates);
+	return pattern ? turbotFishHint(pattern) : null;
 }
 
 type BivalueCell = CellRef & { values: [number, number] };
@@ -1119,6 +1185,8 @@ const HUMAN_TECHNIQUE_COST: Partial<Record<HintTechnique, number>> = {
 	"Naked Triple": 4.6,
 	"Hidden Triple": 5,
 	"X-Wing": 5.2,
+	Skyscraper: 5.5,
+	"2-String Kite": 5.7,
 	"Naked Quad": 6.2,
 	"Hidden Quad": 6.8,
 	"Y-Wing": 6.4,
@@ -1157,6 +1225,8 @@ const ELIMINATION_FINDERS: Array<
 	(candidates) => findNakedSubset(candidates, 4),
 	(candidates) => findHiddenSubset(candidates, 4),
 	(candidates) => findFish(candidates, 2),
+	findSkyscraperHint,
+	findTwoStringKiteHint,
 	findYWing,
 	(candidates) => findFish(candidates, 3),
 	findXYZWing,
@@ -1178,6 +1248,8 @@ function techniqueFamily(technique: HintTechnique) {
 		return "subset";
 	if (
 		technique === "X-Wing" ||
+		technique === "Skyscraper" ||
+		technique === "2-String Kite" ||
 		technique === "Swordfish" ||
 		technique === "Jellyfish"
 	)
