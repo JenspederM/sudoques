@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
+import { HapticFeedbackSetting } from "@/components/HapticFeedbackSetting";
 import { Layout } from "@/components/Layout";
 import { PageTitle } from "@/components/PageTitle";
 import {
@@ -98,34 +99,10 @@ export const SettingsPage: React.FC = () => {
 					<Vibrate size={24} className="text-primary" />
 					<span className="text-xl font-bold">Feedback</span>
 				</StaggeredListElement>
-				<StaggeredListElement type="card" className="p-0 overflow-hidden">
-					<button
-						type="button"
-						role="switch"
-						aria-checked={hapticsEnabled}
-						onClick={() => setHapticsEnabled(!hapticsEnabled)}
-						className="flex min-h-20 w-full items-center gap-4 px-6 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-					>
-						<div className="flex-1 min-w-0">
-							<p className="font-bold text-foreground">Haptic feedback</p>
-							<p className="text-sm text-muted-foreground">
-								Subtle taps for game actions, warnings and wins
-							</p>
-						</div>
-						<span
-							aria-hidden="true"
-							className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-								hapticsEnabled ? "bg-primary" : "bg-secondary"
-							}`}
-						>
-							<span
-								className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${
-									hapticsEnabled ? "translate-x-6" : "translate-x-1"
-								}`}
-							/>
-						</span>
-					</button>
-				</StaggeredListElement>
+				<HapticFeedbackSetting
+					enabled={hapticsEnabled}
+					onToggle={() => setHapticsEnabled(!hapticsEnabled)}
+				/>
 
 				{/* Mode Section */}
 				<StaggeredListElement className="flex items-center gap-3">
