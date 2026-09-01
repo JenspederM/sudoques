@@ -194,7 +194,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 	return (
 		<Layout
 			backRedirect="/"
-			headerClassName="justify-between relative z-50"
+			mainClassName="game-page-main"
+			headerClassName="game-page-header justify-between relative z-50"
 			headerCenter={<Timer time={timer} />}
 			headerRight={
 				<GameMenu
@@ -209,8 +210,8 @@ export const GamePage: React.FC<GamePageProps> = ({
 				/>
 			}
 		>
-			<StaggeredList className="h-full">
-				<StaggeredListElement className="flex flex-col flex-1 max-[400px]:flex-none sm:flex-0">
+			<StaggeredList className="game-stack min-h-0 flex-1">
+				<StaggeredListElement className="game-board-slot flex min-h-0 flex-1 items-center justify-center">
 					<SudokuGrid
 						className="game-board-bleed"
 						initialBoard={puzzle.initial}

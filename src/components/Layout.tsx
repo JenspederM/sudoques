@@ -10,6 +10,7 @@ type LayoutProps = PropsWithChildren<{
 	backRedirect?: string;
 	backState?: unknown;
 	headerClassName?: string;
+	mainClassName?: string;
 	headerCenter?: React.ReactNode;
 	headerRight?: React.ReactNode;
 	centered?: boolean;
@@ -18,6 +19,7 @@ type LayoutProps = PropsWithChildren<{
 export const Layout: React.FC<LayoutProps> = ({
 	children,
 	headerClassName,
+	mainClassName,
 	backRedirect,
 	backState,
 	headerCenter,
@@ -41,6 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({
 				className={cn(
 					"safe flex flex-col h-full w-full max-w-xl sm:justify-center",
 					centered && "justify-center",
+					mainClassName,
 				)}
 				layout={!shouldReduceMotion}
 			>
@@ -77,6 +80,7 @@ function Header({
 	const navigate = useNavigate();
 	return (
 		<m.div
+			data-testid="page-header"
 			className={cn(
 				"bg-glass w-full grid grid-cols-3 items-center p-3 sm:p-4 rounded-2xl border border-border shadow-xl mb-6",
 				headerClassName,

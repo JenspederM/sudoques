@@ -242,6 +242,46 @@ body {
 	}
 }
 
+/* Keep every game control above the home indicator on short phone screens. */
+.game-page-main {
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior-y: contain;
+}
+
+.game-stack,
+.game-board-slot {
+	min-height: 0;
+}
+
+@media (max-height: 700px) {
+	.game-page-header {
+		margin-bottom: 0.5rem;
+		padding-block: 0.5rem;
+	}
+
+	.game-stack {
+		gap: 0.5rem;
+	}
+
+	.game-board-bleed {
+		--game-board-available-height: calc(
+			100dvh -
+			max(var(--safe-top), 1rem) -
+			max(var(--safe-bottom), 2rem) -
+			14rem
+		);
+
+		flex: none;
+		width: min(
+			calc(100% + var(--board-bleed-left, 0px) + var(--board-bleed-right, 0px)),
+			max(12rem, var(--game-board-available-height))
+		);
+		margin-inline: auto;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	::before,
