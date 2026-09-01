@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import type { Board } from "@/types";
-import { getCellHighlightState } from "./highlighting";
+import type { Board, CellNotes } from "@/types";
+import { getCellHighlightState, isMatchingNoteCandidate } from "./highlighting";
 
 const emptyBoard = (): Board =>
 	Array.from({ length: 9 }, () => Array<number | null>(9).fill(null));
+
+const emptyNotes = (): CellNotes =>
+	Array.from({ length: 9 }, () =>
+		Array.from({ length: 9 }, () => new Set<number>()),
+	);
 
 describe("getCellHighlightState", () => {
 	test("separates the selection, matching values, peers, and unrelated cells", () => {
@@ -32,5 +37,34 @@ describe("getCellHighlightState", () => {
 
 	test("returns none when there is no selection", () => {
 		expect(getCellHighlightState(emptyBoard(), null, 0, 0)).toBe("none");
+	});
+});
+
+describe("isMatchingNoteCandidate", () => {
+	test("matches only the candidate equal to a selected placed value", () => {
+		const board = emptyBoard();
+		const notes = emptyNotes();
+		if (!board[0] || !notes[4]?.[4]) throw new Error("Board is missing");
+		board[0][0] = 5;
+		notes[4][4].add(5);
+		notes[4][4].add(7);
+
+		expect(isMatchingNoteCandidate(board, notes, [0, 0], 4, 4, 5)).toBe(true);
+		expect(isMatchingNoteCandidate(board, notes, [0, 0], 4, 4, 7)).toBe(false);
+	});
+
+	test("does not match without a selected placed value or inside filled cells", () => {
+		const board = emptyBoard();
+		const notes = emptyNotes();
+		if (!board[0] || !board[4] || !notes[4]?.[4])
+			throw new Error("Board is missing");
+		notes[4][4].add(5);
+
+		expect(isMatchingNoteCandidate(board, notes, null, 4, 4, 5)).toBe(false);
+		expect(isMatchingNoteCandidate(board, notes, [0, 0], 4, 4, 5)).toBe(false);
+
+		board[0][0] = 5;
+		board[4][4] = 5;
+		expect(isMatchingNoteCandidate(board, notes, [0, 0], 4, 4, 5)).toBe(false);
 	});
 });
