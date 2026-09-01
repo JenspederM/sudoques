@@ -5,6 +5,7 @@ import {
 	Palette,
 	Sun,
 	User as UserIcon,
+	Vibrate,
 } from "lucide-react";
 import type React from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import {
 } from "@/components/StaggeredList";
 import { ThemeButton } from "@/components/ThemeButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHaptics } from "@/contexts/HapticsContext";
 import { useUser } from "@/contexts/UserContext";
 import { updateUserSettings } from "@/logic/firebase";
 import type { Accent, Mode } from "@/types";
@@ -24,6 +26,8 @@ export const SettingsPage: React.FC = () => {
 	const navigate = useNavigate();
 	const { user, signOut } = useAuth();
 	const { accent: currentAccent, mode: currentMode } = useUser();
+	const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled } =
+		useHaptics();
 
 	const handleSignOut = async () => {
 		try {
@@ -87,6 +91,40 @@ export const SettingsPage: React.FC = () => {
 				>
 					<LogOut size={20} />
 					<span>Sign Out</span>
+				</StaggeredListElement>
+
+				{/* Feedback Section */}
+				<StaggeredListElement className="flex items-center gap-3">
+					<Vibrate size={24} className="text-primary" />
+					<span className="text-xl font-bold">Feedback</span>
+				</StaggeredListElement>
+				<StaggeredListElement type="card" className="p-0 overflow-hidden">
+					<button
+						type="button"
+						role="switch"
+						aria-checked={hapticsEnabled}
+						onClick={() => setHapticsEnabled(!hapticsEnabled)}
+						className="flex min-h-20 w-full items-center gap-4 px-6 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+					>
+						<div className="flex-1 min-w-0">
+							<p className="font-bold text-foreground">Haptic feedback</p>
+							<p className="text-sm text-muted-foreground">
+								Subtle taps for game actions, warnings and wins
+							</p>
+						</div>
+						<span
+							aria-hidden="true"
+							className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+								hapticsEnabled ? "bg-primary" : "bg-secondary"
+							}`}
+						>
+							<span
+								className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${
+									hapticsEnabled ? "translate-x-6" : "translate-x-1"
+								}`}
+							/>
+						</span>
+					</button>
 				</StaggeredListElement>
 
 				{/* Mode Section */}

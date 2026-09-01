@@ -18,6 +18,7 @@ import { InitialGameResumeGate } from "@/components/InitialGameResumeGate";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useAuth } from "@/contexts/AuthContext";
+import { HapticsProvider } from "@/contexts/HapticsContext";
 import { ScoresProvider } from "@/contexts/ScoresContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import { Spinner } from "./components/Spinner";
@@ -499,10 +500,12 @@ function AppRoutes() {
 
 export default function App() {
 	return (
-		<UserProvider>
-			<ScoresProvider>
-				<AppRoutes />
-			</ScoresProvider>
-		</UserProvider>
+		<HapticsProvider>
+			<UserProvider>
+				<ScoresProvider>
+					<AppRoutes />
+				</ScoresProvider>
+			</UserProvider>
+		</HapticsProvider>
 	);
 }

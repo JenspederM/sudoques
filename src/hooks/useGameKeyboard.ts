@@ -7,7 +7,7 @@ interface UseGameKeyboardProps {
 	>;
 	handleInput: (num: number | null) => void;
 	handleQuickNote: (num: number) => void;
-	setIsNoteMode: React.Dispatch<React.SetStateAction<boolean>>;
+	onToggleNoteMode: () => void;
 	undo: () => void;
 	redo: () => void;
 }
@@ -29,7 +29,7 @@ export function useGameKeyboard({
 	setSelectedCell,
 	handleInput,
 	handleQuickNote,
-	setIsNoteMode,
+	onToggleNoteMode,
 	undo,
 	redo,
 }: UseGameKeyboardProps) {
@@ -72,7 +72,7 @@ export function useGameKeyboard({
 
 			// Toggle note mode ('n' or 'N')
 			if (e.key.toLowerCase() === "n") {
-				setIsNoteMode((prev) => !prev);
+				onToggleNoteMode();
 				return;
 			}
 
@@ -104,6 +104,6 @@ export function useGameKeyboard({
 		undo,
 		redo,
 		setSelectedCell,
-		setIsNoteMode,
+		onToggleNoteMode,
 	]);
 }
