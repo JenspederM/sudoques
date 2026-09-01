@@ -190,6 +190,24 @@ body {
 	-ms-user-select: none;
 }
 
+/*
+ * Safari can start its selection loupe on descendants before React receives a
+ * double-tap drag. Keep suppression scoped to the board so the rest of the app
+ * still scrolls and behaves normally.
+ */
+.sudoku-gesture-surface,
+.sudoku-gesture-surface * {
+	-webkit-user-select: none;
+	user-select: none;
+	-webkit-touch-callout: none;
+	-webkit-user-drag: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.sudoku-gesture-surface {
+	touch-action: none;
+}
+
 .glass {
 	background: var(--glass-bg);
 	backdrop-filter: blur(var(--glass-blur));

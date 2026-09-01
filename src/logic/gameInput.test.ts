@@ -97,4 +97,34 @@ describe("getGameInputChange", () => {
 			payload: { row: 0, col: 0 },
 		});
 	});
+
+	test("a gesture target toggles its note without touching a stale selected cell", () => {
+		const options = createOptions();
+		const target = [7, 8] as [number, number];
+		const staleSelectedCell = options.selectedCell;
+		const gestureOptions = {
+			...options,
+			selectedCell: target,
+			forceNote: true,
+			value: 6,
+		};
+
+		const addition = getGameInputChange(gestureOptions);
+		expect(addition?.action).toEqual({
+			type: "addNote",
+			delta: 10,
+			payload: { row: 7, col: 8, value: 6 },
+		});
+		expect(addition?.action.type).not.toBe("addValue");
+		expect(staleSelectedCell).toEqual([0, 0]);
+
+		options.notes[7]?.[8]?.add(6);
+		const removal = getGameInputChange(gestureOptions);
+		expect(removal?.action).toEqual({
+			type: "removeNote",
+			delta: 10,
+			payload: { row: 7, col: 8, value: 6 },
+		});
+		expect(removal?.action.type).not.toBe("addValue");
+	});
 });

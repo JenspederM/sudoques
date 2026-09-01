@@ -88,6 +88,15 @@ export function getHapticPattern(cue: HapticCue): Vibration[] {
 	return HAPTIC_PATTERNS[cue];
 }
 
+export function getInputHapticCue(
+	input: { kind: "value" | "note" | "erase"; isCorrect?: boolean },
+	isComplete: boolean,
+): HapticCue {
+	if (isComplete) return "success";
+	if (input.kind === "value") return input.isCorrect ? "value" : "incorrect";
+	return input.kind;
+}
+
 export const HAPTICS_STORAGE_KEY = "sudoques:haptics-enabled";
 
 type ReadableStorage = Pick<Storage, "getItem">;

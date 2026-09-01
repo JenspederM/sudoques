@@ -132,6 +132,16 @@ describe("SudokuGrid visual states", () => {
 		expect(markup).toContain("text-red-500");
 	});
 
+	test("limits iOS gesture suppression to the board surface", () => {
+		const markup = renderGrid(emptyBoard(), emptyBoard(), [0, 0]);
+
+		expect(markup).toContain("sudoku-gesture-surface");
+		expect(markup).toContain("touch-none");
+		expect(markup).toContain("select-none");
+		expect(markup).toContain("[-webkit-touch-callout:none]");
+		expect(markup).toContain('draggable="false"');
+	});
+
 	test("renders a pending value as a neutral large digit without conflict styling", () => {
 		const markup = renderGrid(emptyBoard(), emptyBoard(), [0, 0], {
 			conflicts: [{ row: 0, col: 0 }],

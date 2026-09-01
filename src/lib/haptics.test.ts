@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { DOUBLE_TAP_WINDOW_MS } from "./doubleTapInput";
 import {
+	getInputHapticCue,
 	HAPTIC_OUTCOME_SAFETY_MS,
 	HAPTIC_PATTERNS,
 	HAPTICS_STORAGE_KEY,
@@ -40,6 +41,20 @@ describe("haptic preferences", () => {
 });
 
 describe("haptic language", () => {
+	test("maps committed inputs to distinct value, note, mistake, and success cues", () => {
+		expect(getInputHapticCue({ kind: "value", isCorrect: true }, false)).toBe(
+			"value",
+		);
+		expect(getInputHapticCue({ kind: "value", isCorrect: false }, false)).toBe(
+			"incorrect",
+		);
+		expect(getInputHapticCue({ kind: "note" }, false)).toBe("note");
+		expect(getInputHapticCue({ kind: "erase" }, false)).toBe("erase");
+		expect(getInputHapticCue({ kind: "value", isCorrect: true }, true)).toBe(
+			"success",
+		);
+	});
+
 	test("gives values, notes, and mistakes distinct rhythms", () => {
 		expect(HAPTIC_PATTERNS.value).toHaveLength(1);
 		expect(HAPTIC_PATTERNS.note).toHaveLength(2);
@@ -89,5 +104,10 @@ describe("haptic language", () => {
 				expect(phase.duration).toBeGreaterThanOrEqual(30);
 			}
 		}
+	});
+
+	test("does not schedule an opening cue that Safari cannot activate later", () => {
+		expect("gestureValueOpen" in HAPTIC_PATTERNS).toBe(false);
+		expect("gestureNoteOpen" in HAPTIC_PATTERNS).toBe(false);
 	});
 });

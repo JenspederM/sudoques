@@ -20,6 +20,7 @@ import { useGameActions } from "@/hooks/useGameActions";
 import { useGameKeyboard } from "@/hooks/useGameKeyboard";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useScreenWakeLock } from "@/hooks/useScreenWakeLock";
+import type { CellGestureCommit } from "@/lib/cellGestureNumpad";
 import {
 	createDoubleTapInputController,
 	type PendingNoteToggle,
@@ -120,6 +121,7 @@ export const GamePage: React.FC<GamePageProps> = ({
 		handleInput,
 		handleQuickNote,
 		handleQuickNoteAt,
+		handleCellGestureInput,
 		handleDeferredInput,
 		getValuePreview,
 		undo,
@@ -403,6 +405,55 @@ export const GamePage: React.FC<GamePageProps> = ({
 			setSelectedCell(null);
 		else setSelectedCell([r, c]);
 	};
+	const handleCellGestureArm = useCallback(() => {
+		// Preserve a number that is still inside the double-tap preview window.
+		// A board touch used to flush that value before changing selection; silently
+		// cancelling it here would make fast play lose an otherwise valid move.
+		inputController.flush();
+		cancelHaptic();
+	}, [cancelHaptic, inputController]);
+	const handleCellGestureDisarm = useCallback(() => {
+		cancelHaptic();
+	}, [cancelHaptic]);
+	const handleCellGestureFocus = useCallback((row: number, col: number) => {
+		setSelectedCell([row, col]);
+	}, []);
+	const handleCellGestureCommit = useCallback(
+		(input: CellGestureCommit) => {
+			if (
+				pendingValueRef.current?.phase === "committing" ||
+				pendingNoteToggleRef.current
+			)
+				return;
+			cancelPendingInput();
+			setSelectedCell([input.row, input.col]);
+			if (input.mode === "note") {
+				setPendingNoteToggle({
+					row: input.row,
+					col: input.col,
+					value: input.value,
+					shouldExist: !(
+						currentDerivedState.notes[input.row]?.[input.col]?.has(
+							input.value,
+						) ?? false
+					),
+				});
+			}
+			// This commit-time cue remains distinct for values, notes, mistakes, and a
+			// completed board. It works through navigator.vibrate where supported. On
+			// iOS, web-haptics needs a separate trusted click, which a continuous drag
+			// cannot safely synthesize without also firing the cell's normal action.
+			if (!handleCellGestureInput(input) && input.mode === "note") {
+				setPendingNoteToggle(null);
+			}
+		},
+		[
+			cancelPendingInput,
+			currentDerivedState.notes,
+			handleCellGestureInput,
+			setPendingNoteToggle,
+		],
+	);
 	const handleToggleNoteMode = useCallback(() => {
 		if (pendingNoteToggleRef.current) return;
 		cancelPendingInput();
@@ -541,6 +592,15 @@ export const GamePage: React.FC<GamePageProps> = ({
 						hintStep={visibleHintStep}
 						pendingValue={pendingValue}
 						pendingNoteToggle={pendingNoteToggle}
+						isNoteMode={isNoteMode}
+						disabledNumbers={disabledNumbers}
+						gestureDisabled={
+							pendingValue !== null || pendingNoteToggle !== null
+						}
+						onCellGestureArm={handleCellGestureArm}
+						onCellGestureDisarm={handleCellGestureDisarm}
+						onCellGestureFocus={handleCellGestureFocus}
+						onCellGestureCommit={handleCellGestureCommit}
 					/>
 				</StaggeredListElement>
 				<StaggeredListElement>
