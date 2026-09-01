@@ -7,10 +7,12 @@ import type { Difficulty } from "@/types";
 
 interface NewGamePageProps {
 	onSelectDifficulty: (difficulty: Difficulty) => void;
+	startingDifficulty: Difficulty | null;
 }
 
 export const NewGamePage: React.FC<NewGamePageProps> = ({
 	onSelectDifficulty,
+	startingDifficulty,
 }) => {
 	const { scores, isLoading, isUnavailable } = useScores();
 
@@ -21,6 +23,7 @@ export const NewGamePage: React.FC<NewGamePageProps> = ({
 				isLoading={isLoading}
 				isUnavailable={isUnavailable}
 				onSelectDifficulty={onSelectDifficulty}
+				startingDifficulty={startingDifficulty}
 			/>
 		</Layout>
 	);

@@ -17,6 +17,7 @@ describe("DifficultyList SSR", () => {
 				isLoading={false}
 				isUnavailable={false}
 				onSelectDifficulty={() => {}}
+				startingDifficulty={null}
 			/>,
 		);
 
@@ -36,6 +37,7 @@ describe("DifficultyList SSR", () => {
 				isLoading={false}
 				isUnavailable={false}
 				onSelectDifficulty={() => {}}
+				startingDifficulty={null}
 			/>,
 		);
 
@@ -51,6 +53,7 @@ describe("DifficultyList SSR", () => {
 				isLoading={false}
 				isUnavailable={false}
 				onSelectDifficulty={() => {}}
+				startingDifficulty={null}
 			/>,
 		);
 
@@ -73,6 +76,7 @@ describe("DifficultyList SSR", () => {
 				isLoading={true}
 				isUnavailable={false}
 				onSelectDifficulty={() => {}}
+				startingDifficulty={null}
 			/>,
 		);
 
@@ -89,15 +93,34 @@ describe("DifficultyList SSR", () => {
 				isLoading={false}
 				isUnavailable={true}
 				onSelectDifficulty={() => {}}
+				startingDifficulty={null}
 			/>,
 		);
 
 		expect(markup.match(/>Records unavailable<\/output>/g)).toHaveLength(6);
 		expect(markup).not.toContain("Loading records…");
 		expect(markup).not.toContain("No record yet");
-		expect(markup.match(/role="button"/g)).toHaveLength(6);
+		expect(markup.match(/<button/g)).toHaveLength(6);
+		expect(markup.match(/type="button"/g)).toHaveLength(6);
 		expect(markup).toContain(
 			"Start Easy game. Personal records are unavailable.",
 		);
+	});
+
+	test("disables every option and identifies the requested game while starting", () => {
+		const markup = renderToStaticMarkup(
+			<DifficultyList
+				scores={[]}
+				isLoading={false}
+				isUnavailable={false}
+				onSelectDifficulty={() => {}}
+				startingDifficulty="hard"
+			/>,
+		);
+
+		expect(markup.match(/disabled=""/g)).toHaveLength(6);
+		expect(markup).toContain('aria-label="Starting Hard game…"');
+		expect(markup).toContain('aria-busy="true"');
+		expect(markup.match(/aria-busy="false"/g)).toHaveLength(5);
 	});
 });
